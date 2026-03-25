@@ -8,7 +8,7 @@ Type-safe SCIM 2.0 client for consuming SCIM Service Provider APIs. Use this to 
 ```kotlin
 val client = ScimClientBuilder()
     .baseUrl("https://scim.example.com/scim/v2")
-    .transport(JavaHttpClientTransport())
+    .transport(HttpClientTransport())
     .serializer(JacksonScimSerializer())
     .authentication(BearerTokenAuthentication(token))
     .build()
@@ -25,7 +25,7 @@ client.deleteUser(user.id!!)
 ```java
 ScimClient client = new ScimClientBuilder()
     .baseUrl("https://scim.example.com/scim/v2")
-    .transport(new JavaHttpClientTransport())
+    .transport(new HttpClientTransport())
     .serializer(new JacksonScimSerializer())
     .authentication(new BearerTokenAuthentication(token))
     .build();

@@ -6,9 +6,9 @@
 
 ### Kotlin
 ```kotlin
-val transport = JavaHttpClientTransport()
+val transport = HttpClientTransport()
 // or with custom HttpClient:
-val transport = JavaHttpClientTransport(
+val transport = HttpClientTransport(
     HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .build()
@@ -22,9 +22,9 @@ val client = ScimClientBuilder()
 
 ### Java
 ```java
-var transport = new JavaHttpClientTransport();
+var transport = new HttpClientTransport();
 // or with custom HttpClient:
-var transport = new JavaHttpClientTransport(
+var transport = new HttpClientTransport(
     HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(10))
         .build()

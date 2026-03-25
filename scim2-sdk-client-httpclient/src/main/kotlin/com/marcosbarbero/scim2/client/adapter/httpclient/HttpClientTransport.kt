@@ -6,7 +6,7 @@ import com.marcosbarbero.scim2.client.port.HttpTransport
 import java.net.URI
 import java.net.http.HttpClient
 
-class JavaHttpClientTransport(
+class HttpClientTransport(
     private val httpClient: HttpClient = HttpClient.newHttpClient()
 ) : HttpTransport {
 

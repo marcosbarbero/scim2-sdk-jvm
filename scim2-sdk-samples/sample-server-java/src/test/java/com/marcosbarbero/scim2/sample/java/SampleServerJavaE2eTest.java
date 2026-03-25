@@ -1,7 +1,7 @@
 package com.marcosbarbero.scim2.sample.java;
 
 import com.fasterxml.jackson.databind.node.TextNode;
-import com.marcosbarbero.scim2.client.adapter.httpclient.JavaHttpClientTransport;
+import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport;
 import com.marcosbarbero.scim2.client.api.ScimClient;
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder;
 import com.marcosbarbero.scim2.client.api.ScimResponse;
@@ -58,7 +58,7 @@ class SampleServerJavaE2eTest {
     void setup() {
         client = new ScimClientBuilder()
                 .baseUrl("http://localhost:" + port + "/scim/v2")
-                .transport(new JavaHttpClientTransport())
+                .transport(new HttpClientTransport())
                 .serializer(new JacksonScimSerializer())
                 .build();
     }

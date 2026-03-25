@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.sample.spring
 
-import com.marcosbarbero.scim2.client.adapter.httpclient.JavaHttpClientTransport
+import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport
 import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder
 import com.marcosbarbero.scim2.client.api.create
@@ -39,7 +39,7 @@ class SampleServerE2eTest(@LocalServerPort val port: Int) {
     fun setup() {
         client = ScimClientBuilder()
             .baseUrl("http://localhost:$port/scim/v2")
-            .transport(JavaHttpClientTransport())
+            .transport(HttpClientTransport())
             .serializer(JacksonScimSerializer())
             .build()
     }
