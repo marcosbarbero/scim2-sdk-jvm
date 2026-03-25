@@ -23,8 +23,8 @@ class GroupHandlerContractTest : ResourceHandlerContractTest<Group>() {
         )
     }
 
-    override fun sampleResource(): Group = Group(displayName = faker.name.name())
+    override fun sampleResource(): Group = Group(displayName = "Group-${java.util.UUID.randomUUID()}")
 
     override fun modifiedResource(original: Group): Group =
-        original.copy(displayName = faker.name.name())
+        original.copy(displayName = "Group-${java.util.UUID.randomUUID()}")
 }
