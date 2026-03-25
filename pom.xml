@@ -211,6 +211,9 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${kotlin.jvm-target}</jvmTarget>
+                        <args>
+                            <arg>-Xannotation-default-target=param-property</arg>
+                        </args>
                         <compilerPlugins>
                             <plugin>spring</plugin>
                             <plugin>jpa</plugin>
@@ -452,6 +455,81 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>4.6</version>
+                <configuration>
+                    <licenseSets>
+                        <licenseSet>
+                            <header>${maven.multiModuleProjectDirectory}/src/main/resources/license-header.txt</header>
+                            <includes>
+                                <include>**/*.kt</include>
+                                <include>**/*.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/target/**</exclude>
+                            </excludes>
+                        </licenseSet>
+                    </licenseSets>
+                    <properties>
+                        <year>2026</year>
+                    </properties>
+                    <mapping>
+                        <kt>SLASHSTAR_STYLE</kt>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>check-license</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <kotlin>
+                        <includes>
+                            <include>src/**/*.kt</include>
+                        </includes>
+                        <ktlint>
+                            <version>1.5.0</version>
+                        </ktlint>
+                    </kotlin>
+                    <java>
+                        <includes>
+                            <include>src/**/*.java</include>
+                        </includes>
+                        <googleJavaFormat>
+                            <version>1.25.2</version>
+                        </googleJavaFormat>
+                    </java>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.rudikershaw.gitbuildhook</groupId>
+                <artifactId>git-build-hook-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <inherited>false</inherited>
+                <configuration>
+                    <installHooks>
+                        <pre-push>.githooks/pre-push</pre-push>
+                    </installHooks>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>install</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
