@@ -13,8 +13,15 @@ data class ScimProperties(
     val patch: PatchProperties = PatchProperties(),
     val pagination: PaginationProperties = PaginationProperties(),
     val client: ClientProperties = ClientProperties(),
-    val persistence: PersistenceProperties = PersistenceProperties()
+    val persistence: PersistenceProperties = PersistenceProperties(),
+    val idp: IdpProperties = IdpProperties()
 ) {
+    data class IdpProperties(
+        val provider: String? = null,
+        val clientId: String? = null,
+        val namespace: String? = null
+    )
+
     data class BulkProperties(
         val enabled: Boolean = true,
         val maxOperations: Int = 1000,
