@@ -1,0 +1,125 @@
+package com.marcosbarbero.scim2.spring.autoconfigure
+
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
+import com.marcosbarbero.scim2.core.domain.model.resource.User
+import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
+import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import com.marcosbarbero.scim2.core.domain.vo.ETag
+import com.marcosbarbero.scim2.core.domain.vo.ResourceId
+import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
+import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
+import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
+import com.marcosbarbero.scim2.server.adapter.discovery.DiscoveryService
+import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
+import com.marcosbarbero.scim2.server.config.ScimServerConfig
+import com.marcosbarbero.scim2.server.port.ResourceHandler
+import com.marcosbarbero.scim2.server.port.ScimRequestContext
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import org.junit.jupiter.api.Test
+import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
+import org.springframework.boot.test.context.runner.ApplicationContextRunner
+
+class ScimServerAutoConfigurationTest {
+
+    private val contextRunner = ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                JacksonAutoConfiguration::class.java,
+                ScimJacksonAutoConfiguration::class.java,
+                ScimServerAutoConfiguration::class.java
+            )
+        )
+
+    @Test
+    fun `auto-configures server beans when ResourceHandler is present`() {
+        contextRunner
+            .withBean(TestUserHandler::class.java)
+            .run { context ->
+                context.getBean(ScimServerConfig::class.java).shouldNotBeNull()
+                context.getBean(SchemaRegistry::class.java).shouldNotBeNull()
+                context.getBean(DiscoveryService::class.java).shouldNotBeNull()
+                context.getBean(ScimEndpointDispatcher::class.java).shouldNotBeNull()
+            }
+    }
+
+    @Test
+    fun `maps properties to ScimServerConfig`() {
+        contextRunner
+            .withPropertyValues(
+                "scim.base-path=/api/scim",
+                "scim.bulk.enabled=false",
+                "scim.bulk.max-operations=500",
+                "scim.filter.max-results=50",
+                "scim.sort.enabled=true",
+                "scim.etag.enabled=false",
+                "scim.patch.enabled=false",
+                "scim.pagination.default-page-size=25",
+                "scim.pagination.max-page-size=200"
+            )
+            .withBean(TestUserHandler::class.java)
+            .run { context ->
+                val config = context.getBean(ScimServerConfig::class.java)
+                config.basePath shouldBe "/api/scim"
+                config.bulkEnabled shouldBe false
+                config.bulkMaxOperations shouldBe 500
+                config.filterMaxResults shouldBe 50
+                config.sortEnabled shouldBe true
+                config.etagEnabled shouldBe false
+                config.patchEnabled shouldBe false
+                config.defaultPageSize shouldBe 25
+                config.maxPageSize shouldBe 200
+            }
+    }
+
+    @Test
+    fun `backs off when custom ScimServerConfig provided`() {
+        val customConfig = ScimServerConfig(basePath = "/custom")
+        contextRunner
+            .withBean(TestUserHandler::class.java)
+            .withBean("customConfig", ScimServerConfig::class.java, { customConfig })
+            .run { context ->
+                context.getBean(ScimServerConfig::class.java).basePath shouldBe "/custom"
+            }
+    }
+
+    @Test
+    fun `backs off when custom ScimSerializer provided`() {
+        contextRunner
+            .withBean(TestUserHandler::class.java)
+            .withBean("customSerializer", ScimSerializer::class.java, { JacksonScimSerializer() })
+            .run { context ->
+                context.getBean(ScimSerializer::class.java).shouldBeInstanceOf<JacksonScimSerializer>()
+            }
+    }
+
+    @Test
+    fun `creates dispatcher even without ResourceHandler`() {
+        contextRunner
+            .run { context ->
+                context.getBean(ScimEndpointDispatcher::class.java).shouldNotBeNull()
+            }
+    }
+
+    @Test
+    fun `registers ScimModule bean`() {
+        contextRunner
+            .run { context ->
+                context.getBean(com.marcosbarbero.scim2.core.serialization.jackson.ScimModule::class.java).shouldNotBeNull()
+            }
+    }
+
+    private class TestUserHandler : ResourceHandler<User> {
+        override val resourceType: Class<User> = User::class.java
+        override val endpoint: String = "/Users"
+        override fun get(id: ResourceId, context: ScimRequestContext): User = throw UnsupportedOperationException()
+        override fun create(resource: User, context: ScimRequestContext): User = throw UnsupportedOperationException()
+        override fun replace(id: ResourceId, resource: User, version: ETag?, context: ScimRequestContext): User = throw UnsupportedOperationException()
+        override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): User = throw UnsupportedOperationException()
+        override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) = throw UnsupportedOperationException()
+        override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = throw UnsupportedOperationException()
+    }
+}
