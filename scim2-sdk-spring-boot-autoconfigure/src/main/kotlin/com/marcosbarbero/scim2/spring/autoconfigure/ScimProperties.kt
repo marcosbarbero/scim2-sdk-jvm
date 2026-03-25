@@ -19,7 +19,35 @@ data class ScimProperties(
     data class IdpProperties(
         val provider: String? = null,
         val clientId: String? = null,
-        val namespace: String? = null
+        val namespace: String? = null,
+        val claims: ClaimMapping = ClaimMapping()
+    )
+
+    data class ClaimMapping(
+        val subject: String = "sub",
+        val email: String = "email",
+        val name: String = "name",
+        val roles: String = "roles",
+        val groups: String = "groups",
+        // Keycloak-specific
+        val realmAccess: String = "realm_access",
+        val resourceAccess: String = "resource_access",
+        val preferredUsername: String = "preferred_username",
+        val givenName: String = "given_name",
+        val familyName: String = "family_name",
+        // Azure AD-specific
+        val objectId: String = "oid",
+        val directoryRoles: String = "wids",
+        val tenantId: String = "tid",
+        val appId: String = "appid",
+        // Okta-specific
+        val scopes: String = "scp",
+        // PingFederate-specific
+        val memberOf: String = "memberOf",
+        // Auth0-specific
+        val permissions: String = "permissions",
+        val nickname: String = "nickname",
+        val picture: String = "picture"
     )
 
     data class BulkProperties(
