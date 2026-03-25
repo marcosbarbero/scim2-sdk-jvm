@@ -13,7 +13,7 @@ import org.springframework.security.web.SecurityFilterChain
     prefix = "spring.security.oauth2.resourceserver.jwt",
     name = ["issuer-uri"]
 )
-open class SecurityConfig {
+class SecurityConfig {
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain = http

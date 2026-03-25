@@ -8,7 +8,7 @@ import java.time.Instant
 
 @Entity
 @Table(name = "scim_resources")
-open class ScimResourceEntity(
+class ScimResourceEntity(
     @Id
     @Column(name = "id", length = 255)
     open var id: String = "",

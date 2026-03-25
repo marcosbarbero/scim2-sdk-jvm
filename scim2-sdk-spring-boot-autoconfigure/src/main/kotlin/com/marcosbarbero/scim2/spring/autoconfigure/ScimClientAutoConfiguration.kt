@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Bean
 @ConditionalOnClass(ScimClient::class)
 @ConditionalOnProperty(prefix = "scim.client", name = ["base-url"])
 @EnableConfigurationProperties(ScimProperties::class)
-open class ScimClientAutoConfiguration {
+class ScimClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(HttpTransport::class)

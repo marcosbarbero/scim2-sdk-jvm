@@ -12,7 +12,7 @@ import tools.jackson.databind.ObjectMapper
 
 @AutoConfiguration(after = [JacksonAutoConfiguration::class])
 @ConditionalOnClass(ObjectMapper::class, ScimModule::class)
-open class ScimJacksonAutoConfiguration {
+class ScimJacksonAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean

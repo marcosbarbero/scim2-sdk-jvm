@@ -13,7 +13,7 @@ import javax.sql.DataSource
 @ConditionalOnClass(name = ["org.flywaydb.core.Flyway"])
 @ConditionalOnProperty(prefix = "scim.persistence", name = ["auto-migrate"], havingValue = "true", matchIfMissing = false)
 @EnableConfigurationProperties(ScimProperties::class)
-open class ScimFlywayAutoConfiguration {
+class ScimFlywayAutoConfiguration {
 
     @Bean
     fun scimFlywayInitializer(

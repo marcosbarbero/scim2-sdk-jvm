@@ -29,7 +29,7 @@ import org.springframework.context.annotation.Bean
 @AutoConfiguration(after = [ScimJacksonAutoConfiguration::class])
 @ConditionalOnClass(ScimEndpointDispatcher::class)
 @EnableConfigurationProperties(ScimProperties::class)
-open class ScimServerAutoConfiguration {
+class ScimServerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean

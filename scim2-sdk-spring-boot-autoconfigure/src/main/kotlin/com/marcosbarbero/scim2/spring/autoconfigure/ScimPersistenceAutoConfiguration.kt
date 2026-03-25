@@ -22,7 +22,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 @EnableConfigurationProperties(ScimProperties::class)
 @EnableJpaRepositories(basePackages = ["com.marcosbarbero.scim2.spring.persistence.repository"])
 @EntityScan(basePackages = ["com.marcosbarbero.scim2.spring.persistence.entity"])
-open class ScimPersistenceAutoConfiguration {
+class ScimPersistenceAutoConfiguration {
 
     @Bean
     fun scimHibernateProperties(properties: ScimProperties): HibernatePropertiesCustomizer {

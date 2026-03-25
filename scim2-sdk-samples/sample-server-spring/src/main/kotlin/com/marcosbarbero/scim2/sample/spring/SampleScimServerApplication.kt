@@ -4,7 +4,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-open class SampleScimServerApplication
+class SampleScimServerApplication
 
 fun main(args: Array<String>) {
     runApplication<SampleScimServerApplication>(*args)
