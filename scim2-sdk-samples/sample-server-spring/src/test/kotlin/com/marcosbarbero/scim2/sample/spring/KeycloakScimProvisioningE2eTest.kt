@@ -23,18 +23,17 @@ import dasniko.testcontainers.keycloak.KeycloakContainer
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.Order
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestMethodOrder
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -61,18 +60,12 @@ import java.net.http.HttpResponse
  * This proves the SDK works correctly as a Service Provider receiving provisioning
  * from Keycloak-issued tokens and Keycloak-shaped user data.
  *
- * Requires Docker. Skipped when `TESTCONTAINERS_DISABLED=true`.
+ * Requires Docker. Automatically skipped when Docker is not available.
  *
  * @see <a href="https://github.com/Captain-P-Goldfish/scim-for-keycloak">scim-for-keycloak extension</a>
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-@EnabledIfEnvironmentVariable(
-    named = "TESTCONTAINERS_DISABLED",
-    matches = "(?!true).*",
-    disabledReason = "Docker/Testcontainers not available"
-)
 class KeycloakScimProvisioningE2eTest {
 
     companion object {
@@ -83,16 +76,35 @@ class KeycloakScimProvisioningE2eTest {
         private val objectMapper = ObjectMapper()
         private val httpClient = HttpClient.newHttpClient()
 
-        @Container
+        private var keycloak: KeycloakContainer? = null
+        private var dockerAvailable = false
+
+        init {
+            dockerAvailable = try {
+                org.testcontainers.DockerClientFactory.instance().isDockerAvailable
+            } catch (_: Exception) {
+                false
+            }
+            if (dockerAvailable) {
+                keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
+                    .withRealmImportFile("test-realm.json")
+                keycloak!!.start()
+            }
+        }
+
+        @BeforeAll
         @JvmStatic
-        val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
-            .withRealmImportFile("test-realm.json")
+        fun checkDocker() {
+            assumeTrue(dockerAvailable, "Docker is not available -- skipping Keycloak E2E tests")
+        }
 
         @DynamicPropertySource
         @JvmStatic
         fun properties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
-                "${keycloak.authServerUrl}/realms/$REALM"
+            if (dockerAvailable) {
+                registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
+                    "${keycloak!!.authServerUrl}/realms/$REALM"
+                }
             }
         }
     }
@@ -152,7 +164,7 @@ class KeycloakScimProvisioningE2eTest {
         val keycloakUser = getKeycloakUser(keycloakUserId)
         keycloakUser.shouldNotBeNull()
 
-        // --- Step 3: Simulate SCIM extension — POST user to our SCIM server ---
+        // --- Step 3: Simulate SCIM extension -- POST user to our SCIM server ---
         val scimUser = mapKeycloakUserToScim(keycloakUser)
         val created = scimClient.create<User>("/Users", scimUser)
 
@@ -171,7 +183,7 @@ class KeycloakScimProvisioningE2eTest {
         )
         searchResult.statusCode shouldBe 200
 
-        // --- Step 5: Simulate SCIM extension — update propagation ---
+        // --- Step 5: Simulate SCIM extension -- update propagation ---
         // Update user in Keycloak
         updateKeycloakUser(keycloakUserId, firstName = "Janet", lastName = "Doe-Smith")
 
@@ -203,7 +215,7 @@ class KeycloakScimProvisioningE2eTest {
         afterUpdate.statusCode shouldBe 200
         afterUpdate.value.userName shouldBe keycloakUsername
 
-        // --- Step 6: Simulate SCIM extension — delete propagation ---
+        // --- Step 6: Simulate SCIM extension -- delete propagation ---
         // Delete user in Keycloak
         deleteKeycloakUser(keycloakUserId)
 
@@ -274,7 +286,7 @@ class KeycloakScimProvisioningE2eTest {
     // ---- Keycloak Admin REST API helpers ----
 
     private fun obtainServiceAccountToken(): String {
-        val tokenUrl = "${keycloak.authServerUrl}/realms/$REALM/protocol/openid-connect/token"
+        val tokenUrl = "${keycloak!!.authServerUrl}/realms/$REALM/protocol/openid-connect/token"
         val formData = listOf(
             "grant_type" to "client_credentials",
             "client_id" to CLIENT_ID,
@@ -298,12 +310,12 @@ class KeycloakScimProvisioningE2eTest {
     }
 
     private fun obtainAdminToken(): String {
-        val tokenUrl = "${keycloak.authServerUrl}/realms/master/protocol/openid-connect/token"
+        val tokenUrl = "${keycloak!!.authServerUrl}/realms/master/protocol/openid-connect/token"
         val formData = listOf(
             "grant_type" to "password",
             "client_id" to "admin-cli",
-            "username" to keycloak.adminUsername,
-            "password" to keycloak.adminPassword
+            "username" to keycloak!!.adminUsername,
+            "password" to keycloak!!.adminPassword
         ).joinToString("&") { (key, value) ->
             "${URLEncoder.encode(key, Charsets.UTF_8)}=${URLEncoder.encode(value, Charsets.UTF_8)}"
         }
@@ -329,7 +341,7 @@ class KeycloakScimProvisioningE2eTest {
         lastName: String
     ): String {
         val adminToken = obtainAdminToken()
-        val usersUrl = "${keycloak.authServerUrl}/admin/realms/$REALM/users"
+        val usersUrl = "${keycloak!!.authServerUrl}/admin/realms/$REALM/users"
 
         val userJson = objectMapper.writeValueAsString(
             mapOf(
@@ -361,7 +373,7 @@ class KeycloakScimProvisioningE2eTest {
 
     private fun getKeycloakUser(userId: String): JsonNode {
         val adminToken = obtainAdminToken()
-        val userUrl = "${keycloak.authServerUrl}/admin/realms/$REALM/users/$userId"
+        val userUrl = "${keycloak!!.authServerUrl}/admin/realms/$REALM/users/$userId"
 
         val request = HttpRequest.newBuilder()
             .uri(URI.create(userUrl))
@@ -379,7 +391,7 @@ class KeycloakScimProvisioningE2eTest {
 
     private fun updateKeycloakUser(userId: String, firstName: String, lastName: String) {
         val adminToken = obtainAdminToken()
-        val userUrl = "${keycloak.authServerUrl}/admin/realms/$REALM/users/$userId"
+        val userUrl = "${keycloak!!.authServerUrl}/admin/realms/$REALM/users/$userId"
 
         val updateJson = objectMapper.writeValueAsString(
             mapOf(
@@ -403,7 +415,7 @@ class KeycloakScimProvisioningE2eTest {
 
     private fun deleteKeycloakUser(userId: String) {
         val adminToken = obtainAdminToken()
-        val userUrl = "${keycloak.authServerUrl}/admin/realms/$REALM/users/$userId"
+        val userUrl = "${keycloak!!.authServerUrl}/admin/realms/$REALM/users/$userId"
 
         val request = HttpRequest.newBuilder()
             .uri(URI.create(userUrl))

@@ -668,6 +668,45 @@ components:
             $ref: '#/components/schemas/MultiValuedAttribute'
         meta:
           $ref: '#/components/schemas/Meta'
+        urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:
+          $ref: '#/components/schemas/EnterpriseUserExtension'
+
+    EnterpriseUserExtension:
+      type: object
+      description: |
+        Enterprise User extension schema (RFC 7643 S4.3).
+        Schema URN: urn:ietf:params:scim:schemas:extension:enterprise:2.0:User
+      properties:
+        employeeNumber:
+          type: string
+          description: Numeric or alphanumeric identifier assigned to a person.
+        costCenter:
+          type: string
+          description: Identifies the name of a cost center.
+        organization:
+          type: string
+          description: Identifies the name of an organization.
+        division:
+          type: string
+          description: Identifies the name of a division.
+        department:
+          type: string
+          description: Identifies the name of a department.
+        manager:
+          type: object
+          description: The user's manager.
+          properties:
+            value:
+              type: string
+              description: The id of the SCIM resource representing the manager.
+            $ref:
+              type: string
+              format: uri
+              description: The URI of the SCIM resource representing the manager.
+            displayName:
+              type: string
+              readOnly: true
+              description: The displayName of the manager.
 
     Group:
       type: object

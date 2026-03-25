@@ -9,10 +9,12 @@ import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.test.handler.InMemoryResourceHandler
 import com.marcosbarbero.scim2.test.repository.InMemoryResourceRepository
+import io.github.serpro69.kfaker.Faker
 
 class InMemoryScimApiContractTest : ScimApiContractTest() {
 
     private val objectMapper = JacksonScimSerializer.defaultObjectMapper()
+    private val faker = Faker()
 
     override fun createDispatcher(): ScimEndpointDispatcher {
         val userRepository = InMemoryResourceRepository<User> { user, id, meta ->
@@ -60,7 +62,7 @@ class InMemoryScimApiContractTest : ScimApiContractTest() {
         objectMapper.writeValueAsBytes(
             mapOf(
                 "schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"),
-                "userName" to "john.doe"
+                "userName" to faker.internet.email()
             )
         )
 }

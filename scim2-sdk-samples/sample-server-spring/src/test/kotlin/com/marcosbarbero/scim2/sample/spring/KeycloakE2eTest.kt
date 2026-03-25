@@ -19,15 +19,14 @@ import dasniko.testcontainers.keycloak.KeycloakContainer
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -42,30 +41,43 @@ import java.net.http.HttpResponse
  * 2. Configures the Spring Boot SCIM server as an OAuth2 resource server
  * 3. Obtains an access token from Keycloak (client credentials grant)
  * 4. Uses ScimClient with BearerTokenAuthentication to call SCIM endpoints
- * 5. Verifies: create, get, search, patch, delete — all authenticated via Keycloak JWT
+ * 5. Verifies: create, get, search, patch, delete -- all authenticated via Keycloak JWT
  *
- * Requires Docker. Skipped when TESTCONTAINERS_DISABLED=true.
+ * Requires Docker. Automatically skipped when Docker is not available.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Testcontainers
-@EnabledIfEnvironmentVariable(
-    named = "TESTCONTAINERS_DISABLED",
-    matches = "(?!true).*",
-    disabledReason = "Docker/Testcontainers not available"
-)
 class KeycloakE2eTest {
 
     companion object {
-        @Container
+        private var keycloak: KeycloakContainer? = null
+        private var dockerAvailable = false
+
+        init {
+            dockerAvailable = try {
+                org.testcontainers.DockerClientFactory.instance().isDockerAvailable
+            } catch (_: Exception) {
+                false
+            }
+            if (dockerAvailable) {
+                keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
+                    .withRealmImportFile("test-realm.json")
+                keycloak!!.start()
+            }
+        }
+
+        @BeforeAll
         @JvmStatic
-        val keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
-            .withRealmImportFile("test-realm.json")
+        fun checkDocker() {
+            assumeTrue(dockerAvailable, "Docker is not available -- skipping Keycloak E2E tests")
+        }
 
         @DynamicPropertySource
         @JvmStatic
         fun properties(registry: DynamicPropertyRegistry) {
-            registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
-                "${keycloak.authServerUrl}/realms/scim-test"
+            if (dockerAvailable) {
+                registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri") {
+                    "${keycloak!!.authServerUrl}/realms/scim-test"
+                }
             }
         }
     }
@@ -154,7 +166,7 @@ class KeycloakE2eTest {
     }
 
     private fun obtainAccessToken(): String {
-        val tokenUrl = "${keycloak.authServerUrl}/realms/scim-test/protocol/openid-connect/token"
+        val tokenUrl = "${keycloak!!.authServerUrl}/realms/scim-test/protocol/openid-connect/token"
 
         val formData = listOf(
             "grant_type" to "client_credentials",

@@ -84,4 +84,21 @@ class InMemoryResourceRepository<T : ScimResource>(
     fun clear() = store.clear()
 
     fun getAll(): List<T> = store.values.toList()
+
+    fun createWithId(id: String, resource: T): T {
+        val now = Instant.now()
+        val meta = Meta(
+            resourceType = resource.schemas.firstOrNull()?.substringAfterLast(":"),
+            created = now,
+            lastModified = now,
+            version = ETag("W/\"${UUID.randomUUID()}\"")
+        )
+        val stored = copyWithIdAndMeta(resource, id, meta)
+        store[id] = stored
+        return stored
+    }
+
+    fun deleteIfExists(id: String) {
+        store.remove(id)
+    }
 }
