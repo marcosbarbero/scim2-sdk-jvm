@@ -290,6 +290,10 @@ Three options for managing the SCIM schema:
    ```
    This uses a separate Flyway history table (`scim_flyway_history`) so it does not conflict with your application's migrations. Requires `org.flywaydb:flyway-core` on the classpath.
 
+## API Reference
+
+For complete HTTP request/response examples with curl commands for every SCIM 2.0 endpoint, see [docs/api-reference.md](docs/api-reference.md).
+
 ## Requirements
 
 - Java 25+
