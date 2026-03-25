@@ -105,6 +105,22 @@
       "type": "java.lang.Boolean",
       "description": "Whether to automatically run Flyway migrations for the SCIM schema. When enabled, creates the scim_resources table on startup.",
       "defaultValue": false
+    },
+    {
+      "name": "scim.idp.provider",
+      "type": "java.lang.String",
+      "description": "Identity provider to auto-configure. Supported values: keycloak, okta, azure-ad, ping-federate, auth0."
+    },
+    {
+      "name": "scim.idp.client-id",
+      "type": "java.lang.String",
+      "description": "Client ID for Keycloak client-level role extraction from the resource_access claim."
+    },
+    {
+      "name": "scim.idp.namespace",
+      "type": "java.lang.String",
+      "description": "Custom namespace for Auth0 role claims (e.g., https://your-app.auth0.com).",
+      "defaultValue": "https://your-app.auth0.com"
     }
   ]
 }
