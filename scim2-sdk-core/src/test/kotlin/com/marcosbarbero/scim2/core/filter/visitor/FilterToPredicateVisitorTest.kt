@@ -37,9 +37,23 @@ class FilterToPredicateVisitorTest {
         }
 
         @Test
+        fun `eq should be case-insensitive for strings per RFC 7644`() {
+            matches("userName eq \"BJENSEN\"", sampleUser) shouldBe true
+            matches("userName eq \"Bjensen\"", sampleUser) shouldBe true
+            matches("userName eq \"bJeNsEn\"", sampleUser) shouldBe true
+        }
+
+        @Test
         fun `ne should match not equal`() {
             matches("userName ne \"other\"", sampleUser) shouldBe true
             matches("userName ne \"bjensen\"", sampleUser) shouldBe false
+        }
+
+        @Test
+        fun `ne should be case-insensitive for strings per RFC 7644`() {
+            matches("userName ne \"BJENSEN\"", sampleUser) shouldBe false
+            matches("userName ne \"Bjensen\"", sampleUser) shouldBe false
+            matches("userName ne \"OTHER\"", sampleUser) shouldBe true
         }
 
         @Test

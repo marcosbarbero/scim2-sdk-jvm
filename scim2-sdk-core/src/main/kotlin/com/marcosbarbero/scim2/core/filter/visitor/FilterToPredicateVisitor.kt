@@ -89,7 +89,7 @@ class FilterToPredicateVisitor : FilterVisitor<(Map<String, Any?>) -> Boolean> {
     }
 
     private fun equalsValue(actual: Any?, expected: ScimValue): Boolean = when (expected) {
-        is ScimValue.StringValue -> actual.toString() == expected.value
+        is ScimValue.StringValue -> actual.toString().equals(expected.value, ignoreCase = true)
         is ScimValue.NumberValue -> toComparable(actual) == toComparable(expected.value)
         is ScimValue.BooleanValue -> actual == expected.value
         is ScimValue.NullValue -> actual == null
