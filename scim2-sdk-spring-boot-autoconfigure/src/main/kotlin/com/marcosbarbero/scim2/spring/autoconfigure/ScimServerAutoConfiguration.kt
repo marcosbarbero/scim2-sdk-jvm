@@ -14,7 +14,11 @@ import com.marcosbarbero.scim2.server.port.AuthorizationEvaluator
 import com.marcosbarbero.scim2.server.port.BulkHandler
 import com.marcosbarbero.scim2.server.port.IdentityResolver
 import com.marcosbarbero.scim2.server.port.MeHandler
+import com.marcosbarbero.scim2.core.domain.model.resource.Group
+import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.server.port.ResourceHandler
+import com.marcosbarbero.scim2.server.port.ResourceRepository
+import com.marcosbarbero.scim2.spring.handler.DefaultResourceHandler
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
@@ -95,4 +99,18 @@ class ScimServerAutoConfiguration {
         metrics = metrics.ifAvailable ?: com.marcosbarbero.scim2.core.observability.NoOpScimMetrics,
         tracer = tracer.ifAvailable ?: com.marcosbarbero.scim2.core.observability.NoOpScimTracer
     )
+
+    @Bean
+    @ConditionalOnMissingBean(name = ["scimUserHandler"])
+    fun scimUserHandler(repository: ObjectProvider<ResourceRepository<User>>): ResourceHandler<User>? {
+        val repo = repository.ifAvailable ?: return null
+        return DefaultResourceHandler(User::class.java, "/Users", repo)
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = ["scimGroupHandler"])
+    fun scimGroupHandler(repository: ObjectProvider<ResourceRepository<Group>>): ResourceHandler<Group>? {
+        val repo = repository.ifAvailable ?: return null
+        return DefaultResourceHandler(Group::class.java, "/Groups", repo)
+    }
 }

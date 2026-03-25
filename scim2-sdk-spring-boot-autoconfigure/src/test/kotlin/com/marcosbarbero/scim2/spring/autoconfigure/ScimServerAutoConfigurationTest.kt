@@ -12,8 +12,11 @@ import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.adapter.discovery.DiscoveryService
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
+import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.server.port.ResourceHandler
+import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
+import com.marcosbarbero.scim2.spring.handler.DefaultResourceHandler
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -109,6 +112,81 @@ class ScimServerAutoConfigurationTest {
         contextRunner
             .run { context ->
                 context.getBean(com.marcosbarbero.scim2.core.serialization.jackson.ScimModule::class.java).shouldNotBeNull()
+            }
+    }
+
+    @Test
+    fun `DefaultResourceHandler delegates to repository`() {
+        val users = mutableMapOf<String, User>()
+        val repo = object : ResourceRepository<User> {
+            override fun findById(id: ResourceId): User? = users[id.value]
+            override fun create(resource: User): User {
+                val created = resource.copy(id = "generated-id")
+                users["generated-id"] = created
+                return created
+            }
+            override fun replace(id: ResourceId, resource: User, version: ETag?): User {
+                users[id.value] = resource
+                return resource
+            }
+            override fun delete(id: ResourceId, version: ETag?) { users.remove(id.value) }
+            override fun search(request: SearchRequest): ListResponse<User> =
+                ListResponse(totalResults = users.size, resources = users.values.toList())
+        }
+
+        val handler = DefaultResourceHandler(User::class.java, "/Users", repo)
+        val context = ScimRequestContext()
+
+        val created = handler.create(User(userName = "testuser"), context)
+        created.id shouldBe "generated-id"
+
+        val found = handler.get(ResourceId("generated-id"), context)
+        found.userName shouldBe "testuser"
+
+        val searchResult = handler.search(SearchRequest(), context)
+        searchResult.totalResults shouldBe 1
+
+        handler.delete(ResourceId("generated-id"), null, context)
+        handler.search(SearchRequest(), context).totalResults shouldBe 0
+    }
+
+    @Test
+    fun `auto-registers scimUserHandler when UserRepository is present`() {
+        val repo = object : ResourceRepository<User> {
+            override fun findById(id: ResourceId): User? = null
+            override fun create(resource: User): User = resource
+            override fun replace(id: ResourceId, resource: User, version: ETag?): User = resource
+            override fun delete(id: ResourceId, version: ETag?) {}
+            override fun search(request: SearchRequest): ListResponse<User> =
+                ListResponse(totalResults = 0, resources = emptyList())
+        }
+
+        contextRunner
+            .withBean("userRepository", ResourceRepository::class.java, { repo })
+            .run { context ->
+                context.getBean("scimUserHandler").shouldNotBeNull()
+                val handler = context.getBean("scimUserHandler") as ResourceHandler<*>
+                handler.endpoint shouldBe "/Users"
+                handler.resourceType shouldBe User::class.java
+            }
+    }
+
+    @Test
+    fun `does not create DefaultResourceHandler when no UserRepository`() {
+        contextRunner
+            .run { context ->
+                val handlers = context.getBeansOfType(ResourceHandler::class.java)
+                handlers.values.none { it is DefaultResourceHandler<*> } shouldBe true
+            }
+    }
+
+    @Test
+    fun `scimUserHandler backs off when user provides custom handler`() {
+        contextRunner
+            .withBean("scimUserHandler", ResourceHandler::class.java, { TestUserHandler() })
+            .run { context ->
+                val handler = context.getBean("scimUserHandler") as ResourceHandler<*>
+                handler.shouldBeInstanceOf<TestUserHandler>()
             }
     }
 

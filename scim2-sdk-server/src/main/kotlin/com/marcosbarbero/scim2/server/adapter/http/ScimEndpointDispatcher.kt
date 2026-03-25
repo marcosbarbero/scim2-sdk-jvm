@@ -119,12 +119,13 @@ class ScimEndpointDispatcher(
     private fun resolveEndpoint(relativePath: String): String {
         val handler = findHandler(relativePath)
         if (handler != null) return handler.endpoint
+        val lower = relativePath.lowercase()
         return when {
-            relativePath.startsWith("/ServiceProviderConfig") -> "/ServiceProviderConfig"
-            relativePath.startsWith("/Schemas") -> "/Schemas"
-            relativePath.startsWith("/ResourceTypes") -> "/ResourceTypes"
-            relativePath == "/Bulk" -> "/Bulk"
-            relativePath == "/Me" -> "/Me"
+            lower.startsWith("/serviceproviderconfig") -> "/ServiceProviderConfig"
+            lower.startsWith("/schemas") -> "/Schemas"
+            lower.startsWith("/resourcetypes") -> "/ResourceTypes"
+            lower == "/bulk" -> "/Bulk"
+            lower == "/me" -> "/Me"
             else -> relativePath
         }
     }
@@ -132,39 +133,41 @@ class ScimEndpointDispatcher(
     private fun resolveResourceType(relativePath: String): String {
         val handler = findHandler(relativePath)
         if (handler != null) return handler.resourceType.simpleName ?: "Unknown"
+        val lower = relativePath.lowercase()
         return when {
-            relativePath == "/Bulk" -> "Bulk"
-            relativePath == "/Me" -> "Me"
+            lower == "/bulk" -> "Bulk"
+            lower == "/me" -> "Me"
             else -> "Unknown"
         }
     }
 
     private fun route(request: ScimHttpRequest, context: ScimRequestContext): ScimHttpResponse {
         val relativePath = request.path.removePrefix(config.basePath)
+        val lowerPath = relativePath.lowercase()
 
         return when {
             // Discovery endpoints
-            relativePath == "/ServiceProviderConfig" && request.method == HttpMethod.GET ->
+            lowerPath == "/serviceproviderconfig" && request.method == HttpMethod.GET ->
                 ok(discoveryService.getServiceProviderConfig())
 
-            relativePath == "/Schemas" && request.method == HttpMethod.GET ->
+            lowerPath == "/schemas" && request.method == HttpMethod.GET ->
                 ok(discoveryService.getSchemas())
 
-            relativePath.startsWith("/Schemas/") && request.method == HttpMethod.GET -> {
-                val schemaId = relativePath.removePrefix("/Schemas/")
+            lowerPath.startsWith("/schemas/") && request.method == HttpMethod.GET -> {
+                val schemaId = relativePath.substring("/Schemas/".length) // preserve original case for schema ID lookup
                 ok(discoveryService.getSchema(schemaId))
             }
 
-            relativePath == "/ResourceTypes" && request.method == HttpMethod.GET ->
+            lowerPath == "/resourcetypes" && request.method == HttpMethod.GET ->
                 ok(discoveryService.getResourceTypes())
 
-            relativePath.startsWith("/ResourceTypes/") && request.method == HttpMethod.GET -> {
-                val name = relativePath.removePrefix("/ResourceTypes/")
+            lowerPath.startsWith("/resourcetypes/") && request.method == HttpMethod.GET -> {
+                val name = relativePath.substring("/ResourceTypes/".length) // preserve original case
                 ok(discoveryService.getResourceType(name))
             }
 
             // Bulk endpoint
-            relativePath == "/Bulk" && request.method == HttpMethod.POST -> {
+            lowerPath == "/bulk" && request.method == HttpMethod.POST -> {
                 val handler = bulkHandler
                     ?: throw ScimException(status = 501, detail = "Bulk operations not supported")
                 requireAuthorization { it.canBulk(context) }
@@ -182,7 +185,7 @@ class ScimEndpointDispatcher(
             }
 
             // Me endpoint
-            relativePath == "/Me" -> handleMe(request, context)
+            lowerPath == "/me" -> handleMe(request, context)
 
             // Resource endpoints
             else -> handleResource(relativePath, request, context)
@@ -198,11 +201,13 @@ class ScimEndpointDispatcher(
         val handler = findHandler(relativePath) as? ResourceHandler<ScimResource>
             ?: throw ResourceNotFoundException("No handler found for path: $relativePath")
 
-        val pathAfterEndpoint = relativePath.removePrefix(handler.endpoint)
+        // Find where the endpoint matches (case-insensitive) and extract the rest
+        val endpointLength = handler.endpoint.length
+        val pathAfterEndpoint = relativePath.substring(endpointLength)
         val resourceTypeName = handler.resourceType.simpleName ?: "Unknown"
 
         // POST /{endpoint}/.search
-        if (request.method == HttpMethod.POST && pathAfterEndpoint == "/.search") {
+        if (request.method == HttpMethod.POST && pathAfterEndpoint.equals("/.search", ignoreCase = true)) {
             requireAuthorization { it.canSearch(handler.endpoint, context) }
             val searchRequest = deserializeBody<SearchRequest>(request)
             val result = handler.search(searchRequest, context)
@@ -340,7 +345,7 @@ class ScimEndpointDispatcher(
     }
 
     private fun findHandler(relativePath: String): ResourceHandler<*>? =
-        handlers.firstOrNull { relativePath.startsWith(it.endpoint) }
+        handlers.firstOrNull { relativePath.lowercase().startsWith(it.endpoint.lowercase()) }
 
     private fun buildContext(request: ScimHttpRequest): ScimRequestContext {
         val requestedAttrs = request.queryParam("attributes")
