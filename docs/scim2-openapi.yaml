@@ -1,0 +1,1135 @@
+openapi: 3.1.0
+info:
+  title: SCIM 2.0 API
+  description: |
+    System for Cross-domain Identity Management (SCIM) 2.0 API specification.
+
+    This API implements [RFC 7644 (SCIM Protocol)](https://www.rfc-editor.org/rfc/rfc7644)
+    and [RFC 7643 (SCIM Core Schema)](https://www.rfc-editor.org/rfc/rfc7643).
+
+    Error responses support both SCIM error format (application/scim+json) and
+    [RFC 9457 ProblemDetail](https://www.rfc-editor.org/rfc/rfc9457) (application/problem+json)
+    via content negotiation.
+  version: 1.0.0
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  contact:
+    name: Marcos Barbero
+    url: https://github.com/marcosbarbero/scim2-sdk-jvm
+
+servers:
+  - url: /scim/v2
+    description: Default SCIM base path
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Discovery
+    description: Service discovery endpoints (RFC 7644 §4)
+  - name: Users
+    description: User resource operations (RFC 7644 §3)
+  - name: Groups
+    description: Group resource operations (RFC 7644 §3)
+  - name: Bulk
+    description: Bulk operations (RFC 7644 §3.7)
+  - name: Me
+    description: Authenticated user operations
+
+paths:
+  /ServiceProviderConfig:
+    get:
+      tags: [Discovery]
+      summary: Get Service Provider Configuration
+      description: |
+        Returns a JSON document specifying which SCIM features are supported.
+        [RFC 7644 §4](https://www.rfc-editor.org/rfc/rfc7644#section-4)
+      operationId: getServiceProviderConfig
+      responses:
+        '200':
+          description: Service provider configuration
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/ServiceProviderConfig'
+
+  /Schemas:
+    get:
+      tags: [Discovery]
+      summary: List all schemas
+      operationId: getSchemas
+      responses:
+        '200':
+          description: List of supported schemas
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /Schemas/{id}:
+    get:
+      tags: [Discovery]
+      summary: Get a specific schema
+      operationId: getSchema
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "urn:ietf:params:scim:schemas:core:2.0:User"
+      responses:
+        '200':
+          description: Schema details
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Schema'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /ResourceTypes:
+    get:
+      tags: [Discovery]
+      summary: List all resource types
+      operationId: getResourceTypes
+      responses:
+        '200':
+          description: List of resource types
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/ListResponse'
+
+  /ResourceTypes/{name}:
+    get:
+      tags: [Discovery]
+      summary: Get a specific resource type
+      operationId: getResourceType
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          example: User
+      responses:
+        '200':
+          description: Resource type details
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/ResourceType'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /Users:
+    get:
+      tags: [Users]
+      summary: Search users
+      description: |
+        Query users with optional filtering, sorting, and pagination.
+        [RFC 7644 §3.4.2](https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2)
+      operationId: searchUsers
+      parameters:
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/sortOrder'
+        - $ref: '#/components/parameters/startIndex'
+        - $ref: '#/components/parameters/count'
+        - $ref: '#/components/parameters/attributes'
+        - $ref: '#/components/parameters/excludedAttributes'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+    post:
+      tags: [Users]
+      summary: Create a user
+      description: |
+        Creates a new user resource.
+        [RFC 7644 §3.1](https://www.rfc-editor.org/rfc/rfc7644#section-3.1)
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User created
+          headers:
+            Location:
+              description: URI of the created resource
+              schema:
+                type: string
+            ETag:
+              description: Version of the created resource
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /Users/.search:
+    post:
+      tags: [Users]
+      summary: Search users (POST)
+      description: |
+        Alternative to GET for searching with complex filters.
+        [RFC 7644 §3.4.3](https://www.rfc-editor.org/rfc/rfc7644#section-3.4.3)
+      operationId: searchUsersPost
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+  /Users/{id}:
+    get:
+      tags: [Users]
+      summary: Get a user
+      description: |
+        Retrieves a user by ID.
+        [RFC 7644 §3.2](https://www.rfc-editor.org/rfc/rfc7644#section-3.2)
+      operationId: getUser
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+        - $ref: '#/components/parameters/ifNoneMatch'
+      responses:
+        '200':
+          description: User found
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '304':
+          description: Not Modified (ETag matches If-None-Match)
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Users]
+      summary: Replace a user
+      description: |
+        Replaces an entire user resource. Omitted attributes are cleared.
+        [RFC 7644 §3.3](https://www.rfc-editor.org/rfc/rfc7644#section-3.3)
+      operationId: replaceUser
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+        - $ref: '#/components/parameters/ifMatch'
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User replaced
+          headers:
+            ETag:
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+    patch:
+      tags: [Users]
+      summary: Patch a user
+      description: |
+        Partially updates a user with add/remove/replace operations.
+        [RFC 7644 §3.5.2](https://www.rfc-editor.org/rfc/rfc7644#section-3.5.2)
+      operationId: patchUser
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+        - $ref: '#/components/parameters/ifMatch'
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/PatchRequest'
+      responses:
+        '200':
+          description: User patched
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      description: |
+        Removes a user resource.
+        [RFC 7644 §3.6](https://www.rfc-editor.org/rfc/rfc7644#section-3.6)
+      operationId: deleteUser
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+        - $ref: '#/components/parameters/ifMatch'
+      responses:
+        '204':
+          description: User deleted (no content)
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '412':
+          $ref: '#/components/responses/PreconditionFailed'
+
+  /Groups:
+    get:
+      tags: [Groups]
+      summary: Search groups
+      operationId: searchGroups
+      parameters:
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/sortOrder'
+        - $ref: '#/components/parameters/startIndex'
+        - $ref: '#/components/parameters/count'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+
+    post:
+      tags: [Groups]
+      summary: Create a group
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '201':
+          description: Group created
+          headers:
+            Location:
+              schema:
+                type: string
+            ETag:
+              schema:
+                type: string
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+
+  /Groups/{id}:
+    get:
+      tags: [Groups]
+      summary: Get a group
+      operationId: getGroup
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '200':
+          description: Group found
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags: [Groups]
+      summary: Replace a group
+      operationId: replaceGroup
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+        - $ref: '#/components/parameters/ifMatch'
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/Group'
+      responses:
+        '200':
+          description: Group replaced
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    patch:
+      tags: [Groups]
+      summary: Patch a group
+      operationId: patchGroup
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+        - $ref: '#/components/parameters/ifMatch'
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/PatchRequest'
+      responses:
+        '200':
+          description: Group patched
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/Group'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags: [Groups]
+      summary: Delete a group
+      operationId: deleteGroup
+      parameters:
+        - $ref: '#/components/parameters/resourceId'
+      responses:
+        '204':
+          description: Group deleted
+
+  /Bulk:
+    post:
+      tags: [Bulk]
+      summary: Execute bulk operations
+      description: |
+        Processes multiple SCIM operations in a single request.
+        Supports bulkId cross-references between operations.
+        [RFC 7644 §3.7](https://www.rfc-editor.org/rfc/rfc7644#section-3.7)
+      operationId: bulk
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/BulkRequest'
+      responses:
+        '200':
+          description: Bulk response with per-operation results
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/BulkResponse'
+
+  /Me:
+    get:
+      tags: [Me]
+      summary: Get authenticated user
+      operationId: getMe
+      responses:
+        '200':
+          description: Authenticated user's resource
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    put:
+      tags: [Me]
+      summary: Replace authenticated user
+      operationId: replaceMe
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User replaced
+
+    patch:
+      tags: [Me]
+      summary: Patch authenticated user
+      operationId: patchMe
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/PatchRequest'
+      responses:
+        '200':
+          description: User patched
+
+    delete:
+      tags: [Me]
+      summary: Delete authenticated user
+      operationId: deleteMe
+      responses:
+        '204':
+          description: User deleted
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OAuth 2.0 Bearer Token (RFC 6750)
+
+  parameters:
+    resourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Unique resource identifier
+
+    filter:
+      name: filter
+      in: query
+      schema:
+        type: string
+      description: |
+        SCIM filter expression (RFC 7644 §3.4.2.2).
+        Examples: `userName eq "john"`, `emails[type eq "work"]`, `active eq true and userName sw "j"`
+
+    sortBy:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+      description: Attribute path to sort by (e.g., `userName`, `name.familyName`)
+
+    sortOrder:
+      name: sortOrder
+      in: query
+      schema:
+        type: string
+        enum: [ascending, descending]
+        default: ascending
+
+    startIndex:
+      name: startIndex
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: 1-based index of the first result
+
+    count:
+      name: count
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+      description: Maximum number of results per page
+
+    attributes:
+      name: attributes
+      in: query
+      schema:
+        type: string
+      description: Comma-separated list of attributes to include (mutually exclusive with excludedAttributes)
+
+    excludedAttributes:
+      name: excludedAttributes
+      in: query
+      schema:
+        type: string
+      description: Comma-separated list of attributes to exclude
+
+    ifMatch:
+      name: If-Match
+      in: header
+      schema:
+        type: string
+      description: ETag for optimistic concurrency (RFC 7644 §3.14)
+
+    ifNoneMatch:
+      name: If-None-Match
+      in: header
+      schema:
+        type: string
+      description: ETag for conditional retrieval — returns 304 if matches (RFC 7644 §3.14)
+
+  schemas:
+    User:
+      type: object
+      required: [schemas, userName]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:User"]
+        id:
+          type: string
+          readOnly: true
+        externalId:
+          type: string
+        userName:
+          type: string
+        name:
+          $ref: '#/components/schemas/Name'
+        displayName:
+          type: string
+        nickName:
+          type: string
+        profileUrl:
+          type: string
+          format: uri
+        title:
+          type: string
+        userType:
+          type: string
+        preferredLanguage:
+          type: string
+        locale:
+          type: string
+        timezone:
+          type: string
+        active:
+          type: boolean
+        password:
+          type: string
+          writeOnly: true
+        emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiValuedAttribute'
+        phoneNumbers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiValuedAttribute'
+        ims:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiValuedAttribute'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiValuedAttribute'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        groups:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/GroupMembership'
+        entitlements:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiValuedAttribute'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiValuedAttribute'
+        x509Certificates:
+          type: array
+          items:
+            $ref: '#/components/schemas/MultiValuedAttribute'
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    Group:
+      type: object
+      required: [schemas, displayName]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:Group"]
+        id:
+          type: string
+          readOnly: true
+        externalId:
+          type: string
+        displayName:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupMembership'
+        meta:
+          $ref: '#/components/schemas/Meta'
+
+    Name:
+      type: object
+      properties:
+        formatted:
+          type: string
+        familyName:
+          type: string
+        givenName:
+          type: string
+        middleName:
+          type: string
+        honorificPrefix:
+          type: string
+        honorificSuffix:
+          type: string
+
+    Address:
+      type: object
+      properties:
+        formatted:
+          type: string
+        streetAddress:
+          type: string
+        locality:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        type:
+          type: string
+        primary:
+          type: boolean
+
+    MultiValuedAttribute:
+      type: object
+      properties:
+        value:
+          type: string
+        display:
+          type: string
+        type:
+          type: string
+        primary:
+          type: boolean
+        $ref:
+          type: string
+          format: uri
+
+    GroupMembership:
+      type: object
+      properties:
+        value:
+          type: string
+          description: Member's resource ID
+        $ref:
+          type: string
+          format: uri
+        display:
+          type: string
+        type:
+          type: string
+          enum: [User, Group]
+
+    Meta:
+      type: object
+      readOnly: true
+      properties:
+        resourceType:
+          type: string
+        created:
+          type: string
+          format: date-time
+        lastModified:
+          type: string
+          format: date-time
+        location:
+          type: string
+          format: uri
+        version:
+          type: string
+          description: ETag value (e.g., W/"1")
+
+    ListResponse:
+      type: object
+      required: [schemas, totalResults]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:ListResponse"]
+        totalResults:
+          type: integer
+        startIndex:
+          type: integer
+        itemsPerPage:
+          type: integer
+        Resources:
+          type: array
+          items: {}
+
+    UserListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ListResponse'
+        - type: object
+          properties:
+            Resources:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+
+    GroupListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ListResponse'
+        - type: object
+          properties:
+            Resources:
+              type: array
+              items:
+                $ref: '#/components/schemas/Group'
+
+    SearchRequest:
+      type: object
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:SearchRequest"]
+        filter:
+          type: string
+        sortBy:
+          type: string
+        sortOrder:
+          type: string
+          enum: [ascending, descending]
+        startIndex:
+          type: integer
+          minimum: 1
+        count:
+          type: integer
+          minimum: 0
+        attributes:
+          type: array
+          items:
+            type: string
+        excludedAttributes:
+          type: array
+          items:
+            type: string
+
+    PatchRequest:
+      type: object
+      required: [schemas, Operations]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
+        Operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PatchOperation'
+
+    PatchOperation:
+      type: object
+      required: [op]
+      properties:
+        op:
+          type: string
+          enum: [add, remove, replace]
+        path:
+          type: string
+          description: SCIM attribute path (e.g., "displayName", "emails[type eq \"work\"].value")
+        value: {}
+
+    BulkRequest:
+      type: object
+      required: [schemas, Operations]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"]
+        failOnErrors:
+          type: integer
+          description: Number of errors before the server stops processing
+        Operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkOperation'
+
+    BulkOperation:
+      type: object
+      required: [method, path]
+      properties:
+        method:
+          type: string
+          enum: [POST, PUT, PATCH, DELETE]
+        path:
+          type: string
+          description: Resource endpoint path (e.g., /Users, /Users/123)
+        bulkId:
+          type: string
+          description: Client-assigned ID for cross-referencing in bulk
+        version:
+          type: string
+        data: {}
+
+    BulkResponse:
+      type: object
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:BulkResponse"]
+        Operations:
+          type: array
+          items:
+            $ref: '#/components/schemas/BulkOperationResponse'
+
+    BulkOperationResponse:
+      type: object
+      properties:
+        method:
+          type: string
+        bulkId:
+          type: string
+        version:
+          type: string
+        location:
+          type: string
+        status:
+          type: string
+        response: {}
+
+    ScimError:
+      type: object
+      required: [schemas, status]
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:api:messages:2.0:Error"]
+        status:
+          type: string
+          description: HTTP status code as string
+        scimType:
+          type: string
+          enum: [invalidFilter, tooMany, uniqueness, mutability, invalidSyntax, invalidPath, noTarget, invalidValue, invalidVers, sensitive]
+        detail:
+          type: string
+
+    ProblemDetail:
+      type: object
+      description: RFC 9457 Problem Details
+      properties:
+        type:
+          type: string
+          format: uri
+          default: "about:blank"
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+        scimType:
+          type: string
+          description: SCIM-specific error type (extension field)
+
+    ServiceProviderConfig:
+      type: object
+      properties:
+        schemas:
+          type: array
+          items:
+            type: string
+        patch:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        bulk:
+          type: object
+          properties:
+            supported:
+              type: boolean
+            maxOperations:
+              type: integer
+            maxPayloadSize:
+              type: integer
+        filter:
+          type: object
+          properties:
+            supported:
+              type: boolean
+            maxResults:
+              type: integer
+        changePassword:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        sort:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        etag:
+          type: object
+          properties:
+            supported:
+              type: boolean
+        authenticationSchemes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              name:
+                type: string
+              description:
+                type: string
+
+    Schema:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        attributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchemaAttribute'
+
+    SchemaAttribute:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [string, boolean, decimal, integer, dateTime, binary, reference, complex]
+        multiValued:
+          type: boolean
+        description:
+          type: string
+        required:
+          type: boolean
+        mutability:
+          type: string
+          enum: [readOnly, readWrite, immutable, writeOnly]
+        returned:
+          type: string
+          enum: [always, never, default, request]
+        uniqueness:
+          type: string
+          enum: [none, server, global]
+        subAttributes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SchemaAttribute'
+
+    ResourceType:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        endpoint:
+          type: string
+        schema:
+          type: string
+        schemaExtensions:
+          type: array
+          items:
+            type: object
+            properties:
+              schema:
+                type: string
+              required:
+                type: boolean
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/scim+json:
+          schema:
+            $ref: '#/components/schemas/ScimError'
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/scim+json:
+          schema:
+            $ref: '#/components/schemas/ScimError'
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    Conflict:
+      description: Uniqueness constraint violated
+      content:
+        application/scim+json:
+          schema:
+            $ref: '#/components/schemas/ScimError'
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
+
+    PreconditionFailed:
+      description: ETag mismatch (stale If-Match)
+      content:
+        application/scim+json:
+          schema:
+            $ref: '#/components/schemas/ScimError'
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetail'
