@@ -21,7 +21,7 @@ class PostgresCustomSchemaTest {
 
     companion object {
         @Container
-        val postgres = PostgreSQLContainer("postgres:17-alpine")
+        val postgres = PostgreSQLContainer("postgres:16-alpine")
             .withInitScript("create-custom-schema.sql")
 
         @JvmStatic
