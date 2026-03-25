@@ -86,17 +86,11 @@ class ScimEndpointDispatcher(
                 val processedException = sortedInterceptors.fold(e) { ex, interceptor ->
                     interceptor.onError(processedRequest, ex, context)
                 }
-                val errorBody = serializer.serialize(processedException.toScimError())
-                ScimHttpResponse.error(processedException.status, errorBody)
+                buildErrorResponse(processedException, processedRequest)
             } catch (e: Exception) {
                 logger.error("Unexpected error processing request: {} {}", request.method, request.path, e)
-                val errorBody = serializer.serialize(
-                    com.marcosbarbero.scim2.core.domain.model.error.ScimError(
-                        status = "500",
-                        detail = "Internal server error"
-                    )
-                )
-                ScimHttpResponse.error(500, errorBody)
+                val fallback = ScimException(status = 500, detail = "Internal server error")
+                buildErrorResponse(fallback, processedRequest)
             }
 
             val duration = Duration.between(start, Instant.now())
@@ -411,5 +405,21 @@ class ScimEndpointDispatcher(
         if (!check(evaluator)) {
             throw ScimException(status = 403, detail = "Forbidden")
         }
+    }
+
+    private fun buildErrorResponse(exception: ScimException, request: ScimHttpRequest): ScimHttpResponse {
+        val acceptsProblemJson = request.headers.entries
+            .firstOrNull { it.key.equals("Accept", ignoreCase = true) }
+            ?.value
+            ?.any { it.contains("application/problem+json") } == true
+
+        val body = if (acceptsProblemJson) {
+            serializer.serialize(exception.toScimProblemDetail())
+        } else {
+            serializer.serialize(exception.toScimError())
+        }
+
+        val contentType = if (acceptsProblemJson) "application/problem+json" else "application/scim+json"
+        return ScimHttpResponse.error(exception.status, body, mapOf("Content-Type" to contentType))
     }
 }

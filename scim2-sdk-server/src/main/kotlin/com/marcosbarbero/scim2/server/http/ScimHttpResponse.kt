@@ -37,6 +37,9 @@ data class ScimHttpResponse(
         fun error(status: Int, body: ByteArray): ScimHttpResponse =
             ScimHttpResponse(status = status, headers = SCIM_CONTENT_TYPE, body = body)
 
+        fun error(status: Int, body: ByteArray, headers: Map<String, String>): ScimHttpResponse =
+            ScimHttpResponse(status = status, headers = headers, body = body)
+
         private val SCIM_CONTENT_TYPE = mapOf("Content-Type" to "application/scim+json")
     }
 }
