@@ -82,6 +82,29 @@
       "type": "java.time.Duration",
       "description": "Read timeout for the SCIM client.",
       "defaultValue": "30s"
+    },
+    {
+      "name": "scim.persistence.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether the JPA-based SCIM persistence adapter is enabled.",
+      "defaultValue": false
+    },
+    {
+      "name": "scim.persistence.table-name",
+      "type": "java.lang.String",
+      "description": "Name of the database table used to store SCIM resources.",
+      "defaultValue": "scim_resources"
+    },
+    {
+      "name": "scim.persistence.schema-name",
+      "type": "java.lang.String",
+      "description": "Database schema name for the SCIM resources table."
+    },
+    {
+      "name": "scim.persistence.auto-migrate",
+      "type": "java.lang.Boolean",
+      "description": "Whether to automatically create the SCIM resources table on startup.",
+      "defaultValue": false
     }
   ]
 }

@@ -12,7 +12,8 @@ data class ScimProperties(
     val changePassword: ChangePasswordProperties = ChangePasswordProperties(),
     val patch: PatchProperties = PatchProperties(),
     val pagination: PaginationProperties = PaginationProperties(),
-    val client: ClientProperties = ClientProperties()
+    val client: ClientProperties = ClientProperties(),
+    val persistence: PersistenceProperties = PersistenceProperties()
 ) {
     data class BulkProperties(
         val enabled: Boolean = true,
@@ -50,5 +51,12 @@ data class ScimProperties(
         val baseUrl: String? = null,
         val connectTimeout: java.time.Duration = java.time.Duration.ofSeconds(10),
         val readTimeout: java.time.Duration = java.time.Duration.ofSeconds(30)
+    )
+
+    data class PersistenceProperties(
+        val enabled: Boolean = false,
+        val tableName: String = "scim_resources",
+        val schemaName: String? = null,
+        val autoMigrate: Boolean = false
     )
 }
