@@ -1,7 +1,8 @@
 [![Build](https://github.com/marcosbarbero/scim2-sdk-jvm/actions/workflows/ci.yml/badge.svg)](https://github.com/marcosbarbero/scim2-sdk-jvm/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/marcosbarbero/scim2-sdk-jvm/graph/badge.svg)](https://codecov.io/gh/marcosbarbero/scim2-sdk-jvm)
 [![Maven Central](https://img.shields.io/maven-central/v/com.marcosbarbero/scim2-sdk-core)](https://central.sonatype.com/search?q=com.marcosbarbero.scim2-sdk)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1-purple.svg)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.2-purple.svg)](https://kotlinlang.org)
 
 # SCIM 2.0 SDK for JVM
 
