@@ -121,6 +121,120 @@
       "type": "java.lang.String",
       "description": "Custom namespace for Auth0 role claims (e.g., https://your-app.auth0.com).",
       "defaultValue": "https://your-app.auth0.com"
+    },
+    {
+      "name": "scim.idp.claims.subject",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the subject (principal identifier).",
+      "defaultValue": "sub"
+    },
+    {
+      "name": "scim.idp.claims.email",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the user's email address.",
+      "defaultValue": "email"
+    },
+    {
+      "name": "scim.idp.claims.name",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the user's display name.",
+      "defaultValue": "name"
+    },
+    {
+      "name": "scim.idp.claims.roles",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the user's roles.",
+      "defaultValue": "roles"
+    },
+    {
+      "name": "scim.idp.claims.groups",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the user's groups (used by Okta and PingFederate).",
+      "defaultValue": "groups"
+    },
+    {
+      "name": "scim.idp.claims.realm-access",
+      "type": "java.lang.String",
+      "description": "JWT claim name for Keycloak realm-level role access.",
+      "defaultValue": "realm_access"
+    },
+    {
+      "name": "scim.idp.claims.resource-access",
+      "type": "java.lang.String",
+      "description": "JWT claim name for Keycloak client-level resource access.",
+      "defaultValue": "resource_access"
+    },
+    {
+      "name": "scim.idp.claims.preferred-username",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the preferred username (Keycloak, Azure AD).",
+      "defaultValue": "preferred_username"
+    },
+    {
+      "name": "scim.idp.claims.given-name",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the user's given (first) name.",
+      "defaultValue": "given_name"
+    },
+    {
+      "name": "scim.idp.claims.family-name",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the user's family (last) name.",
+      "defaultValue": "family_name"
+    },
+    {
+      "name": "scim.idp.claims.object-id",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the Azure AD object identifier.",
+      "defaultValue": "oid"
+    },
+    {
+      "name": "scim.idp.claims.directory-roles",
+      "type": "java.lang.String",
+      "description": "JWT claim name for Azure AD directory role identifiers (wids).",
+      "defaultValue": "wids"
+    },
+    {
+      "name": "scim.idp.claims.tenant-id",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the Azure AD tenant identifier.",
+      "defaultValue": "tid"
+    },
+    {
+      "name": "scim.idp.claims.app-id",
+      "type": "java.lang.String",
+      "description": "JWT claim name for the Azure AD application identifier.",
+      "defaultValue": "appid"
+    },
+    {
+      "name": "scim.idp.claims.scopes",
+      "type": "java.lang.String",
+      "description": "JWT claim name for Okta scopes.",
+      "defaultValue": "scp"
+    },
+    {
+      "name": "scim.idp.claims.member-of",
+      "type": "java.lang.String",
+      "description": "JWT claim name for PingFederate group membership.",
+      "defaultValue": "memberOf"
+    },
+    {
+      "name": "scim.idp.claims.permissions",
+      "type": "java.lang.String",
+      "description": "JWT claim name for Auth0 permissions.",
+      "defaultValue": "permissions"
+    },
+    {
+      "name": "scim.idp.claims.nickname",
+      "type": "java.lang.String",
+      "description": "JWT claim name for Auth0 nickname.",
+      "defaultValue": "nickname"
+    },
+    {
+      "name": "scim.idp.claims.picture",
+      "type": "java.lang.String",
+      "description": "JWT claim name for Auth0 profile picture URL.",
+      "defaultValue": "picture"
     }
   ]
 }

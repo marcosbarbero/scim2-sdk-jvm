@@ -19,6 +19,8 @@ import org.springframework.context.annotation.Bean
  * Activates only when Spring Security OAuth2 JWT classes are on the classpath.
  * Each provider bean backs off via [ConditionalOnMissingBean] so users can always provide
  * their own [IdentityResolver].
+ *
+ * All claim names are configurable via `scim.idp.claims.*` properties.
  */
 @AutoConfiguration
 @ConditionalOnClass(name = ["org.springframework.security.oauth2.jwt.Jwt"])
@@ -29,30 +31,37 @@ class ScimIdentityAutoConfiguration {
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "keycloak")
     fun keycloakIdentityResolver(properties: ScimProperties): IdentityResolver =
-        KeycloakIdentityResolver(clientId = properties.idp.clientId)
+        KeycloakIdentityResolver(clientId = properties.idp.clientId, claims = properties.idp.claims)
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "okta")
-    fun oktaIdentityResolver(): IdentityResolver = OktaIdentityResolver()
+    fun oktaIdentityResolver(properties: ScimProperties): IdentityResolver =
+        OktaIdentityResolver(claims = properties.idp.claims)
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "azure-ad")
-    fun azureAdIdentityResolver(): IdentityResolver = AzureAdIdentityResolver()
+    fun azureAdIdentityResolver(properties: ScimProperties): IdentityResolver =
+        AzureAdIdentityResolver(claims = properties.idp.claims)
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "ping-federate")
-    fun pingFederateIdentityResolver(): IdentityResolver = PingFederateIdentityResolver()
+    fun pingFederateIdentityResolver(properties: ScimProperties): IdentityResolver =
+        PingFederateIdentityResolver(claims = properties.idp.claims)
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "auth0")
     fun auth0IdentityResolver(properties: ScimProperties): IdentityResolver =
-        Auth0IdentityResolver(namespace = properties.idp.namespace ?: "https://your-app.auth0.com")
+        Auth0IdentityResolver(
+            namespace = properties.idp.namespace ?: "https://your-app.auth0.com",
+            claims = properties.idp.claims
+        )
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
-    fun defaultJwtIdentityResolver(): IdentityResolver = JwtIdentityResolver()
+    fun defaultJwtIdentityResolver(properties: ScimProperties): IdentityResolver =
+        JwtIdentityResolver(claims = properties.idp.claims)
 }
