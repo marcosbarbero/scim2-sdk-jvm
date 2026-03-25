@@ -216,18 +216,28 @@ All properties are optional with sensible defaults:
 
 | Property | Default | Description |
 |---|---|---|
-| `scim.base-path` | `/scim/v2` | Base path for SCIM endpoints |
-| `scim.persistence.enabled` | `false` | Enable JPA-backed persistence |
-| `scim.persistence.table-name` | `scim_resources` | Database table name |
-| `scim.persistence.schema-name` | (none) | Database schema name |
-| `scim.bulk.enabled` | `true` | Enable bulk operations |
-| `scim.bulk.max-operations` | `1000` | Max operations per bulk request |
-| `scim.filter.enabled` | `true` | Enable filtering |
-| `scim.filter.max-results` | `200` | Max results per filtered query |
-| `scim.etag.enabled` | `true` | Enable ETag support |
-| `scim.patch.enabled` | `true` | Enable PATCH operations |
-| `scim.sort.enabled` | `false` | Enable sorting |
-| `scim.client.base-url` | (none) | SCIM client target URL |
+| `scim.base-path` | `/scim/v2` | Base URL path for all SCIM endpoints |
+| `scim.bulk.enabled` | `true` | Enable [Bulk Operations (RFC 7644 §3.7)](https://www.rfc-editor.org/rfc/rfc7644#section-3.7) — allows clients to batch multiple create/update/delete operations into a single HTTP request, reducing round-trips for large provisioning jobs |
+| `scim.bulk.max-operations` | `1000` | Maximum number of individual operations allowed in a single bulk request |
+| `scim.bulk.max-payload-size` | `1048576` | Maximum payload size (bytes) for bulk requests (default: 1 MB) |
+| `scim.filter.enabled` | `true` | Enable [Filtering (RFC 7644 §3.4.2.2)](https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2.2) — allows clients to query resources using expressions like `userName eq "john"` or `emails[type eq "work"]` |
+| `scim.filter.max-results` | `200` | Maximum number of resources returned by a filtered query |
+| `scim.etag.enabled` | `true` | Enable [ETags (RFC 7644 §3.14)](https://www.rfc-editor.org/rfc/rfc7644#section-3.14) — optimistic concurrency control using `If-Match` / `If-None-Match` headers to prevent lost updates when multiple clients modify the same resource |
+| `scim.patch.enabled` | `true` | Enable [PATCH Operations (RFC 7644 §3.5.2)](https://www.rfc-editor.org/rfc/rfc7644#section-3.5.2) — partial resource updates (add/remove/replace individual attributes) without replacing the entire resource |
+| `scim.sort.enabled` | `false` | Enable [Sorting (RFC 7644 §3.4.2.3)](https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2.3) — allows clients to sort search results using `sortBy` and `sortOrder` query parameters |
+| `scim.change-password.enabled` | `false` | Enable [Change Password (RFC 7644 §3.5.2.1)](https://www.rfc-editor.org/rfc/rfc7644#section-3.5.2) — indicates the service provider supports password changes via PATCH |
+| `scim.pagination.default-page-size` | `100` | Default number of resources returned per page when the client doesn't specify `count` |
+| `scim.pagination.max-page-size` | `1000` | Maximum allowed page size — the server caps the client's `count` parameter to this value |
+| `scim.persistence.enabled` | `false` | Enable the OOTB JPA persistence adapter — stores SCIM resources in a relational database |
+| `scim.persistence.table-name` | `scim_resources` | Database table name for SCIM resource storage |
+| `scim.persistence.schema-name` | *(none)* | Database schema name (e.g., `scim`) — if set, the table is qualified as `schema.table` |
+| `scim.persistence.auto-migrate` | `false` | Run [Flyway](https://flywaydb.org/) migration on startup to create the `scim_resources` table automatically |
+| `scim.client.base-url` | *(none)* | Base URL of the remote SCIM Service Provider — when set, auto-configures a `ScimClient` bean |
+| `scim.client.connect-timeout` | `10s` | TCP connection timeout for the SCIM client |
+| `scim.client.read-timeout` | `30s` | Read timeout for the SCIM client |
+| `scim.idp.provider` | *(none)* | Identity Provider type: `keycloak`, `okta`, `azure-ad`, `ping-federate`, `auth0` — auto-configures the corresponding `IdentityResolver` |
+| `scim.idp.client-id` | *(none)* | Client ID for Keycloak client-role extraction |
+| `scim.idp.namespace` | *(none)* | Auth0 custom namespace for role claims |
 
 ## Database Support
 
