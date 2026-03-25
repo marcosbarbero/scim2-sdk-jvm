@@ -3,78 +3,78 @@
     {
       "name": "scim.base-path",
       "type": "java.lang.String",
-      "description": "Base path for all SCIM 2.0 endpoints.",
+      "description": "Base URL path for all SCIM endpoints.",
       "defaultValue": "/scim/v2"
     },
     {
       "name": "scim.bulk.enabled",
       "type": "java.lang.Boolean",
-      "description": "Whether SCIM bulk operations are enabled.",
+      "description": "Enable Bulk Operations (RFC 7644 §3.7) — allows clients to batch multiple create/update/delete operations into a single HTTP request, reducing round-trips for large provisioning jobs.",
       "defaultValue": true
     },
     {
       "name": "scim.bulk.max-operations",
       "type": "java.lang.Integer",
-      "description": "Maximum number of operations in a single bulk request.",
+      "description": "Maximum number of individual operations allowed in a single bulk request.",
       "defaultValue": 1000
     },
     {
       "name": "scim.bulk.max-payload-size",
       "type": "java.lang.Long",
-      "description": "Maximum payload size in bytes for bulk requests.",
+      "description": "Maximum payload size (bytes) for bulk requests (default: 1 MB).",
       "defaultValue": 1048576
     },
     {
       "name": "scim.filter.enabled",
       "type": "java.lang.Boolean",
-      "description": "Whether SCIM filtering is enabled.",
+      "description": "Enable Filtering (RFC 7644 §3.4.2.2) — allows clients to query resources using expressions like 'userName eq \"john\"' or 'emails[type eq \"work\"]'.",
       "defaultValue": true
     },
     {
       "name": "scim.filter.max-results",
       "type": "java.lang.Integer",
-      "description": "Maximum number of results returned by a filtered query.",
+      "description": "Maximum number of resources returned by a filtered query.",
       "defaultValue": 200
     },
     {
       "name": "scim.pagination.default-page-size",
       "type": "java.lang.Integer",
-      "description": "Default page size when count is not specified.",
+      "description": "Default number of resources returned per page when the client doesn't specify 'count'.",
       "defaultValue": 100
     },
     {
       "name": "scim.pagination.max-page-size",
       "type": "java.lang.Integer",
-      "description": "Maximum allowed page size.",
+      "description": "Maximum allowed page size — the server caps the client's 'count' parameter to this value.",
       "defaultValue": 1000
     },
     {
       "name": "scim.etag.enabled",
       "type": "java.lang.Boolean",
-      "description": "Whether ETag support is enabled for optimistic concurrency.",
+      "description": "Enable ETags (RFC 7644 §3.14) — optimistic concurrency control using If-Match / If-None-Match headers to prevent lost updates when multiple clients modify the same resource.",
       "defaultValue": true
     },
     {
       "name": "scim.patch.enabled",
       "type": "java.lang.Boolean",
-      "description": "Whether SCIM PATCH operations are enabled.",
+      "description": "Enable PATCH Operations (RFC 7644 §3.5.2) — partial resource updates (add/remove/replace individual attributes) without replacing the entire resource.",
       "defaultValue": true
     },
     {
       "name": "scim.sort.enabled",
       "type": "java.lang.Boolean",
-      "description": "Whether SCIM sorting is enabled.",
+      "description": "Enable Sorting (RFC 7644 §3.4.2.3) — allows clients to sort search results using 'sortBy' and 'sortOrder' query parameters.",
       "defaultValue": false
     },
     {
       "name": "scim.client.base-url",
       "type": "java.lang.String",
-      "description": "Base URL of the remote SCIM service provider."
+      "description": "Base URL of the remote SCIM Service Provider — when set, auto-configures a ScimClient bean."
     },
     {
       "name": "scim.client.connect-timeout",
       "type": "java.time.Duration",
-      "description": "Connection timeout for the SCIM client.",
+      "description": "TCP connection timeout for the SCIM client.",
       "defaultValue": "10s"
     },
     {
@@ -86,40 +86,40 @@
     {
       "name": "scim.persistence.enabled",
       "type": "java.lang.Boolean",
-      "description": "Whether the JPA-based SCIM persistence adapter is enabled.",
+      "description": "Enable the OOTB JPA persistence adapter — stores SCIM resources in a relational database.",
       "defaultValue": false
     },
     {
       "name": "scim.persistence.table-name",
       "type": "java.lang.String",
-      "description": "Name of the database table used to store SCIM resources.",
+      "description": "Database table name for SCIM resource storage.",
       "defaultValue": "scim_resources"
     },
     {
       "name": "scim.persistence.schema-name",
       "type": "java.lang.String",
-      "description": "Database schema name for the SCIM resources table."
+      "description": "Database schema name (e.g., 'scim') — if set, the table is qualified as schema.table."
     },
     {
       "name": "scim.persistence.auto-migrate",
       "type": "java.lang.Boolean",
-      "description": "Whether to automatically run Flyway migrations for the SCIM schema. When enabled, creates the scim_resources table on startup.",
+      "description": "Run Flyway migration on startup to create the scim_resources table automatically.",
       "defaultValue": false
     },
     {
       "name": "scim.idp.provider",
       "type": "java.lang.String",
-      "description": "Identity provider to auto-configure. Supported values: keycloak, okta, azure-ad, ping-federate, auth0."
+      "description": "Identity Provider type: keycloak, okta, azure-ad, ping-federate, auth0 — auto-configures the corresponding IdentityResolver."
     },
     {
       "name": "scim.idp.client-id",
       "type": "java.lang.String",
-      "description": "Client ID for Keycloak client-level role extraction from the resource_access claim."
+      "description": "Client ID for Keycloak client-role extraction."
     },
     {
       "name": "scim.idp.namespace",
       "type": "java.lang.String",
-      "description": "Custom namespace for Auth0 role claims (e.g., https://your-app.auth0.com).",
+      "description": "Auth0 custom namespace for role claims (e.g., https://your-app.auth0.com).",
       "defaultValue": "https://your-app.auth0.com"
     },
     {

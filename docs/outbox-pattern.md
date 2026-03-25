@@ -40,9 +40,10 @@ interface ScimOutboxPort {
 
 ### Option 1: namastack-outbox (Recommended)
 
-[namastack-outbox](https://github.com/namastack/namastack-outbox) integrates with Spring Modulith for transactional event publishing.
+[namastack-outbox](https://github.com/namastack/namastack-outbox) provides transactional outbox support and is available in Maven Central. It integrates with Spring Modulith's event externalization.
 
 Add the dependency:
+
 ```xml
 <dependency>
     <groupId>com.namastack</groupId>
@@ -51,66 +52,15 @@ Add the dependency:
 </dependency>
 ```
 
-Configure:
+Configure in `application.yml`:
+
 ```yaml
 scim:
   outbox:
     enabled: true
 ```
 
-The SDK auto-configures a `NamastackOutboxAdapter` that implements `ScimOutboxPort` and delegates to namastack-outbox's `OutboxPublisher`.
-
-#### Adapter Code
-
-Since namastack-outbox may not yet be available in Maven Central, you can create the adapter manually in your project:
-
-```kotlin
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.marcosbarbero.scim2.core.event.ScimEvent
-import com.marcosbarbero.scim2.server.port.ScimOutboxPort
-// import com.namastack.outbox.OutboxPublisher  // from namastack-outbox
-import org.springframework.stereotype.Component
-
-/**
- * Bridges [ScimOutboxPort] to namastack-outbox's [OutboxPublisher].
- *
- * Each [ScimEvent] is mapped to an outbox message with:
- * - aggregateType = "ScimResource"
- * - aggregateId   = event.resourceId
- * - eventType     = event's simple class name (e.g., "ResourceCreatedEvent")
- * - payload       = JSON-serialized event
- *
- * namastack-outbox handles persistence in the same DB transaction and
- * asynchronous relay to the configured message broker (Kafka, SQS, etc.).
- */
-@Component
-class NamastackOutboxAdapter(
-    private val outboxPublisher: Any, // OutboxPublisher — replace with actual type
-    private val objectMapper: ObjectMapper
-) : ScimOutboxPort {
-
-    override fun store(event: ScimEvent) {
-        val payload = objectMapper.writeValueAsString(event)
-
-        // Replace with actual namastack-outbox API call:
-        // outboxPublisher.publish(
-        //     OutboxMessage(
-        //         aggregateType = "ScimResource",
-        //         aggregateId = event.resourceId,
-        //         eventType = event::class.simpleName ?: "ScimEvent",
-        //         payload = payload,
-        //         headers = buildMap {
-        //             put("correlationId", event.correlationId ?: "")
-        //             put("resourceType", event.resourceType)
-        //             put("eventId", event.eventId)
-        //         }
-        //     )
-        // )
-    }
-}
-```
-
-Once namastack-outbox is published, replace the commented section with the actual API call and update the `outboxPublisher` type to `OutboxPublisher`.
+The SDK auto-configures a `NamastackOutboxAdapter` implementing `ScimOutboxPort` that delegates to namastack-outbox's event publishing. Events are stored transactionally alongside your resource changes and published asynchronously.
 
 ### Option 2: Custom Implementation
 
