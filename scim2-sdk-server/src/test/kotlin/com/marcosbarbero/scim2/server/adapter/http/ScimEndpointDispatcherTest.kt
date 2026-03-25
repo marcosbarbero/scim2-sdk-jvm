@@ -8,6 +8,7 @@ import com.marcosbarbero.scim2.core.domain.model.error.ResourceConflictException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.error.ScimError
 import com.marcosbarbero.scim2.core.domain.model.error.ScimException
+import com.marcosbarbero.scim2.core.domain.model.error.ScimProblemDetail
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
@@ -862,6 +863,99 @@ class ScimEndpointDispatcherTest {
         val response = dispatcher.dispatch(request)
 
         response.status shouldBe 200
+    }
+
+    // --- ProblemDetail content negotiation tests ---
+
+    @Test
+    fun `error with Accept problem+json returns ProblemDetail format`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/nonexistent-id",
+            headers = mapOf("Accept" to listOf("application/problem+json"))
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 404
+        response.headers["Content-Type"] shouldBe "application/problem+json"
+        val problemDetail = objectMapper.readValue(response.body, ScimProblemDetail::class.java)
+        problemDetail.status shouldBe 404
+        problemDetail.type shouldBe "about:blank"
+        problemDetail.title shouldBe "Not Found"
+        problemDetail.detail shouldNotBe null
+    }
+
+    @Test
+    fun `error with Accept scim+json returns ScimError format`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/nonexistent-id",
+            headers = mapOf("Accept" to listOf("application/scim+json"))
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 404
+        response.headers["Content-Type"] shouldBe "application/scim+json"
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.status shouldBe "404"
+    }
+
+    @Test
+    fun `error without Accept header returns ScimError format by default`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/nonexistent-id"
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 404
+        response.headers["Content-Type"] shouldBe "application/scim+json"
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.status shouldBe "404"
+    }
+
+    @Test
+    fun `error with Accept problem+json includes scimType when present`() {
+        val conflictHandler = object : ResourceHandler<User> {
+            override val resourceType: Class<User> = User::class.java
+            override val endpoint: String = "/Users"
+            override fun get(id: ResourceId, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
+            override fun create(resource: User, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
+            override fun replace(id: ResourceId, resource: User, version: ETag?, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
+            override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
+            override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) = throw ResourceConflictException("duplicate")
+            override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = throw ResourceConflictException("duplicate")
+        }
+
+        val conflictDispatcher = ScimEndpointDispatcher(
+            handlers = listOf(conflictHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = discoveryService,
+            config = config,
+            serializer = serializer
+        )
+
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test")
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            headers = mapOf("Accept" to listOf("application/problem+json")),
+            body = body
+        )
+
+        val response = conflictDispatcher.dispatch(request)
+
+        response.status shouldBe 409
+        response.headers["Content-Type"] shouldBe "application/problem+json"
+        val problemDetail = objectMapper.readValue(response.body, ScimProblemDetail::class.java)
+        problemDetail.scimType shouldBe "uniqueness"
+        problemDetail.type shouldBe "urn:ietf:params:scim:api:messages:2.0:Error:uniqueness"
     }
 
     private fun createTestUser(): User {

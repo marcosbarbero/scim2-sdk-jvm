@@ -14,6 +14,8 @@ open class ScimException(
         scimType = scimType?.value,
         detail = detail
     )
+
+    fun toScimProblemDetail(): ScimProblemDetail = ScimProblemDetail.fromScimException(this)
 }
 
 class ResourceNotFoundException(detail: String? = null) :
