@@ -55,6 +55,6 @@ class AttributeProjector(private val objectMapper: ObjectMapper) {
     }
 
     companion object {
-        private val ALWAYS_RETURNED = setOf("id", "schemas")
+        private val ALWAYS_RETURNED = setOf("id", "schemas", "meta")
     }
 }

@@ -37,12 +37,11 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
 
         if (path == null) {
             // No path: value must be an object, merge its attributes into the resource
-            if (value is Map<*, *>) {
-                val valueNode = objectMapper.valueToTree<ObjectNode>(value)
-                val fieldNames = valueNode.fieldNames()
+            if (value is ObjectNode) {
+                val fieldNames = value.fieldNames()
                 while (fieldNames.hasNext()) {
                     val fieldName = fieldNames.next()
-                    node.set<com.fasterxml.jackson.databind.JsonNode>(fieldName, valueNode.get(fieldName))
+                    node.set<com.fasterxml.jackson.databind.JsonNode>(fieldName, value.get(fieldName))
                 }
             } else {
                 throw InvalidValueException("ADD operation with no path requires an object value")
@@ -65,14 +64,13 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         if (existing != null && existing.isArray) {
             // Append to existing array
             val array = existing as ArrayNode
-            val valueNode = objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(value)
-            if (valueNode.isArray) {
-                valueNode.forEach { array.add(it) }
+            if (value != null && value.isArray) {
+                value.forEach { array.add(it) }
             } else {
-                array.add(valueNode)
+                array.add(value)
             }
         } else {
-            node.set<com.fasterxml.jackson.databind.JsonNode>(path, objectMapper.valueToTree(value))
+            node.set<com.fasterxml.jackson.databind.JsonNode>(path, value)
         }
         return node
     }
@@ -100,18 +98,19 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
 
         if (path == null) {
             // No path: value must be an object, replace its attributes
-            if (value is Map<*, *>) {
-                val valueNode = objectMapper.valueToTree<ObjectNode>(value)
-                val fieldNames = valueNode.fieldNames()
+            if (value is ObjectNode) {
+                val fieldNames = value.fieldNames()
                 while (fieldNames.hasNext()) {
                     val fieldName = fieldNames.next()
-                    node.set<com.fasterxml.jackson.databind.JsonNode>(fieldName, valueNode.get(fieldName))
+                    node.set<com.fasterxml.jackson.databind.JsonNode>(fieldName, value.get(fieldName))
                 }
+            } else {
+                throw InvalidValueException("REPLACE operation with no path requires an object value")
             }
             return node
         }
 
-        node.set<com.fasterxml.jackson.databind.JsonNode>(path, objectMapper.valueToTree(value))
+        node.set<com.fasterxml.jackson.databind.JsonNode>(path, value)
         return node
     }
 
@@ -120,18 +119,19 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         attrName: String,
         filterAttr: String,
         filterValue: String,
-        value: Any?
+        value: com.fasterxml.jackson.databind.JsonNode?
     ) {
         val array = node.get(attrName) as? ArrayNode ?: return
         for (i in 0 until array.size()) {
             val element = array.get(i) as? ObjectNode ?: continue
             val fieldValue = element.get(filterAttr)?.asText()
             if (fieldValue.equals(filterValue, ignoreCase = true)) {
-                if (value is Map<*, *>) {
-                    val valueNode = objectMapper.valueToTree<ObjectNode>(value)
-                    valueNode.fieldNames().forEach { field ->
-                        element.set<com.fasterxml.jackson.databind.JsonNode>(field, valueNode.get(field))
+                if (value is ObjectNode) {
+                    value.fieldNames().forEach { field ->
+                        element.set<com.fasterxml.jackson.databind.JsonNode>(field, value.get(field))
                     }
+                } else {
+                    throw InvalidValueException("Filtered multi-valued attribute update requires an object value")
                 }
             }
         }

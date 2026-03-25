@@ -2,17 +2,20 @@ package com.marcosbarbero.scim2.core.domain.model.search
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class SearchModelsTest {
 
+    private val faker = Faker()
     private val mapper = jacksonObjectMapper()
 
     @Test
     fun `should serialize and deserialize SearchRequest`() {
+        val userName = faker.name.firstName().lowercase()
         val request = SearchRequest(
-            filter = "userName eq \"bjensen\"",
+            filter = "userName eq \"$userName\"",
             sortBy = "userName",
             sortOrder = SortOrder.DESCENDING,
             startIndex = 1,
@@ -24,7 +27,7 @@ class SearchModelsTest {
         val deserialized = mapper.readValue<SearchRequest>(json)
 
         deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:SearchRequest")
-        deserialized.filter shouldBe "userName eq \"bjensen\""
+        deserialized.filter shouldBe "userName eq \"$userName\""
         deserialized.sortBy shouldBe "userName"
         deserialized.sortOrder shouldBe SortOrder.DESCENDING
         deserialized.startIndex shouldBe 1
@@ -34,11 +37,13 @@ class SearchModelsTest {
 
     @Test
     fun `should serialize and deserialize ListResponse`() {
+        val userName1 = faker.name.firstName().lowercase()
+        val userName2 = faker.name.firstName().lowercase()
         val response = ListResponse(
             totalResults = 100,
             itemsPerPage = 10,
             startIndex = 1,
-            resources = listOf(mapOf("userName" to "bjensen"), mapOf("userName" to "jsmith"))
+            resources = listOf(mapOf("userName" to userName1), mapOf("userName" to userName2))
         )
 
         val json = mapper.writeValueAsString(response)

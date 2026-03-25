@@ -7,6 +7,7 @@ import com.marcosbarbero.scim2.core.schema.annotation.AttributeType
 import com.marcosbarbero.scim2.core.schema.annotation.Mutability
 import com.marcosbarbero.scim2.core.schema.annotation.Returned
 import com.marcosbarbero.scim2.core.schema.annotation.Uniqueness
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test
 
 class SchemaIntrospectorTest {
 
+    private val faker = Faker()
     private val introspector = SchemaIntrospector()
 
     @Nested

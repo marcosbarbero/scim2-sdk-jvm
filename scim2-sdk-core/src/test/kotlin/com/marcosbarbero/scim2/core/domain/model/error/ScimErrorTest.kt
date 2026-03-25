@@ -3,6 +3,7 @@ package com.marcosbarbero.scim2.core.domain.model.error
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Nested
@@ -10,93 +11,106 @@ import org.junit.jupiter.api.Test
 
 class ScimErrorTest {
 
+    private val faker = Faker()
+
     @Nested
     inner class ScimExceptionHierarchyTest {
 
         @Test
         fun `ResourceNotFoundException should have status 404`() {
-            val ex = ResourceNotFoundException("User not found")
+            val detail = faker.name.name()
+            val ex = ResourceNotFoundException(detail)
             ex.status shouldBe 404
-            ex.detail shouldBe "User not found"
+            ex.detail shouldBe detail
             ex.scimType.shouldBe(null)
         }
 
         @Test
         fun `ResourceConflictException should have status 409`() {
-            val ex = ResourceConflictException("User already exists")
+            val detail = faker.name.name()
+            val ex = ResourceConflictException(detail)
             ex.status shouldBe 409
             ex.scimType shouldBe ScimErrorType.UNIQUENESS
         }
 
         @Test
         fun `InvalidFilterException should have status 400 and scimType invalidFilter`() {
-            val ex = InvalidFilterException("Bad filter")
+            val detail = faker.name.name()
+            val ex = InvalidFilterException(detail)
             ex.status shouldBe 400
             ex.scimType shouldBe ScimErrorType.INVALID_FILTER
         }
 
         @Test
         fun `InvalidPathException should have status 400 and scimType invalidPath`() {
-            val ex = InvalidPathException("Bad path")
+            val detail = faker.name.name()
+            val ex = InvalidPathException(detail)
             ex.status shouldBe 400
             ex.scimType shouldBe ScimErrorType.INVALID_PATH
         }
 
         @Test
         fun `MutabilityException should have status 400 and scimType mutability`() {
-            val ex = MutabilityException("Cannot modify read-only attribute")
+            val detail = faker.name.name()
+            val ex = MutabilityException(detail)
             ex.status shouldBe 400
             ex.scimType shouldBe ScimErrorType.MUTABILITY
         }
 
         @Test
         fun `InvalidSyntaxException should have status 400 and scimType invalidSyntax`() {
-            val ex = InvalidSyntaxException("Bad syntax")
+            val detail = faker.name.name()
+            val ex = InvalidSyntaxException(detail)
             ex.status shouldBe 400
             ex.scimType shouldBe ScimErrorType.INVALID_SYNTAX
         }
 
         @Test
         fun `NoTargetException should have status 400 and scimType noTarget`() {
-            val ex = NoTargetException("No target")
+            val detail = faker.name.name()
+            val ex = NoTargetException(detail)
             ex.status shouldBe 400
             ex.scimType shouldBe ScimErrorType.NO_TARGET
         }
 
         @Test
         fun `InvalidValueException should have status 400 and scimType invalidValue`() {
-            val ex = InvalidValueException("Bad value")
+            val detail = faker.name.name()
+            val ex = InvalidValueException(detail)
             ex.status shouldBe 400
             ex.scimType shouldBe ScimErrorType.INVALID_VALUE
         }
 
         @Test
         fun `TooManyException should have status 400 and scimType tooMany`() {
-            val ex = TooManyException("Too many results")
+            val detail = faker.name.name()
+            val ex = TooManyException(detail)
             ex.status shouldBe 400
             ex.scimType shouldBe ScimErrorType.TOO_MANY
         }
 
         @Test
         fun `SensitiveException should have status 403 and scimType sensitive`() {
-            val ex = SensitiveException("Sensitive attribute")
+            val detail = faker.name.name()
+            val ex = SensitiveException(detail)
             ex.status shouldBe 403
             ex.scimType shouldBe ScimErrorType.SENSITIVE
         }
 
         @Test
         fun `all exceptions should extend ScimException`() {
+            val detail = faker.name.name()
             val exceptions: List<ScimException> = listOf(
-                ResourceNotFoundException("test"),
-                ResourceConflictException("test"),
-                InvalidFilterException("test"),
-                InvalidPathException("test"),
-                MutabilityException("test"),
-                InvalidSyntaxException("test"),
-                NoTargetException("test"),
-                InvalidValueException("test"),
-                TooManyException("test"),
-                SensitiveException("test")
+                ResourceNotFoundException(detail),
+                ResourceConflictException(detail),
+                InvalidFilterException(detail),
+                InvalidPathException(detail),
+                MutabilityException(detail),
+                InvalidSyntaxException(detail),
+                NoTargetException(detail),
+                InvalidValueException(detail),
+                TooManyException(detail),
+                SensitiveException(detail)
             )
             exceptions.forEach { it.shouldBeInstanceOf<ScimException>() }
         }
@@ -127,11 +141,12 @@ class ScimErrorTest {
 
         @Test
         fun `should serialize ScimError to JSON`() {
+            val detail = faker.name.name()
             val error = ScimError(
                 schemas = listOf("urn:ietf:params:scim:api:messages:2.0:Error"),
                 status = "400",
                 scimType = "invalidFilter",
-                detail = "The filter syntax is invalid"
+                detail = detail
             )
 
             val json = mapper.writeValueAsString(error)
@@ -139,34 +154,36 @@ class ScimErrorTest {
 
             deserialized.status shouldBe "400"
             deserialized.scimType shouldBe "invalidFilter"
-            deserialized.detail shouldBe "The filter syntax is invalid"
+            deserialized.detail shouldBe detail
             deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:Error")
         }
 
         @Test
         fun `should deserialize ScimError from JSON`() {
+            val detail = faker.name.name()
             val json = """
             {
                 "schemas": ["urn:ietf:params:scim:api:messages:2.0:Error"],
                 "status": "404",
-                "detail": "Resource not found"
+                "detail": "$detail"
             }
             """.trimIndent()
 
             val error = mapper.readValue<ScimError>(json)
             error.status shouldBe "404"
             error.scimType shouldBe null
-            error.detail shouldBe "Resource not found"
+            error.detail shouldBe detail
         }
 
         @Test
         fun `ScimException should convert to ScimError`() {
-            val ex = InvalidFilterException("Bad filter expression")
+            val detail = faker.name.name()
+            val ex = InvalidFilterException(detail)
             val error = ex.toScimError()
 
             error.status shouldBe "400"
             error.scimType shouldBe "invalidFilter"
-            error.detail shouldBe "Bad filter expression"
+            error.detail shouldBe detail
             error.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:Error")
         }
     }

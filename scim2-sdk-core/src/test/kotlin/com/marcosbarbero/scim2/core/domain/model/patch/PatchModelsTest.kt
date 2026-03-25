@@ -2,20 +2,24 @@ package com.marcosbarbero.scim2.core.domain.model.patch
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class PatchModelsTest {
 
+    private val faker = Faker()
     private val mapper = jacksonObjectMapper()
 
     @Test
     fun `should serialize and deserialize PatchRequest`() {
+        val displayName = faker.name.name()
+        val userName = faker.name.firstName().lowercase()
         val request = PatchRequest(
             operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "displayName", value = "Babs"),
+                PatchOperation(op = PatchOp.ADD, path = "displayName", value = mapper.valueToTree(displayName)),
                 PatchOperation(op = PatchOp.REMOVE, path = "title"),
-                PatchOperation(op = PatchOp.REPLACE, path = "userName", value = "bjensen")
+                PatchOperation(op = PatchOp.REPLACE, path = "userName", value = mapper.valueToTree(userName))
             )
         )
 

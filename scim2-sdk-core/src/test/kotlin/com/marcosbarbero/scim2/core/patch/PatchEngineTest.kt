@@ -13,6 +13,7 @@ import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.User
+import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -22,6 +23,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class PatchEngineTest {
+
+    private val faker = Faker()
 
     private val objectMapper = ObjectMapper().apply {
         registerModule(KotlinModule.Builder().build())
@@ -33,36 +36,44 @@ class PatchEngineTest {
 
     private val engine = PatchEngine(objectMapper)
 
-    private fun baseUser() = User(
-        id = "123",
-        userName = "bjensen",
-        displayName = "Babs Jensen",
-        emails = listOf(
-            MultiValuedAttribute(value = "bjensen@example.com", type = "work", primary = true),
-            MultiValuedAttribute(value = "babs@home.org", type = "home")
+    private fun baseUser(): User {
+        val userName = faker.name.firstName().lowercase()
+        val displayName = faker.name.name()
+        val workEmail = faker.internet.email()
+        val homeEmail = faker.internet.email()
+        return User(
+            id = java.util.UUID.randomUUID().toString(),
+            userName = userName,
+            displayName = displayName,
+            emails = listOf(
+                MultiValuedAttribute(value = workEmail, type = "work", primary = true),
+                MultiValuedAttribute(value = homeEmail, type = "home")
+            )
         )
-    )
+    }
 
     @Nested
     inner class AddOperations {
 
         @Test
         fun `should add simple attribute`() {
-            val user = User(userName = "bjensen")
+            val userName = faker.name.firstName().lowercase()
+            val displayName = faker.name.name()
+            val user = User(userName = userName)
             val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "displayName", value = "Babs Jensen")
+                PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName))
             ))
 
             val result = engine.apply(user, request)
-            result.displayName shouldBe "Babs Jensen"
+            result.displayName shouldBe displayName
         }
 
         @Test
         fun `should add to multi-valued attribute`() {
             val user = baseUser()
-            val newEmail = mapOf("value" to "new@example.com", "type" to "other")
+            val newEmail = mapOf("value" to faker.internet.email(), "type" to "other")
             val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "emails", value = listOf(newEmail))
+                PatchOperation(op = PatchOp.ADD, path = "emails", value = objectMapper.valueToTree(listOf(newEmail)))
             ))
 
             val result = engine.apply(user, request)
@@ -71,14 +82,29 @@ class PatchEngineTest {
 
         @Test
         fun `should add with no path by merging object`() {
-            val user = User(userName = "bjensen")
+            val userName = faker.name.firstName().lowercase()
+            val displayName = faker.name.name()
+            val title = faker.name.name()
+            val user = User(userName = userName)
             val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, value = mapOf("displayName" to "Babs", "title" to "Guide"))
+                PatchOperation(op = PatchOp.ADD, value = objectMapper.valueToTree(mapOf("displayName" to displayName, "title" to title)))
             ))
 
             val result = engine.apply(user, request)
-            result.displayName shouldBe "Babs"
-            result.title shouldBe "Guide"
+            result.displayName shouldBe displayName
+            result.title shouldBe title
+        }
+
+        @Test
+        fun `should throw when add with no path has non-object value`() {
+            val user = User(userName = faker.name.firstName().lowercase())
+            val request = PatchRequest(operations = listOf(
+                PatchOperation(op = PatchOp.ADD, value = objectMapper.valueToTree("plain string"))
+            ))
+
+            shouldThrow<InvalidValueException> {
+                engine.apply(user, request)
+            }
         }
     }
 
@@ -127,25 +153,39 @@ class PatchEngineTest {
         @Test
         fun `should replace simple attribute`() {
             val user = baseUser()
+            val newDisplayName = faker.name.name()
             val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = "Barbara Jensen")
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(newDisplayName))
             ))
 
             val result = engine.apply(user, request)
-            result.displayName shouldBe "Barbara Jensen"
+            result.displayName shouldBe newDisplayName
         }
 
         @Test
         fun `should replace multi-valued attribute entirely`() {
             val user = baseUser()
-            val newEmails = listOf(mapOf("value" to "only@example.com", "type" to "work"))
+            val newEmail = faker.internet.email()
+            val newEmails = listOf(mapOf("value" to newEmail, "type" to "work"))
             val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REPLACE, path = "emails", value = newEmails)
+                PatchOperation(op = PatchOp.REPLACE, path = "emails", value = objectMapper.valueToTree(newEmails))
             ))
 
             val result = engine.apply(user, request)
             result.emails shouldHaveSize 1
-            result.emails[0].value shouldBe "only@example.com"
+            result.emails[0].value shouldBe newEmail
+        }
+
+        @Test
+        fun `should throw when replace with no path has non-object value`() {
+            val user = User(userName = faker.name.firstName().lowercase())
+            val request = PatchRequest(operations = listOf(
+                PatchOperation(op = PatchOp.REPLACE, value = objectMapper.valueToTree("plain string"))
+            ))
+
+            shouldThrow<InvalidValueException> {
+                engine.apply(user, request)
+            }
         }
     }
 
@@ -154,16 +194,20 @@ class PatchEngineTest {
 
         @Test
         fun `should apply multiple operations in sequence`() {
-            val user = User(userName = "bjensen")
+            val userName = faker.name.firstName().lowercase()
+            val displayName1 = faker.name.name()
+            val title = faker.name.name()
+            val displayName2 = faker.name.name()
+            val user = User(userName = userName)
             val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "displayName", value = "Babs"),
-                PatchOperation(op = PatchOp.ADD, path = "title", value = "Guide"),
-                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = "Barbara")
+                PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName1)),
+                PatchOperation(op = PatchOp.ADD, path = "title", value = objectMapper.valueToTree(title)),
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(displayName2))
             ))
 
             val result = engine.apply(user, request)
-            result.displayName shouldBe "Barbara"
-            result.title shouldBe "Guide"
+            result.displayName shouldBe displayName2
+            result.title shouldBe title
         }
     }
 
@@ -173,13 +217,14 @@ class PatchEngineTest {
         @Test
         fun `should preserve schemas, id, and userName`() {
             val user = baseUser()
+            val title = faker.name.name()
             val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "title", value = "Guide")
+                PatchOperation(op = PatchOp.ADD, path = "title", value = objectMapper.valueToTree(title))
             ))
 
             val result = engine.apply(user, request)
-            result.id shouldBe "123"
-            result.userName shouldBe "bjensen"
+            result.id shouldBe user.id
+            result.userName shouldBe user.userName
             result.schemas shouldBe user.schemas
         }
     }

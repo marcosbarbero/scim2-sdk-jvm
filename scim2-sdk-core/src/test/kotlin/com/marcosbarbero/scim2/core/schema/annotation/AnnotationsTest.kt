@@ -3,11 +3,14 @@ package com.marcosbarbero.scim2.core.schema.annotation
 import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtension
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class AnnotationsTest {
+
+    private val faker = Faker()
 
     @Test
     fun `User class should have ScimResource annotation`() {

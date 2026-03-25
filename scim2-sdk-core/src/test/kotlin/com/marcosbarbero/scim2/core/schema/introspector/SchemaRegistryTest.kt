@@ -3,6 +3,7 @@ package com.marcosbarbero.scim2.core.schema.introspector
 import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtension
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -15,6 +16,7 @@ import java.util.concurrent.Executors
 
 class SchemaRegistryTest {
 
+    private val faker = Faker()
     private lateinit var registry: SchemaRegistry
 
     @BeforeEach
@@ -43,7 +45,7 @@ class SchemaRegistryTest {
 
         @Test
         fun `should return null for unknown schema URI`() {
-            registry.getSchema("urn:unknown").shouldBeNull()
+            registry.getSchema("urn:${faker.name.name()}").shouldBeNull()
         }
 
         @Test
@@ -57,7 +59,7 @@ class SchemaRegistryTest {
 
         @Test
         fun `should return null for unknown resource type`() {
-            registry.getResourceType("Unknown").shouldBeNull()
+            registry.getResourceType(faker.name.name()).shouldBeNull()
         }
 
         @Test

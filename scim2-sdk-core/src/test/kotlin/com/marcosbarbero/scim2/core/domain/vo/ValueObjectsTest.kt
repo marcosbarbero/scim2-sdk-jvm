@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.vo
 
+import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Nested
@@ -7,19 +8,22 @@ import org.junit.jupiter.api.Test
 
 class ValueObjectsTest {
 
+    private val faker = Faker()
+
     @Nested
     inner class SchemaUriTest {
 
         @Test
         fun `should create SchemaUri with valid URN`() {
-            val uri = SchemaUri("urn:ietf:params:scim:schemas:core:2.0:User")
-            uri.value shouldBe "urn:ietf:params:scim:schemas:core:2.0:User"
+            val urn = "urn:ietf:params:scim:schemas:core:2.0:${faker.name.name()}"
+            val uri = SchemaUri(urn)
+            uri.value shouldBe urn
         }
 
         @Test
         fun `should reject SchemaUri not starting with urn`() {
             shouldThrow<IllegalArgumentException> {
-                SchemaUri("http://example.com/schema")
+                SchemaUri("http://${faker.internet.domain()}/schema")
             }
         }
 
@@ -32,8 +36,9 @@ class ValueObjectsTest {
 
         @Test
         fun `toString returns the value`() {
-            val uri = SchemaUri("urn:ietf:params:scim:schemas:core:2.0:User")
-            uri.toString() shouldBe "urn:ietf:params:scim:schemas:core:2.0:User"
+            val urn = "urn:ietf:params:scim:schemas:core:2.0:User"
+            val uri = SchemaUri(urn)
+            uri.toString() shouldBe urn
         }
     }
 
@@ -42,8 +47,9 @@ class ValueObjectsTest {
 
         @Test
         fun `should create ResourceId with valid value`() {
-            val id = ResourceId("abc-123")
-            id.value shouldBe "abc-123"
+            val idValue = java.util.UUID.randomUUID().toString()
+            val id = ResourceId(idValue)
+            id.value shouldBe idValue
         }
 
         @Test
@@ -62,8 +68,9 @@ class ValueObjectsTest {
 
         @Test
         fun `toString returns the value`() {
-            val id = ResourceId("abc-123")
-            id.toString() shouldBe "abc-123"
+            val idValue = java.util.UUID.randomUUID().toString()
+            val id = ResourceId(idValue)
+            id.toString() shouldBe idValue
         }
     }
 
@@ -72,14 +79,16 @@ class ValueObjectsTest {
 
         @Test
         fun `should create ETag with value`() {
-            val etag = ETag("W/\"abc\"")
-            etag.value shouldBe "W/\"abc\""
+            val etagValue = "W/\"${java.util.UUID.randomUUID().toString()}\""
+            val etag = ETag(etagValue)
+            etag.value shouldBe etagValue
         }
 
         @Test
         fun `toString returns the value`() {
-            val etag = ETag("W/\"abc\"")
-            etag.toString() shouldBe "W/\"abc\""
+            val etagValue = "W/\"${java.util.UUID.randomUUID().toString()}\""
+            val etag = ETag(etagValue)
+            etag.toString() shouldBe etagValue
         }
     }
 }
