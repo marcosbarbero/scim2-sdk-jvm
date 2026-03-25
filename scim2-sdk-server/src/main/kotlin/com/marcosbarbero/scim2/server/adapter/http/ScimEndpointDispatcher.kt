@@ -56,7 +56,7 @@ class ScimEndpointDispatcher(
     private val sortedInterceptors = interceptors.sortedBy { it.order }
 
     fun dispatch(request: ScimHttpRequest): ScimHttpResponse {
-        val context = buildContext(request)
+        val context = request.toScimRequestContext()
         val relativePath = request.path.removePrefix(config.basePath)
         val endpoint = resolveEndpoint(relativePath)
         val method = request.method.name
@@ -86,11 +86,11 @@ class ScimEndpointDispatcher(
                 val processedException = sortedInterceptors.fold(e) { ex, interceptor ->
                     interceptor.onError(processedRequest, ex, context)
                 }
-                buildErrorResponse(processedException, processedRequest)
+                processedException.toErrorResponse(processedRequest)
             } catch (e: Exception) {
                 logger.error("Unexpected error processing request: {} {}", request.method, request.path, e)
                 val fallback = ScimException(status = 500, detail = "Internal server error")
-                buildErrorResponse(fallback, processedRequest)
+                fallback.toErrorResponse(processedRequest)
             }
 
             val duration = Duration.between(start, Instant.now())
@@ -234,7 +234,7 @@ class ScimEndpointDispatcher(
                 if (resourceId == null || resourceId.isEmpty()) {
                     // Search via GET
                     requireAuthorization { it.canSearch(handler.endpoint, context) }
-                    val searchRequest = buildSearchFromQuery(request)
+                    val searchRequest = request.toSearchRequest()
                     val result = handler.search(searchRequest, context)
                     ok(result)
                 } else {
@@ -341,18 +341,18 @@ class ScimEndpointDispatcher(
     private fun findHandler(relativePath: String): ResourceHandler<*>? =
         handlers.firstOrNull { relativePath.lowercase().startsWith(it.endpoint.lowercase()) }
 
-    private fun buildContext(request: ScimHttpRequest): ScimRequestContext {
-        val requestedAttrs = request.queryParam("attributes")
+    private fun ScimHttpRequest.toScimRequestContext(): ScimRequestContext {
+        val requestedAttrs = queryParam("attributes")
             ?.split(",")
             ?.map { it.trim() }
             ?: emptyList()
-        val excludedAttrs = request.queryParam("excludedAttributes")
+        val excludedAttrs = queryParam("excludedAttributes")
             ?.split(",")
             ?.map { it.trim() }
             ?: emptyList()
 
         return if (identityResolver != null) {
-            val resolved = identityResolver.resolve(request)
+            val resolved = identityResolver.resolve(this)
             resolved.copy(
                 requestedAttributes = requestedAttrs,
                 excludedAttributes = excludedAttrs
@@ -365,21 +365,21 @@ class ScimEndpointDispatcher(
         }
     }
 
-    private fun buildSearchFromQuery(request: ScimHttpRequest): SearchRequest =
+    private fun ScimHttpRequest.toSearchRequest(): SearchRequest =
         SearchRequest(
-            filter = request.queryParam("filter"),
-            sortBy = request.queryParam("sortBy"),
-            sortOrder = request.queryParam("sortOrder")?.let {
+            filter = queryParam("filter"),
+            sortBy = queryParam("sortBy"),
+            sortOrder = queryParam("sortOrder")?.let {
                 com.marcosbarbero.scim2.core.domain.model.search.SortOrder.entries
                     .firstOrNull { order -> order.value.equals(it, ignoreCase = true) }
             },
-            startIndex = request.queryParam("startIndex")?.toIntOrNull(),
-            count = request.queryParam("count")?.toIntOrNull(),
-            attributes = request.queryParam("attributes")
+            startIndex = queryParam("startIndex")?.toIntOrNull(),
+            count = queryParam("count")?.toIntOrNull(),
+            attributes = queryParam("attributes")
                 ?.split(",")
                 ?.map { it.trim() }
                 ?.takeIf { it.isNotEmpty() },
-            excludedAttributes = request.queryParam("excludedAttributes")
+            excludedAttributes = queryParam("excludedAttributes")
                 ?.split(",")
                 ?.map { it.trim() }
                 ?.takeIf { it.isNotEmpty() }
@@ -407,19 +407,19 @@ class ScimEndpointDispatcher(
         }
     }
 
-    private fun buildErrorResponse(exception: ScimException, request: ScimHttpRequest): ScimHttpResponse {
+    private fun ScimException.toErrorResponse(request: ScimHttpRequest): ScimHttpResponse {
         val acceptsProblemJson = request.headers.entries
             .firstOrNull { it.key.equals("Accept", ignoreCase = true) }
             ?.value
             ?.any { it.contains("application/problem+json") } == true
 
         val body = if (acceptsProblemJson) {
-            serializer.serialize(exception.toScimProblemDetail())
+            serializer.serialize(toScimProblemDetail())
         } else {
-            serializer.serialize(exception.toScimError())
+            serializer.serialize(toScimError())
         }
 
         val contentType = if (acceptsProblemJson) "application/problem+json" else "application/scim+json"
-        return ScimHttpResponse.error(exception.status, body, mapOf("Content-Type" to contentType))
+        return ScimHttpResponse.error(status, body, mapOf("Content-Type" to contentType))
     }
 }
