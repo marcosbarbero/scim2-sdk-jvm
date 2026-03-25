@@ -15,6 +15,24 @@ A modern, Kotlin-first SCIM 2.0 (RFC 7643/7644) SDK for the JVM with full Java i
 - **RFC 9457 ProblemDetail**: Content-negotiated error responses
 - **Extensible**: SPI for serialization, HTTP transport, identity, authorization, events
 
+## Architecture
+
+For detailed architecture diagrams (module dependencies, request flow, authentication, outbox pattern), see [docs/architecture.md](docs/architecture.md).
+
+```mermaid
+graph LR
+    CORE[scim2-sdk-core] --> SERVER[scim2-sdk-server]
+    CORE --> CLIENT[scim2-sdk-client]
+    SERVER --> SPRING[Spring Boot<br/>Auto-Configuration]
+    CLIENT --> HTTPCLIENT[Java HttpClient]
+    CLIENT --> OKHTTP[OkHttp]
+
+    style CORE fill:#4CAF50,color:#fff
+    style SERVER fill:#2196F3,color:#fff
+    style CLIENT fill:#FF9800,color:#fff
+    style SPRING fill:#9C27B0,color:#fff
+```
+
 ## Quick Start
 
 ### With Spring Boot
