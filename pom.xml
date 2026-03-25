@@ -211,6 +211,9 @@
                     <version>${kotlin.version}</version>
                     <configuration>
                         <jvmTarget>${kotlin.jvm-target}</jvmTarget>
+                        <args>
+                            <arg>-Xannotation-default-target=param-property</arg>
+                        </args>
                         <compilerPlugins>
                             <plugin>spring</plugin>
                             <plugin>jpa</plugin>
