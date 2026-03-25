@@ -1,9 +1,10 @@
 package com.marcosbarbero.scim2.core.domain.model.resource
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.common.Manager
 import com.marcosbarbero.scim2.core.schema.annotation.ScimExtension
 
-@ScimExtension(schema = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User")
+@ScimExtension(schema = ScimUrns.ENTERPRISE_USER)
 data class EnterpriseUserExtension(
     val employeeNumber: String? = null,
     val costCenter: String? = null,

@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.serialization.jackson
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.common.Address
 import com.marcosbarbero.scim2.core.domain.model.common.GroupMembership
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
@@ -177,7 +178,7 @@ class JacksonScimSerializerTest {
             val organization = faker.name.name()
             val user = User(userName = faker.name.firstName().lowercase())
             user.setExtension(
-                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+                ScimUrns.ENTERPRISE_USER,
                 mapOf(
                     "employeeNumber" to employeeNumber,
                     "costCenter" to costCenter,
@@ -186,12 +187,12 @@ class JacksonScimSerializerTest {
             )
 
             val json = serializer.serializeToString(user)
-            json shouldContain "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+            json shouldContain ScimUrns.ENTERPRISE_USER
             json shouldContain employeeNumber
 
             val deserialized = serializer.deserializeFromString(json, User::class)
             val ext = deserialized.getExtension<Map<*, *>>(
-                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+                ScimUrns.ENTERPRISE_USER
             )
             ext shouldBe mapOf(
                 "employeeNumber" to employeeNumber,

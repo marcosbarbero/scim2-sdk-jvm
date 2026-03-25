@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.schema.introspector
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtension
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
@@ -30,17 +31,17 @@ class SchemaRegistryTest {
         @Test
         fun `should register and retrieve User schema`() {
             registry.register(User::class)
-            val schema = registry.getSchema("urn:ietf:params:scim:schemas:core:2.0:User")
+            val schema = registry.getSchema(ScimUrns.USER)
             schema.shouldNotBeNull()
-            schema.id shouldBe "urn:ietf:params:scim:schemas:core:2.0:User"
+            schema.id shouldBe ScimUrns.USER
         }
 
         @Test
         fun `should register and retrieve Group schema`() {
             registry.register(Group::class)
-            val schema = registry.getSchema("urn:ietf:params:scim:schemas:core:2.0:Group")
+            val schema = registry.getSchema(ScimUrns.GROUP)
             schema.shouldNotBeNull()
-            schema.id shouldBe "urn:ietf:params:scim:schemas:core:2.0:Group"
+            schema.id shouldBe ScimUrns.GROUP
         }
 
         @Test
@@ -89,7 +90,7 @@ class SchemaRegistryTest {
             resourceType.shouldNotBeNull()
             resourceType.schemaExtensions shouldHaveSize 1
             resourceType.schemaExtensions[0].schema shouldBe
-                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+                ScimUrns.ENTERPRISE_USER
         }
 
         @Test
@@ -98,7 +99,7 @@ class SchemaRegistryTest {
             registry.registerExtension(User::class, EnterpriseUserExtension::class)
 
             val extSchema = registry.getSchema(
-                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+                ScimUrns.ENTERPRISE_USER
             )
             extSchema.shouldNotBeNull()
             extSchema.attributes.map { it.name }.toSet() shouldBe setOf(
@@ -123,8 +124,8 @@ class SchemaRegistryTest {
             repeat(threadCount) {
                 executor.submit {
                     try {
-                        val user = registry.getSchema("urn:ietf:params:scim:schemas:core:2.0:User")
-                        val group = registry.getSchema("urn:ietf:params:scim:schemas:core:2.0:Group")
+                        val user = registry.getSchema(ScimUrns.USER)
+                        val group = registry.getSchema(ScimUrns.GROUP)
                         val allSchemas = registry.getAllSchemas()
                         val allTypes = registry.getAllResourceTypes()
                         synchronized(results) {

@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.model.bulk
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
@@ -27,7 +28,7 @@ class BulkModelsTest {
         val json = mapper.writeValueAsString(request)
         val deserialized = mapper.readValue<BulkRequest>(json)
 
-        deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:BulkRequest")
+        deserialized.schemas shouldBe listOf(ScimUrns.BULK_REQUEST)
         deserialized.failOnErrors shouldBe 1
         deserialized.operations.size shouldBe 2
         deserialized.operations[0].method shouldBe "POST"
@@ -53,7 +54,7 @@ class BulkModelsTest {
         val json = mapper.writeValueAsString(response)
         val deserialized = mapper.readValue<BulkResponse>(json)
 
-        deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:BulkResponse")
+        deserialized.schemas shouldBe listOf(ScimUrns.BULK_RESPONSE)
         deserialized.operations.size shouldBe 2
         deserialized.operations[0].status shouldBe "201"
         deserialized.operations[0].location shouldBe "https://example.com/v2/Users/$userId"
