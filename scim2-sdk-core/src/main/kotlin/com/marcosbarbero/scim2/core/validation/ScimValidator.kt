@@ -34,7 +34,7 @@ class ScimValidator {
         }
 
         // Also check common readOnly fields not annotated
-        if (resource.id != null) {
+        resource.id?.let {
             errors.add("Attribute 'id' is readOnly and should not be set by client")
         }
 

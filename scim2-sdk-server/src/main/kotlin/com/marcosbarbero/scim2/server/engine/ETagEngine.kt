@@ -8,9 +8,7 @@ import com.marcosbarbero.scim2.server.http.ScimHttpRequest
 class ETagEngine {
 
     fun generateETag(resource: ScimResource): ETag {
-        val version = resource.meta?.version
-        if (version != null) return version
-
+        resource.meta?.version?.let { return it }
         val hash = resource.hashCode().toUInt().toString(16)
         return ETag("W/\"$hash\"")
     }
@@ -26,8 +24,8 @@ class ETagEngine {
     }
 
     fun checkPrecondition(current: ETag?, required: ETag?): Boolean {
-        if (required == null) return true
-        if (current == null) return true
+        required ?: return true
+        current ?: return true
         return current == required
     }
 

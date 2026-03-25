@@ -4,8 +4,6 @@ import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
-import com.marcosbarbero.scim2.core.domain.vo.ETag
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
@@ -119,17 +117,17 @@ class ScimServerAutoConfigurationTest {
     fun `DefaultResourceHandler delegates to repository`() {
         val users = mutableMapOf<String, User>()
         val repo = object : ResourceRepository<User> {
-            override fun findById(id: ResourceId): User? = users[id.value]
+            override fun findById(id: String): User? = users[id]
             override fun create(resource: User): User {
                 val created = resource.copy(id = "generated-id")
                 users["generated-id"] = created
                 return created
             }
-            override fun replace(id: ResourceId, resource: User, version: ETag?): User {
-                users[id.value] = resource
+            override fun replace(id: String, resource: User, version: String?): User {
+                users[id] = resource
                 return resource
             }
-            override fun delete(id: ResourceId, version: ETag?) { users.remove(id.value) }
+            override fun delete(id: String, version: String?) { users.remove(id) }
             override fun search(request: SearchRequest): ListResponse<User> =
                 ListResponse(totalResults = users.size, resources = users.values.toList())
         }
@@ -140,23 +138,23 @@ class ScimServerAutoConfigurationTest {
         val created = handler.create(User(userName = "testuser"), context)
         created.id shouldBe "generated-id"
 
-        val found = handler.get(ResourceId("generated-id"), context)
+        val found = handler.get("generated-id", context)
         found.userName shouldBe "testuser"
 
         val searchResult = handler.search(SearchRequest(), context)
         searchResult.totalResults shouldBe 1
 
-        handler.delete(ResourceId("generated-id"), null, context)
+        handler.delete("generated-id", null, context)
         handler.search(SearchRequest(), context).totalResults shouldBe 0
     }
 
     @Test
     fun `auto-registers scimUserHandler when UserRepository is present`() {
         val repo = object : ResourceRepository<User> {
-            override fun findById(id: ResourceId): User? = null
+            override fun findById(id: String): User? = null
             override fun create(resource: User): User = resource
-            override fun replace(id: ResourceId, resource: User, version: ETag?): User = resource
-            override fun delete(id: ResourceId, version: ETag?) {}
+            override fun replace(id: String, resource: User, version: String?): User = resource
+            override fun delete(id: String, version: String?) {}
             override fun search(request: SearchRequest): ListResponse<User> =
                 ListResponse(totalResults = 0, resources = emptyList())
         }
@@ -193,11 +191,11 @@ class ScimServerAutoConfigurationTest {
     private class TestUserHandler : ResourceHandler<User> {
         override val resourceType: Class<User> = User::class.java
         override val endpoint: String = "/Users"
-        override fun get(id: ResourceId, context: ScimRequestContext): User = throw UnsupportedOperationException()
+        override fun get(id: String, context: ScimRequestContext): User = throw UnsupportedOperationException()
         override fun create(resource: User, context: ScimRequestContext): User = throw UnsupportedOperationException()
-        override fun replace(id: ResourceId, resource: User, version: ETag?, context: ScimRequestContext): User = throw UnsupportedOperationException()
-        override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): User = throw UnsupportedOperationException()
-        override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) = throw UnsupportedOperationException()
+        override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = throw UnsupportedOperationException()
+        override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = throw UnsupportedOperationException()
+        override fun delete(id: String, version: String?, context: ScimRequestContext) = throw UnsupportedOperationException()
         override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = throw UnsupportedOperationException()
     }
 }

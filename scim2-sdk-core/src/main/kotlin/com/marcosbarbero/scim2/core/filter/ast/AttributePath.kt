@@ -6,14 +6,14 @@ data class AttributePath(
     val subAttribute: String? = null
 ) {
     fun toFullPath(): String = buildString {
-        if (schemaUri != null) {
-            append(schemaUri)
+        schemaUri?.let {
+            append(it)
             append(":")
         }
         append(attributeName)
-        if (subAttribute != null) {
+        subAttribute?.let {
             append(".")
-            append(subAttribute)
+            append(it)
         }
     }
 }

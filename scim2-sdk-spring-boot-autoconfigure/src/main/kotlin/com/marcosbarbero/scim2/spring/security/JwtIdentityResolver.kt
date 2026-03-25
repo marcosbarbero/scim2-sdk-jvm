@@ -19,20 +19,15 @@ open class JwtIdentityResolver(
 
     override fun resolve(request: ScimHttpRequest): ScimRequestContext {
         val authentication = SecurityContextHolder.getContext().authentication
-        val jwt = when (authentication) {
-            is JwtAuthenticationToken -> authentication.token
-            else -> null
-        }
+        val jwt = (authentication as? JwtAuthenticationToken)?.token
 
-        return if (jwt != null) {
+        return jwt?.let {
             ScimRequestContext(
-                principalId = extractPrincipal(jwt),
-                roles = extractRoles(jwt),
-                attributes = extractAttributes(jwt)
+                principalId = extractPrincipal(it),
+                roles = extractRoles(it),
+                attributes = extractAttributes(it)
             )
-        } else {
-            ScimRequestContext()
-        }
+        } ?: ScimRequestContext()
     }
 
     protected open fun extractPrincipal(jwt: Jwt): String =

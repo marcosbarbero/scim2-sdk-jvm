@@ -5,7 +5,6 @@ import com.marcosbarbero.scim2.core.domain.model.error.ScimException
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.core.event.BulkOperationCompletedEvent
 import com.marcosbarbero.scim2.core.event.NoOpEventPublisher
 import com.marcosbarbero.scim2.core.event.ResourceCreatedEvent
@@ -111,8 +110,7 @@ class ScimEndpointDispatcher(
     }
 
     private fun resolveEndpoint(relativePath: String): String {
-        val handler = findHandler(relativePath)
-        if (handler != null) return handler.endpoint
+        findHandler(relativePath)?.let { return it.endpoint }
         val lower = relativePath.lowercase()
         return when {
             lower.startsWith("/serviceproviderconfig") -> "/ServiceProviderConfig"
@@ -125,8 +123,7 @@ class ScimEndpointDispatcher(
     }
 
     private fun resolveResourceType(relativePath: String): String {
-        val handler = findHandler(relativePath)
-        if (handler != null) return handler.resourceType.simpleName ?: "Unknown"
+        findHandler(relativePath)?.let { return it.resourceType.simpleName ?: "Unknown" }
         val lower = relativePath.lowercase()
         return when {
             lower == "/bulk" -> "Bulk"
@@ -231,7 +228,7 @@ class ScimEndpointDispatcher(
             }
 
             HttpMethod.GET -> {
-                if (resourceId == null || resourceId.isEmpty()) {
+                if (resourceId.isNullOrEmpty()) {
                     // Search via GET
                     requireAuthorization { it.canSearch(handler.endpoint, context) }
                     val searchRequest = request.toSearchRequest()
@@ -239,7 +236,7 @@ class ScimEndpointDispatcher(
                     ok(result)
                 } else {
                     requireAuthorization { it.canRead(handler.endpoint, resourceId, context) }
-                    val result = handler.get(ResourceId(resourceId), context)
+                    val result = handler.get(resourceId, context)
                     val etag = etagEngine.generateETag(result)
                     val ifNoneMatch = etagEngine.extractIfNoneMatch(request)
                     if (ifNoneMatch != null && etag == ifNoneMatch) {
@@ -258,7 +255,7 @@ class ScimEndpointDispatcher(
                 requireAuthorization { it.canUpdate(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val resource = deserializeBody(request, handler.resourceType)
-                val result = handler.replace(ResourceId(resourceId), resource, ifMatch, context)
+                val result = handler.replace(resourceId, resource, ifMatch?.value, context)
                 eventPublisher.publish(
                     ResourceReplacedEvent(
                         resourceType = resourceTypeName,
@@ -274,7 +271,7 @@ class ScimEndpointDispatcher(
                 requireAuthorization { it.canUpdate(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val patchRequest = deserializeBody<PatchRequest>(request)
-                val result = handler.patch(ResourceId(resourceId), patchRequest, ifMatch, context)
+                val result = handler.patch(resourceId, patchRequest, ifMatch?.value, context)
                 eventPublisher.publish(
                     ResourcePatchedEvent(
                         resourceType = resourceTypeName,
@@ -290,7 +287,7 @@ class ScimEndpointDispatcher(
                 requireNotNull(resourceId) { "DELETE requires a resource ID" }
                 requireAuthorization { it.canDelete(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
-                handler.delete(ResourceId(resourceId), ifMatch, context)
+                handler.delete(resourceId, ifMatch?.value, context)
                 eventPublisher.publish(
                     ResourceDeletedEvent(
                         resourceType = resourceTypeName,
@@ -317,20 +314,20 @@ class ScimEndpointDispatcher(
             HttpMethod.PUT -> {
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val resource = deserializeBody<ScimResource>(request)
-                val result = handler.replaceMe(context, resource, ifMatch)
+                val result = handler.replaceMe(context, resource, ifMatch?.value)
                 ok(result)
             }
 
             HttpMethod.PATCH -> {
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val patchRequest = deserializeBody<PatchRequest>(request)
-                val result = handler.patchMe(context, patchRequest, ifMatch)
+                val result = handler.patchMe(context, patchRequest, ifMatch?.value)
                 ok(result)
             }
 
             HttpMethod.DELETE -> {
                 val ifMatch = etagEngine.extractIfMatch(request)
-                handler.deleteMe(context, ifMatch)
+                handler.deleteMe(context, ifMatch?.value)
                 ScimHttpResponse.noContent()
             }
 
@@ -351,18 +348,13 @@ class ScimEndpointDispatcher(
             ?.map { it.trim() }
             ?: emptyList()
 
-        return if (identityResolver != null) {
-            val resolved = identityResolver.resolve(this)
-            resolved.copy(
-                requestedAttributes = requestedAttrs,
-                excludedAttributes = excludedAttrs
-            )
-        } else {
-            ScimRequestContext(
-                requestedAttributes = requestedAttrs,
-                excludedAttributes = excludedAttrs
-            )
-        }
+        return identityResolver?.resolve(this)?.copy(
+            requestedAttributes = requestedAttrs,
+            excludedAttributes = excludedAttrs
+        ) ?: ScimRequestContext(
+            requestedAttributes = requestedAttrs,
+            excludedAttributes = excludedAttrs
+        )
     }
 
     private fun ScimHttpRequest.toSearchRequest(): SearchRequest =

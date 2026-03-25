@@ -37,13 +37,11 @@ class FilterToPredicateVisitor : FilterVisitor<(Map<String, Any?>) -> Boolean> {
         if (collection is List<*>) {
             val innerPredicate = visit(node.filter)
             val matchingItems = collection.filterIsInstance<Map<String, Any?>>().filter { innerPredicate(it) }
-            if (node.subAttribute != null) {
+            node.subAttribute?.let { subAttr ->
                 // There's a sub-attribute + outer comparison - but as a standalone value path,
                 // just check that matching items exist with that sub-attribute
-                matchingItems.any { it.containsKey(node.subAttribute) }
-            } else {
-                matchingItems.isNotEmpty()
-            }
+                matchingItems.any { it.containsKey(subAttr) }
+            } ?: matchingItems.isNotEmpty()
         } else {
             false
         }

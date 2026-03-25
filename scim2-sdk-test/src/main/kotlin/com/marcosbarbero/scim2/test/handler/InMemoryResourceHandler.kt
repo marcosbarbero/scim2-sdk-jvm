@@ -1,13 +1,10 @@
 package com.marcosbarbero.scim2.test.handler
 
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
-import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
-import com.marcosbarbero.scim2.core.domain.vo.ETag
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import com.marcosbarbero.scim2.test.repository.InMemoryResourceRepository
@@ -19,34 +16,30 @@ class InMemoryResourceHandler<T : ScimResource>(
     private val patchApplier: ((T, PatchRequest) -> T)? = null
 ) : ResourceHandler<T> {
 
-    override fun get(id: ResourceId, context: ScimRequestContext): T {
+    override fun get(id: String, context: ScimRequestContext): T {
         return repository.findById(id)
-            ?: throw ResourceNotFoundException("Resource not found: ${id.value}")
+            ?: throw ResourceNotFoundException("Resource not found: $id")
     }
 
     override fun create(resource: T, context: ScimRequestContext): T {
         return repository.create(resource)
     }
 
-    override fun replace(id: ResourceId, resource: T, version: ETag?, context: ScimRequestContext): T {
+    override fun replace(id: String, resource: T, version: String?, context: ScimRequestContext): T {
         return repository.replace(id, resource, version)
     }
 
-    override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): T {
+    override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): T {
         val existing = repository.findById(id)
-            ?: throw ResourceNotFoundException("Resource not found: ${id.value}")
+            ?: throw ResourceNotFoundException("Resource not found: $id")
 
-        val patched = if (patchApplier != null) {
-            patchApplier.invoke(existing, request)
-        } else {
-            // Default no-op: return existing resource unchanged for operations we cannot apply generically
-            existing
-        }
+        val patched = patchApplier?.invoke(existing, request)
+            ?: existing // Default no-op: return existing resource unchanged for operations we cannot apply generically
 
         return repository.replace(id, patched, version)
     }
 
-    override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) {
+    override fun delete(id: String, version: String?, context: ScimRequestContext) {
         repository.delete(id, version)
     }
 
