@@ -1,28 +1,31 @@
-# ADR-0011: No IdP Opinion
+# ADR-0011: Generic Core with OOTB IdP Adapters
 
 ## Status
-
-Accepted
+Accepted (updated 2026-03-25, originally accepted as "No IdP Opinion")
 
 ## Context
-
-SCIM is often deployed alongside identity providers (IdPs) with OIDC, SAML, or other authentication mechanisms. Different organizations use different IdPs (Okta, Azure AD, Keycloak, custom) and authentication strategies.
+SCIM is inherently about identity provisioning — most deployments integrate with a specific Identity Provider. Requiring every user to implement `IdentityResolver` and `AuthenticationStrategy` from scratch creates unnecessary boilerplate for common IdPs. The SDK should work out of the box with major providers while remaining extensible for custom or niche providers.
 
 ## Decision
-
-Authentication and authorization in the SDK are behind generic interfaces (`IdentityResolver`, `AuthenticationStrategy`). The SDK will not include any IdP-specific dependencies in core or server modules.
+- Core and server modules define generic interfaces with zero IdP dependencies:
+  - `IdentityResolver` — resolves the authenticated principal from request context
+  - `AuthenticationStrategy` — handles token validation and authentication
+  - `AuthorizationEvaluator` — evaluates fine-grained authorization decisions
+- The Spring Boot autoconfigure module provides OOTB adapters for major IdPs:
+  - **Okta** — maps Okta JWT claims to SCIM identity
+  - **Azure AD (Entra ID)** — maps Azure AD / Microsoft Entra tokens and claims
+  - **Keycloak** — maps Keycloak realm tokens and roles
+  - **PingFederate** — maps PingFederate access tokens
+  - **Auth0** — maps Auth0 JWT claims
+- Each IdP adapter:
+  - Auto-detected via `@ConditionalOnClass` for the respective IdP SDK on classpath
+  - Configurable via `scim.idp.*` properties (issuer URL, client ID, claim mappings, etc.)
+  - Backs off via `@ConditionalOnMissingBean` so users can provide their own implementation
+- Additional IdP adapters can be contributed as separate modules or added to autoconfigure
 
 ## Consequences
-
-### Positive
-
-- SDK works with any IdP or authentication mechanism
-- No transitive IdP SDK dependencies
-- Implementers choose their own security stack
-- Spring Boot starter can optionally integrate with Spring Security
-
-### Negative
-
-- Implementers must wire their own authentication
-- Cannot provide turnkey IdP integration without additional modules
-- Security misconfiguration risk if implementers skip authentication
+- Works OOTB with the 5 most popular IdPs — no boilerplate needed
+- Fully extensible for custom, on-premise, or niche identity providers
+- Core/server modules remain clean of IdP SDK dependencies
+- Each new IdP adapter is an additive change
+- Aligns with Spring Security's OIDC/SAML resource server integration path
