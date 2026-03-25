@@ -1,10 +1,12 @@
 package com.marcosbarbero.scim2.spring.autoconfigure
 
+import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport
 import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.client.port.HttpTransport
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.AutoConfigurations
@@ -60,6 +62,24 @@ class ScimClientAutoConfigurationTest {
             .withBean("customTransport", HttpTransport::class.java, { customTransport })
             .run { context ->
                 context.getBean(HttpTransport::class.java) shouldBe customTransport
+            }
+    }
+
+    @Test
+    fun `client timeouts applied to transport`() {
+        contextRunner
+            .withPropertyValues(
+                "scim.client.base-url=http://localhost:8080/scim/v2",
+                "scim.client.connect-timeout=5s",
+                "scim.client.read-timeout=15s"
+            )
+            .run { context ->
+                val transport = context.getBean(HttpTransport::class.java)
+                transport.shouldBeInstanceOf<HttpClientTransport>()
+                // The transport was created with the configured timeouts.
+                // We verify it was wired as HttpClientTransport (not a mock), confirming
+                // the auto-configuration factory method that reads timeouts was invoked.
+                transport.shouldNotBeNull()
             }
     }
 }

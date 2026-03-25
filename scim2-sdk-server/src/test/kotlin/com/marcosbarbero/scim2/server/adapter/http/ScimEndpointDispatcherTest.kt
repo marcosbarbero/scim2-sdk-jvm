@@ -956,6 +956,221 @@ class ScimEndpointDispatcherTest {
         problemDetail.type shouldBe "urn:ietf:params:scim:api:messages:2.0:Error:uniqueness"
     }
 
+    // --- Property enforcement tests ---
+
+    private fun dispatcherWithConfig(
+        customConfig: ScimServerConfig,
+        customBulkHandler: BulkHandler? = null
+    ) = ScimEndpointDispatcher(
+        handlers = listOf(userHandler),
+        bulkHandler = customBulkHandler,
+        meHandler = null,
+        discoveryService = DiscoveryService(listOf(userHandler), schemaRegistry, customConfig),
+        config = customConfig,
+        serializer = serializer
+    )
+
+    @Test
+    fun `bulk disabled returns 501`() {
+        val bulkHandler = object : BulkHandler {
+            override fun processBulk(request: BulkRequest, context: ScimRequestContext): BulkResponse =
+                BulkResponse(operations = emptyList())
+        }
+        val d = dispatcherWithConfig(
+            config.copy(bulkEnabled = false),
+            customBulkHandler = bulkHandler
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Bulk",
+            body = objectMapper.writeValueAsBytes(BulkRequest(operations = emptyList()))
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 501
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.detail shouldContain "Bulk operations are not supported"
+    }
+
+    @Test
+    fun `patch disabled returns 501`() {
+        val d = dispatcherWithConfig(config.copy(patchEnabled = false))
+        val user = createTestUser()
+        val patchRequest = PatchRequest(
+            operations = listOf(
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree("New"))
+            )
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.PATCH,
+            path = "${config.basePath}/Users/${user.id}",
+            body = objectMapper.writeValueAsBytes(patchRequest)
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 501
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.detail shouldContain "PATCH operations are not supported"
+    }
+
+    @Test
+    fun `filter disabled rejects filter param`() {
+        val d = dispatcherWithConfig(config.copy(filterEnabled = false))
+        createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users",
+            queryParameters = mapOf("filter" to listOf("userName eq \"test\""))
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 400
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.detail shouldContain "Filtering is not supported"
+    }
+
+    @Test
+    fun `sort disabled rejects sortBy param`() {
+        val d = dispatcherWithConfig(config.copy(sortEnabled = false))
+        createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users",
+            queryParameters = mapOf("sortBy" to listOf("userName"))
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 400
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.detail shouldContain "Sorting is not supported"
+    }
+
+    @Test
+    fun `filter max-results caps results`() {
+        repeat(5) { i -> createTestUser() }
+
+        val d = dispatcherWithConfig(config.copy(filterMaxResults = 2))
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users"
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.get("Resources").size() shouldBe 2
+        responseBody.get("itemsPerPage").asInt() shouldBe 2
+    }
+
+    @Test
+    fun `bulk max-payload-size rejects oversized requests`() {
+        val bulkHandler = object : BulkHandler {
+            override fun processBulk(request: BulkRequest, context: ScimRequestContext): BulkResponse =
+                BulkResponse(operations = emptyList())
+        }
+        val d = dispatcherWithConfig(
+            config.copy(bulkMaxPayloadSize = 10),
+            customBulkHandler = bulkHandler
+        )
+        val largeBody = ByteArray(100) { 0 }
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Bulk",
+            body = largeBody
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 413
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.detail shouldContain "maximum size"
+    }
+
+    @Test
+    fun `pagination default-page-size used when count not specified`() {
+        repeat(5) { createTestUser() }
+
+        // Use a handler that captures the SearchRequest to verify the effective count
+        var capturedCount: Int? = null
+        val capturingHandler = object : ResourceHandler<User> {
+            override val resourceType: Class<User> = User::class.java
+            override val endpoint: String = "/Users"
+            override fun get(id: String, context: ScimRequestContext): User = users[id]!!
+            override fun create(resource: User, context: ScimRequestContext): User = resource
+            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = resource
+            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = users[id]!!
+            override fun delete(id: String, version: String?, context: ScimRequestContext) {}
+            override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> {
+                capturedCount = request.count
+                return ListResponse(totalResults = users.size, resources = users.values.toList())
+            }
+        }
+
+        val customConfig = config.copy(defaultPageSize = 3)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(capturingHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = DiscoveryService(listOf(capturingHandler), schemaRegistry, customConfig),
+            config = customConfig,
+            serializer = serializer
+        )
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users"
+        )
+
+        d.dispatch(request)
+
+        capturedCount shouldBe 3
+    }
+
+    @Test
+    fun `pagination max-page-size caps count`() {
+        createTestUser()
+
+        var capturedCount: Int? = null
+        val capturingHandler = object : ResourceHandler<User> {
+            override val resourceType: Class<User> = User::class.java
+            override val endpoint: String = "/Users"
+            override fun get(id: String, context: ScimRequestContext): User = users[id]!!
+            override fun create(resource: User, context: ScimRequestContext): User = resource
+            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = resource
+            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = users[id]!!
+            override fun delete(id: String, version: String?, context: ScimRequestContext) {}
+            override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> {
+                capturedCount = request.count
+                return ListResponse(totalResults = 0, resources = emptyList())
+            }
+        }
+
+        val customConfig = config.copy(maxPageSize = 5)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(capturingHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = DiscoveryService(listOf(capturingHandler), schemaRegistry, customConfig),
+            config = customConfig,
+            serializer = serializer
+        )
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users",
+            queryParameters = mapOf("count" to listOf("9999"))
+        )
+
+        d.dispatch(request)
+
+        capturedCount shouldBe 5
+    }
+
     private fun createTestUser(): User {
         val id = java.util.UUID.randomUUID().toString()
         val user = User(id = id, userName = faker.name.firstName())

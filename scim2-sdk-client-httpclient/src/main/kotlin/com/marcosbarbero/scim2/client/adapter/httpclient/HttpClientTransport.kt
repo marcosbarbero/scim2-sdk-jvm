@@ -5,9 +5,11 @@ import com.marcosbarbero.scim2.client.port.HttpResponse
 import com.marcosbarbero.scim2.client.port.HttpTransport
 import java.net.URI
 import java.net.http.HttpClient
+import java.time.Duration
 
 class HttpClientTransport(
-    private val httpClient: HttpClient = HttpClient.newHttpClient()
+    private val httpClient: HttpClient = HttpClient.newHttpClient(),
+    private val requestTimeout: Duration? = null
 ) : HttpTransport {
 
     override fun execute(request: HttpRequest): HttpResponse {
@@ -20,6 +22,8 @@ class HttpClientTransport(
         val builder = java.net.http.HttpRequest.newBuilder()
             .uri(URI.create(request.url))
             .method(request.method, bodyPublisher)
+
+        requestTimeout?.let { builder.timeout(it) }
 
         request.headers.forEach { (key, value) ->
             builder.header(key, value)

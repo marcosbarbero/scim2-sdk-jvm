@@ -1,7 +1,9 @@
 package com.marcosbarbero.scim2.server.adapter.http
 
+import com.marcosbarbero.scim2.core.domain.model.error.InvalidFilterException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.error.ScimException
+import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
@@ -159,9 +161,15 @@ class ScimEndpointDispatcher(
 
             // Bulk endpoint
             lowerPath == "/bulk" && request.method == HttpMethod.POST -> {
+                if (!config.bulkEnabled) throw ScimException(status = 501, detail = "Bulk operations are not supported")
                 val handler = bulkHandler
                     ?: throw ScimException(status = 501, detail = "Bulk operations not supported")
                 requireAuthorization { it.canBulk(context) }
+                request.body?.let { body ->
+                    if (body.size > config.bulkMaxPayloadSize) {
+                        throw ScimException(status = 413, detail = "Bulk request payload exceeds maximum size of ${config.bulkMaxPayloadSize} bytes")
+                    }
+                }
                 val bulkRequest = deserializeBody<com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest>(request)
                 val result = handler.processBulk(bulkRequest, context)
                 val failureCount = result.operations.count { !it.status.startsWith("2") }
@@ -201,8 +209,10 @@ class ScimEndpointDispatcher(
         if (request.method == HttpMethod.POST && pathAfterEndpoint.equals("/.search", ignoreCase = true)) {
             requireAuthorization { it.canSearch(handler.endpoint, context) }
             val searchRequest = deserializeBody<SearchRequest>(request)
-            val result = handler.search(searchRequest, context)
-            return ok(result)
+            validateSearchRequest(searchRequest)
+            val effectiveRequest = applyPaginationDefaults(searchRequest)
+            val result = handler.search(effectiveRequest, context)
+            return ok(capSearchResults(result))
         }
 
         // Extract resource ID if present
@@ -232,8 +242,10 @@ class ScimEndpointDispatcher(
                     // Search via GET
                     requireAuthorization { it.canSearch(handler.endpoint, context) }
                     val searchRequest = request.toSearchRequest()
-                    val result = handler.search(searchRequest, context)
-                    ok(result)
+                    validateSearchRequest(searchRequest)
+                    val effectiveRequest = applyPaginationDefaults(searchRequest)
+                    val result = handler.search(effectiveRequest, context)
+                    ok(capSearchResults(result))
                 } else {
                     requireAuthorization { it.canRead(handler.endpoint, resourceId, context) }
                     val result = handler.get(resourceId, context)
@@ -267,6 +279,7 @@ class ScimEndpointDispatcher(
             }
 
             HttpMethod.PATCH -> {
+                if (!config.patchEnabled) throw ScimException(status = 501, detail = "PATCH operations are not supported")
                 requireNotNull(resourceId) { "PATCH requires a resource ID" }
                 requireAuthorization { it.canUpdate(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
@@ -332,6 +345,31 @@ class ScimEndpointDispatcher(
             }
 
             HttpMethod.POST -> throw ScimException(status = 405, detail = "POST not allowed on /Me")
+        }
+    }
+
+    private fun validateSearchRequest(searchRequest: SearchRequest) {
+        if (!config.filterEnabled && searchRequest.filter != null) {
+            throw InvalidFilterException("Filtering is not supported")
+        }
+        if (!config.sortEnabled && searchRequest.sortBy != null) {
+            throw ScimException(status = 400, detail = "Sorting is not supported")
+        }
+    }
+
+    private fun applyPaginationDefaults(searchRequest: SearchRequest): SearchRequest {
+        val effectiveCount = (searchRequest.count ?: config.defaultPageSize).coerceAtMost(config.maxPageSize)
+        return searchRequest.copy(count = effectiveCount)
+    }
+
+    private fun <T> capSearchResults(result: ListResponse<T>): ListResponse<T> {
+        return if (result.resources.size > config.filterMaxResults) {
+            result.copy(
+                resources = result.resources.take(config.filterMaxResults),
+                itemsPerPage = config.filterMaxResults
+            )
+        } else {
+            result
         }
     }
 

@@ -22,7 +22,12 @@ class ScimClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(HttpTransport::class)
-    fun httpTransport(): HttpTransport = HttpClientTransport()
+    fun httpTransport(properties: ScimProperties): HttpTransport {
+        val httpClient = java.net.http.HttpClient.newBuilder()
+            .connectTimeout(properties.client.connectTimeout)
+            .build()
+        return HttpClientTransport(httpClient, properties.client.readTimeout)
+    }
 
     @Bean
     @ConditionalOnMissingBean(ScimClient::class)
