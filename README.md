@@ -155,37 +155,29 @@ val client = ScimClientBuilder()
     .authentication(BearerTokenAuthentication("your-token"))
     .build()
 
-// Create a user
-val user = User(userName = "john.doe", displayName = "John Doe")
+// Type-safe operations (recommended)
+val response = client.createUser(user)
+val user = client.getUser(id).value
+val results = client.searchUsers("userName sw \"john\"")
+client.patchUser(id, patch)
+client.deleteUser(id)
+
+// Group operations
+val group = client.createGroup(Group(displayName = "Admins"))
+val groups = client.searchGroups()
+
+// Generic typed operations (reads endpoint from @ScimResource annotation)
+val created = client.createResource(user) // detects /Users from annotation
+val fetched = client.getResource<User>(id)
+
+// Low-level operations (explicit endpoint and type)
 val response = client.create("/Users", user, User::class)
-
-// Search with SearchRequest
-val searchRequest = SearchRequest(
-    filter = "userName sw \"john\"",
-    sortBy = "userName",
-    count = 25
-)
 val results = client.search("/Users", searchRequest, User::class)
-
-// Patch with PatchRequest
-val patch = PatchRequest(
-    operations = listOf(
-        PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = TextNode("John D. Doe")),
-        PatchOperation(op = PatchOp.REMOVE, path = "nickName")
-    )
-)
-client.patch("/Users", userId, patch, User::class)
 ```
 
 #### Java client usage
 
 ```java
-import kotlin.jvm.JvmClassMappingKt;
-import kotlin.reflect.KClass;
-
-// Helper to convert Java Class to Kotlin KClass (one-line utility)
-static <T> KClass<T> kclass(Class<T> c) { return JvmClassMappingKt.getKotlinClass(c); }
-
 ScimClient client = new ScimClientBuilder()
     .baseUrl("https://scim.example.com/scim/v2")
     .transport(new JavaHttpClientTransport())
@@ -193,27 +185,15 @@ ScimClient client = new ScimClientBuilder()
     .authentication(new BearerTokenAuthentication("your-token"))
     .build();
 
-// Create a user — all fields except userName are optional (null)
-User user = new User(
-    null, null, null,        // id, externalId, meta
-    "john.doe",              // userName (required)
-    null, "John Doe", null, null, null, null, null, null, null, null, null,
-    List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of()
-);
-ScimResponse<User> response = client.create("/Users", user, kclass(User.class));
+// Type-safe operations via ScimClients utility class
+ScimResponse<User> response = ScimClients.createUser(client, user);
+User user = ScimClients.getUser(client, id).getValue();
+ScimClients.deleteUser(client, id);
+ScimClients.searchUsers(client, new SearchRequest());
 
-// Search — schemas is non-null, use ScimUrns.SEARCH_REQUEST
-SearchRequest searchRequest = new SearchRequest(
-    List.of(ScimUrns.SEARCH_REQUEST),  // schemas
-    "userName sw \"john\"",            // filter
-    "userName",                        // sortBy
-    null,                              // sortOrder
-    1,                                 // startIndex
-    25,                                // count
-    null,                              // attributes
-    null                               // excludedAttributes
-);
-ScimResponse<ListResponse<User>> results = client.search("/Users", searchRequest, kclass(User.class));
+// Group operations
+ScimClients.createGroup(client, group);
+ScimClients.getGroup(client, id);
 ```
 
 ## Modules
