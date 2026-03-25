@@ -26,7 +26,7 @@ class PostgresIntegrationTest {
 
     companion object {
         @Container
-        val postgres = PostgreSQLContainer("postgres:17-alpine")
+        val postgres = PostgreSQLContainer("postgres:16-alpine")
 
         @JvmStatic
         @DynamicPropertySource
