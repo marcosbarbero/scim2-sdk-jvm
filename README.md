@@ -292,7 +292,8 @@ Three options for managing the SCIM schema:
 
 ## API Reference
 
-For complete HTTP request/response examples with curl commands for every SCIM 2.0 endpoint, see [docs/api-reference.md](docs/api-reference.md).
+- **[OpenAPI 3.1 Specification](docs/scim2-openapi.yaml)** — machine-readable API spec, usable with Swagger UI, Redoc, or any OpenAPI tooling
+- **[HTTP Examples](docs/api-reference.md)** — curl command examples for quick reference
 
 ## Requirements
 
