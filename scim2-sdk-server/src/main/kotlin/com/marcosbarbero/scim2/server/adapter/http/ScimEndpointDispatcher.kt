@@ -14,7 +14,9 @@ import com.marcosbarbero.scim2.server.http.HttpMethod
 import com.marcosbarbero.scim2.server.http.ScimHttpRequest
 import com.marcosbarbero.scim2.server.http.ScimHttpResponse
 import com.marcosbarbero.scim2.server.interceptor.ScimInterceptor
+import com.marcosbarbero.scim2.server.port.AuthorizationEvaluator
 import com.marcosbarbero.scim2.server.port.BulkHandler
+import com.marcosbarbero.scim2.server.port.IdentityResolver
 import com.marcosbarbero.scim2.server.port.MeHandler
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
@@ -28,7 +30,9 @@ class ScimEndpointDispatcher(
     private val config: ScimServerConfig,
     private val serializer: ScimSerializer,
     private val etagEngine: ETagEngine = ETagEngine(),
-    private val interceptors: List<ScimInterceptor> = emptyList()
+    private val interceptors: List<ScimInterceptor> = emptyList(),
+    private val identityResolver: IdentityResolver? = null,
+    private val authorizationEvaluator: AuthorizationEvaluator? = null
 ) {
 
     private val logger = LoggerFactory.getLogger(ScimEndpointDispatcher::class.java)
@@ -97,6 +101,7 @@ class ScimEndpointDispatcher(
             relativePath == "/Bulk" && request.method == HttpMethod.POST -> {
                 val handler = bulkHandler
                     ?: throw ScimException(status = 501, detail = "Bulk operations not supported")
+                requireAuthorization { it.canBulk(context) }
                 val bulkRequest = deserializeBody<com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest>(request)
                 val result = handler.processBulk(bulkRequest, context)
                 ok(result)
@@ -123,6 +128,7 @@ class ScimEndpointDispatcher(
 
         // POST /{endpoint}/.search
         if (request.method == HttpMethod.POST && pathAfterEndpoint == "/.search") {
+            requireAuthorization { it.canSearch(handler.endpoint, context) }
             val searchRequest = deserializeBody<SearchRequest>(request)
             val result = handler.search(searchRequest, context)
             return ok(result)
@@ -136,6 +142,7 @@ class ScimEndpointDispatcher(
                 if (resourceId != null) {
                     throw ScimException(status = 405, detail = "POST not allowed on resource instance")
                 }
+                requireAuthorization { it.canCreate(handler.endpoint, context) }
                 val resource = deserializeBody(request, handler.resourceType)
                 val created = handler.create(resource, context)
                 val location = "${config.basePath}${handler.endpoint}/${created.id}"
@@ -145,10 +152,12 @@ class ScimEndpointDispatcher(
             HttpMethod.GET -> {
                 if (resourceId == null || resourceId.isEmpty()) {
                     // Search via GET
+                    requireAuthorization { it.canSearch(handler.endpoint, context) }
                     val searchRequest = buildSearchFromQuery(request)
                     val result = handler.search(searchRequest, context)
                     ok(result)
                 } else {
+                    requireAuthorization { it.canRead(handler.endpoint, resourceId, context) }
                     val result = handler.get(ResourceId(resourceId), context)
                     val etag = etagEngine.generateETag(result)
                     val ifNoneMatch = etagEngine.extractIfNoneMatch(request)
@@ -165,6 +174,7 @@ class ScimEndpointDispatcher(
 
             HttpMethod.PUT -> {
                 requireNotNull(resourceId) { "PUT requires a resource ID" }
+                requireAuthorization { it.canUpdate(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val resource = deserializeBody(request, handler.resourceType)
                 val result = handler.replace(ResourceId(resourceId), resource, ifMatch, context)
@@ -173,6 +183,7 @@ class ScimEndpointDispatcher(
 
             HttpMethod.PATCH -> {
                 requireNotNull(resourceId) { "PATCH requires a resource ID" }
+                requireAuthorization { it.canUpdate(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val patchRequest = deserializeBody<PatchRequest>(request)
                 val result = handler.patch(ResourceId(resourceId), patchRequest, ifMatch, context)
@@ -181,6 +192,7 @@ class ScimEndpointDispatcher(
 
             HttpMethod.DELETE -> {
                 requireNotNull(resourceId) { "DELETE requires a resource ID" }
+                requireAuthorization { it.canDelete(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
                 handler.delete(ResourceId(resourceId), ifMatch, context)
                 ScimHttpResponse.noContent()
@@ -236,10 +248,18 @@ class ScimEndpointDispatcher(
             ?.map { it.trim() }
             ?: emptyList()
 
-        return ScimRequestContext(
-            requestedAttributes = requestedAttrs,
-            excludedAttributes = excludedAttrs
-        )
+        return if (identityResolver != null) {
+            val resolved = identityResolver.resolve(request)
+            resolved.copy(
+                requestedAttributes = requestedAttrs,
+                excludedAttributes = excludedAttrs
+            )
+        } else {
+            ScimRequestContext(
+                requestedAttributes = requestedAttrs,
+                excludedAttributes = excludedAttrs
+            )
+        }
     }
 
     private fun buildSearchFromQuery(request: ScimHttpRequest): SearchRequest =
@@ -275,5 +295,12 @@ class ScimEndpointDispatcher(
         val body = request.body
             ?: throw com.marcosbarbero.scim2.core.domain.model.error.InvalidSyntaxException("Request body is required")
         return serializer.deserialize(body, type.kotlin)
+    }
+
+    private inline fun requireAuthorization(check: (AuthorizationEvaluator) -> Boolean) {
+        val evaluator = authorizationEvaluator ?: return
+        if (!check(evaluator)) {
+            throw ScimException(status = 403, detail = "Forbidden")
+        }
     }
 }

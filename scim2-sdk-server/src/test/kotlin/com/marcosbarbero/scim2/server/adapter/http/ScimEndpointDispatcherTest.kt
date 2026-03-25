@@ -1,6 +1,7 @@
 package com.marcosbarbero.scim2.server.adapter.http
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceConflictException
@@ -25,6 +26,7 @@ import com.marcosbarbero.scim2.server.http.HttpMethod
 import com.marcosbarbero.scim2.server.http.ScimHttpRequest
 import com.marcosbarbero.scim2.server.http.ScimHttpResponse
 import com.marcosbarbero.scim2.server.interceptor.ScimInterceptor
+import com.marcosbarbero.scim2.server.port.AuthorizationEvaluator
 import com.marcosbarbero.scim2.server.port.BulkHandler
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
@@ -109,7 +111,7 @@ class ScimEndpointDispatcherTest {
     fun `POST Users should create and return 201`() {
         val userName = faker.name.firstName()
         val body = objectMapper.writeValueAsBytes(
-            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to userName)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName)
         )
         val request = ScimHttpRequest(
             method = HttpMethod.POST,
@@ -147,7 +149,7 @@ class ScimEndpointDispatcherTest {
         val user = createTestUser()
         val newUserName = faker.name.firstName()
         val body = objectMapper.writeValueAsBytes(
-            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to newUserName)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to newUserName)
         )
 
         val request = ScimHttpRequest(
@@ -339,7 +341,7 @@ class ScimEndpointDispatcherTest {
         )
 
         val body = objectMapper.writeValueAsBytes(
-            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to "test")
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test")
         )
         val request = ScimHttpRequest(
             method = HttpMethod.POST,
@@ -457,6 +459,99 @@ class ScimEndpointDispatcherTest {
         val response = dispatcher.dispatch(request)
 
         response.status shouldBe 501
+    }
+
+    // --- Authorization tests ---
+
+    private fun denyAllEvaluator() = object : AuthorizationEvaluator {
+        override fun canCreate(resourceType: String, context: ScimRequestContext): Boolean = false
+        override fun canRead(resourceType: String, resourceId: String, context: ScimRequestContext): Boolean = false
+        override fun canUpdate(resourceType: String, resourceId: String, context: ScimRequestContext): Boolean = false
+        override fun canDelete(resourceType: String, resourceId: String, context: ScimRequestContext): Boolean = false
+        override fun canSearch(resourceType: String, context: ScimRequestContext): Boolean = false
+        override fun canBulk(context: ScimRequestContext): Boolean = false
+    }
+
+    private fun dispatcherWithAuth(evaluator: AuthorizationEvaluator?) = ScimEndpointDispatcher(
+        handlers = listOf(userHandler),
+        bulkHandler = null,
+        meHandler = null,
+        discoveryService = discoveryService,
+        config = config,
+        serializer = serializer,
+        authorizationEvaluator = evaluator
+    )
+
+    @Test
+    fun `create with authorization denied returns 403`() {
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test")
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body
+        )
+
+        val response = dispatcherWithAuth(denyAllEvaluator()).dispatch(request)
+
+        response.status shouldBe 403
+        val error = objectMapper.readValue(response.body, ScimError::class.java)
+        error.detail shouldContain "Forbidden"
+    }
+
+    @Test
+    fun `get with authorization denied returns 403`() {
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}"
+        )
+
+        val response = dispatcherWithAuth(denyAllEvaluator()).dispatch(request)
+
+        response.status shouldBe 403
+    }
+
+    @Test
+    fun `delete with authorization denied returns 403`() {
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.DELETE,
+            path = "${config.basePath}/Users/${user.id}"
+        )
+
+        val response = dispatcherWithAuth(denyAllEvaluator()).dispatch(request)
+
+        response.status shouldBe 403
+    }
+
+    @Test
+    fun `search with authorization denied returns 403`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users"
+        )
+
+        val response = dispatcherWithAuth(denyAllEvaluator()).dispatch(request)
+
+        response.status shouldBe 403
+    }
+
+    @Test
+    fun `null evaluator allows all operations`() {
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test")
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body
+        )
+
+        val response = dispatcherWithAuth(null).dispatch(request)
+
+        response.status shouldBe 201
     }
 
     private fun createTestUser(): User {

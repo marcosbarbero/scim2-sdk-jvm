@@ -1,7 +1,7 @@
 package com.marcosbarbero.scim2.server.engine
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkOperation
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
@@ -79,7 +79,7 @@ class BulkEngineTest {
     fun `execute should process POST operation`() {
         val userName = faker.name.firstName()
         val userData = objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
-            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to userName)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName)
         )
         val request = BulkRequest(
             operations = listOf(
@@ -116,10 +116,10 @@ class BulkEngineTest {
         val userName1 = faker.name.firstName()
         val userName2 = faker.name.firstName()
         val user1Data = objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
-            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to userName1)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName1)
         )
         val user2Data = objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
-            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to userName2)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName2)
         )
 
         val request = BulkRequest(

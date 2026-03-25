@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.server.adapter.discovery
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
@@ -72,9 +73,9 @@ class DiscoveryServiceTest {
 
     @Test
     fun `getSchema should return schema by id`() {
-        val schema = discoveryService.getSchema("urn:ietf:params:scim:schemas:core:2.0:User")
+        val schema = discoveryService.getSchema(ScimUrns.USER)
 
-        schema.id shouldBe "urn:ietf:params:scim:schemas:core:2.0:User"
+        schema.id shouldBe ScimUrns.USER
     }
 
     @Test
