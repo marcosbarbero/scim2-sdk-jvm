@@ -20,9 +20,9 @@ class KeycloakIdentityResolver(
         val realmAccess = jwt.getClaim<Map<String, Any>>(claims.realmAccess)
         (realmAccess?.get("roles") as? List<String>)?.let { roles.addAll(it) }
         // Client roles
-        if (clientId != null) {
+        clientId?.let { cid ->
             val resourceAccess = jwt.getClaim<Map<String, Any>>(claims.resourceAccess)
-            val clientAccess = resourceAccess?.get(clientId) as? Map<String, Any>
+            val clientAccess = resourceAccess?.get(cid) as? Map<String, Any>
             (clientAccess?.get("roles") as? List<String>)?.let { roles.addAll(it) }
         }
         return roles

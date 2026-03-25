@@ -128,9 +128,7 @@ internal class DefaultScimClient(
         val headers = buildMap {
             putAll(defaultHeaders)
             put(ACCEPT, SCIM_MEDIA_TYPE)
-            if (body != null) {
-                put(CONTENT_TYPE, SCIM_MEDIA_TYPE)
-            }
+            body?.let { put(CONTENT_TYPE, SCIM_MEDIA_TYPE) }
         }
         return HttpRequest(method = method, url = url, headers = headers, body = body)
     }

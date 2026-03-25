@@ -4,7 +4,6 @@ import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.spring.persistence.adapter.JpaResourceRepository
@@ -69,7 +68,7 @@ class JpaResourceRepositoryTest {
         val user = User(userName = faker.name.firstName())
         val created = userRepository.create(user)
 
-        val found = userRepository.findById(ResourceId(created.id!!))
+        val found = userRepository.findById(created.id!!)
 
         found.shouldNotBeNull()
         found.id shouldBe created.id
@@ -78,7 +77,7 @@ class JpaResourceRepositoryTest {
 
     @Test
     fun `findById returns null for non-existent resource`() {
-        val result = userRepository.findById(ResourceId("non-existent"))
+        val result = userRepository.findById("non-existent")
         result.shouldBeNull()
     }
 
@@ -87,7 +86,7 @@ class JpaResourceRepositoryTest {
         val group = Group(displayName = faker.name.name())
         val created = groupRepository.create(group)
 
-        val result = userRepository.findById(ResourceId(created.id!!))
+        val result = userRepository.findById(created.id!!)
         result.shouldBeNull()
     }
 
@@ -97,7 +96,7 @@ class JpaResourceRepositoryTest {
         val created = userRepository.create(user)
 
         val updated = userRepository.replace(
-            ResourceId(created.id!!),
+            created.id!!,
             User(userName = created.userName, displayName = "Updated"),
             null
         )
@@ -106,7 +105,7 @@ class JpaResourceRepositoryTest {
         updated.meta!!.version!!.value shouldBe "W/\"2\""
         updated.meta!!.created shouldBe created.meta!!.created
 
-        val found = userRepository.findById(ResourceId(created.id!!))
+        val found = userRepository.findById(created.id!!)
         found.shouldNotBeNull()
         found.displayName shouldBe "Updated"
     }
@@ -115,7 +114,7 @@ class JpaResourceRepositoryTest {
     fun `replace throws ResourceNotFoundException for non-existent resource`() {
         assertThrows<ResourceNotFoundException> {
             userRepository.replace(
-                ResourceId("non-existent"),
+                "non-existent",
                 User(userName = "test"),
                 null
             )
@@ -127,15 +126,15 @@ class JpaResourceRepositoryTest {
         val user = User(userName = faker.name.firstName())
         val created = userRepository.create(user)
 
-        userRepository.delete(ResourceId(created.id!!), null)
+        userRepository.delete(created.id!!, null)
 
-        userRepository.findById(ResourceId(created.id!!)).shouldBeNull()
+        userRepository.findById(created.id!!).shouldBeNull()
     }
 
     @Test
     fun `delete throws ResourceNotFoundException for non-existent resource`() {
         assertThrows<ResourceNotFoundException> {
-            userRepository.delete(ResourceId("non-existent"), null)
+            userRepository.delete("non-existent", null)
         }
     }
 

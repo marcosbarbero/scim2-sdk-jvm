@@ -9,7 +9,6 @@ import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.domain.model.search.SortOrder
 import com.marcosbarbero.scim2.core.domain.vo.ETag
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.spring.persistence.entity.ScimResourceEntity
@@ -50,17 +49,17 @@ class JpaResourceRepository<T : ScimResource>(
         return withMeta
     }
 
-    override fun findById(id: ResourceId): T? {
-        val entity = jpaRepository.findById(id.value).orElse(null) ?: return null
+    override fun findById(id: String): T? {
+        val entity = jpaRepository.findById(id).orElse(null) ?: return null
         if (entity.resourceType != resourceTypeName) return null
         return serializer.deserializeFromString(entity.resourceJson, resourceType.kotlin)
     }
 
-    override fun replace(id: ResourceId, resource: T, version: ETag?): T {
-        val entity = jpaRepository.findById(id.value).orElse(null)
-            ?: throw ResourceNotFoundException("${resourceType.simpleName} not found: ${id.value}")
+    override fun replace(id: String, resource: T, version: String?): T {
+        val entity = jpaRepository.findById(id).orElse(null)
+            ?: throw ResourceNotFoundException("${resourceType.simpleName} not found: $id")
         if (entity.resourceType != resourceTypeName) {
-            throw ResourceNotFoundException("${resourceType.simpleName} not found: ${id.value}")
+            throw ResourceNotFoundException("${resourceType.simpleName} not found: $id")
         }
         val now = Instant.now()
         val newVersion = entity.version + 1
@@ -70,7 +69,7 @@ class JpaResourceRepository<T : ScimResource>(
             lastModified = now,
             version = ETag("W/\"$newVersion\"")
         )
-        val withMeta = copyWithIdAndMeta(resource, id.value, meta)
+        val withMeta = copyWithIdAndMeta(resource, id, meta)
         entity.resourceJson = serializer.serializeToString(withMeta)
         entity.externalId = resource.externalId
         entity.displayName = extractDisplayName(resource)
@@ -80,10 +79,10 @@ class JpaResourceRepository<T : ScimResource>(
         return withMeta
     }
 
-    override fun delete(id: ResourceId, version: ETag?) {
-        val deleted = jpaRepository.deleteByIdAndResourceType(id.value, resourceTypeName)
+    override fun delete(id: String, version: String?) {
+        val deleted = jpaRepository.deleteByIdAndResourceType(id, resourceTypeName)
         if (deleted == 0L) {
-            throw ResourceNotFoundException("${resourceType.simpleName} not found: ${id.value}")
+            throw ResourceNotFoundException("${resourceType.simpleName} not found: $id")
         }
     }
 

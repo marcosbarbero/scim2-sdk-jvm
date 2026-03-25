@@ -60,6 +60,58 @@ scim:
 
 The SDK auto-configures a `NamastackOutboxAdapter` that implements `ScimOutboxPort` and delegates to namastack-outbox's `OutboxPublisher`.
 
+#### Adapter Code
+
+Since namastack-outbox may not yet be available in Maven Central, you can create the adapter manually in your project:
+
+```kotlin
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.marcosbarbero.scim2.core.event.ScimEvent
+import com.marcosbarbero.scim2.server.port.ScimOutboxPort
+// import com.namastack.outbox.OutboxPublisher  // from namastack-outbox
+import org.springframework.stereotype.Component
+
+/**
+ * Bridges [ScimOutboxPort] to namastack-outbox's [OutboxPublisher].
+ *
+ * Each [ScimEvent] is mapped to an outbox message with:
+ * - aggregateType = "ScimResource"
+ * - aggregateId   = event.resourceId
+ * - eventType     = event's simple class name (e.g., "ResourceCreatedEvent")
+ * - payload       = JSON-serialized event
+ *
+ * namastack-outbox handles persistence in the same DB transaction and
+ * asynchronous relay to the configured message broker (Kafka, SQS, etc.).
+ */
+@Component
+class NamastackOutboxAdapter(
+    private val outboxPublisher: Any, // OutboxPublisher — replace with actual type
+    private val objectMapper: ObjectMapper
+) : ScimOutboxPort {
+
+    override fun store(event: ScimEvent) {
+        val payload = objectMapper.writeValueAsString(event)
+
+        // Replace with actual namastack-outbox API call:
+        // outboxPublisher.publish(
+        //     OutboxMessage(
+        //         aggregateType = "ScimResource",
+        //         aggregateId = event.resourceId,
+        //         eventType = event::class.simpleName ?: "ScimEvent",
+        //         payload = payload,
+        //         headers = buildMap {
+        //             put("correlationId", event.correlationId ?: "")
+        //             put("resourceType", event.resourceType)
+        //             put("eventId", event.eventId)
+        //         }
+        //     )
+        // )
+    }
+}
+```
+
+Once namastack-outbox is published, replace the commented section with the actual API call and update the `outboxPublisher` type to `OutboxPublisher`.
+
 ### Option 2: Custom Implementation
 
 Implement `ScimOutboxPort` and register as a Spring bean:

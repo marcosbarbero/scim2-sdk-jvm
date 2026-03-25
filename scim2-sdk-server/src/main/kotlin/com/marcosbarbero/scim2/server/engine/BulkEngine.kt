@@ -6,7 +6,7 @@ import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
 import com.marcosbarbero.scim2.core.domain.model.error.ScimException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
+
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.server.port.ResourceHandler
@@ -55,15 +55,12 @@ class BulkEngine(
         val method = operation.method.uppercase()
         val path = resolveBulkIdReferences(operation.path ?: "", bulkIdMap)
         val handler = findHandler(path) as? ResourceHandler<ScimResource>
-
-        if (handler == null) {
-            return BulkOperationResponse(
+            ?: return BulkOperationResponse(
                 method = method,
                 bulkId = operation.bulkId,
                 status = "404",
                 location = null
             )
-        }
 
         return try {
             when (method) {
@@ -77,8 +74,8 @@ class BulkEngine(
                     val created = handler.create(resource, context)
                     val location = "${config.basePath}${handler.endpoint}/${created.id}"
                     val opBulkId = operation.bulkId
-                    if (opBulkId != null && created.id != null) {
-                        bulkIdMap[opBulkId] = created.id!!
+                    if (opBulkId != null) {
+                        created.id?.let { bulkIdMap[opBulkId] = it }
                     }
                     BulkOperationResponse(
                         method = method,
@@ -96,7 +93,7 @@ class BulkEngine(
                         serializer.serialize(data),
                         handler.resourceType.kotlin
                     )
-                    handler.replace(ResourceId(resourceId), resource, null, context)
+                    handler.replace(resourceId, resource, null, context)
                     val location = "${config.basePath}${handler.endpoint}/$resourceId"
                     BulkOperationResponse(
                         method = method,
@@ -112,7 +109,7 @@ class BulkEngine(
                         serializer.serialize(operation.data!!),
                         com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest::class
                     )
-                    handler.patch(ResourceId(resourceId), patchRequest, null, context)
+                    handler.patch(resourceId, patchRequest, null, context)
                     val location = "${config.basePath}${handler.endpoint}/$resourceId"
                     BulkOperationResponse(
                         method = method,
@@ -124,7 +121,7 @@ class BulkEngine(
 
                 "DELETE" -> {
                     val resourceId = extractResourceId(path, handler.endpoint)
-                    handler.delete(ResourceId(resourceId), null, context)
+                    handler.delete(resourceId, null, context)
                     BulkOperationResponse(
                         method = method,
                         bulkId = operation.bulkId,
@@ -167,8 +164,7 @@ class BulkEngine(
         val regex = Regex("bulkId:([^/\"\\s]+)")
         regex.findAll(path).forEach { match ->
             val bulkId = match.groupValues[1]
-            val resourceId = bulkIdMap[bulkId]
-            if (resourceId != null) {
+            bulkIdMap[bulkId]?.let { resourceId ->
                 resolved = resolved.replace("bulkId:$bulkId", resourceId)
             }
         }

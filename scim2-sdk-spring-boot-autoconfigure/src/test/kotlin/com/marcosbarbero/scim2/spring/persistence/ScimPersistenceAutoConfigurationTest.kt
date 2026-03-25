@@ -3,8 +3,6 @@ package com.marcosbarbero.scim2.spring.persistence
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
-import com.marcosbarbero.scim2.core.domain.vo.ETag
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.spring.autoconfigure.ScimJacksonAutoConfiguration
 import com.marcosbarbero.scim2.spring.autoconfigure.ScimPersistenceAutoConfiguration
@@ -60,10 +58,10 @@ class ScimPersistenceAutoConfigurationTest {
     @Test
     fun `backs off when custom user repository provided`() {
         val customRepo = object : ResourceRepository<User> {
-            override fun findById(id: ResourceId): User? = null
+            override fun findById(id: String): User? = null
             override fun create(resource: User): User = resource
-            override fun replace(id: ResourceId, resource: User, version: ETag?): User = resource
-            override fun delete(id: ResourceId, version: ETag?) {}
+            override fun replace(id: String, resource: User, version: String?): User = resource
+            override fun delete(id: String, version: String?) {}
             override fun search(request: SearchRequest): ListResponse<User> =
                 ListResponse(totalResults = 0, resources = emptyList())
         }

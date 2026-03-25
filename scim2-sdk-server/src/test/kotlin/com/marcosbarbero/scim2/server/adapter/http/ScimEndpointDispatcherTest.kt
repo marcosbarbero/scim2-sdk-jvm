@@ -16,8 +16,6 @@ import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
-import com.marcosbarbero.scim2.core.domain.vo.ETag
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.core.event.ResourceCreatedEvent
 import com.marcosbarbero.scim2.core.event.ResourceDeletedEvent
 import com.marcosbarbero.scim2.core.event.ResourcePatchedEvent
@@ -68,8 +66,8 @@ class ScimEndpointDispatcherTest {
         override val resourceType: Class<User> = User::class.java
         override val endpoint: String = "/Users"
 
-        override fun get(id: ResourceId, context: ScimRequestContext): User =
-            users[id.value] ?: throw ResourceNotFoundException("User not found: ${id.value}")
+        override fun get(id: String, context: ScimRequestContext): User =
+            users[id] ?: throw ResourceNotFoundException("User not found: $id")
 
         override fun create(resource: User, context: ScimRequestContext): User {
             val id = java.util.UUID.randomUUID().toString()
@@ -78,22 +76,22 @@ class ScimEndpointDispatcherTest {
             return created
         }
 
-        override fun replace(id: ResourceId, resource: User, version: ETag?, context: ScimRequestContext): User {
-            if (!users.containsKey(id.value)) throw ResourceNotFoundException("User not found: ${id.value}")
-            val replaced = resource.copy(id = id.value)
-            users[id.value] = replaced
+        override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User {
+            if (!users.containsKey(id)) throw ResourceNotFoundException("User not found: $id")
+            val replaced = resource.copy(id = id)
+            users[id] = replaced
             return replaced
         }
 
-        override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): User {
-            val existing = users[id.value] ?: throw ResourceNotFoundException("User not found: ${id.value}")
+        override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User {
+            val existing = users[id] ?: throw ResourceNotFoundException("User not found: $id")
             // Simple patch: just return existing for test purposes
             return existing
         }
 
-        override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) {
-            if (!users.containsKey(id.value)) throw ResourceNotFoundException("User not found: ${id.value}")
-            users.remove(id.value)
+        override fun delete(id: String, version: String?, context: ScimRequestContext) {
+            if (!users.containsKey(id)) throw ResourceNotFoundException("User not found: $id")
+            users.remove(id)
         }
 
         override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> =
@@ -324,19 +322,19 @@ class ScimEndpointDispatcherTest {
             override val resourceType: Class<User> = User::class.java
             override val endpoint: String = "/Users"
 
-            override fun get(id: ResourceId, context: ScimRequestContext): User =
+            override fun get(id: String, context: ScimRequestContext): User =
                 throw ResourceConflictException("User already exists")
 
             override fun create(resource: User, context: ScimRequestContext): User =
                 throw ResourceConflictException("User already exists")
 
-            override fun replace(id: ResourceId, resource: User, version: ETag?, context: ScimRequestContext): User =
+            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User =
                 throw ResourceConflictException("User already exists")
 
-            override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): User =
+            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User =
                 throw ResourceConflictException("User already exists")
 
-            override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) =
+            override fun delete(id: String, version: String?, context: ScimRequestContext) =
                 throw ResourceConflictException("User already exists")
 
             override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> =
@@ -922,11 +920,11 @@ class ScimEndpointDispatcherTest {
         val conflictHandler = object : ResourceHandler<User> {
             override val resourceType: Class<User> = User::class.java
             override val endpoint: String = "/Users"
-            override fun get(id: ResourceId, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
+            override fun get(id: String, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
             override fun create(resource: User, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
-            override fun replace(id: ResourceId, resource: User, version: ETag?, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
-            override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
-            override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) = throw ResourceConflictException("duplicate")
+            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
+            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = throw ResourceConflictException("duplicate")
+            override fun delete(id: String, version: String?, context: ScimRequestContext) = throw ResourceConflictException("duplicate")
             override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = throw ResourceConflictException("duplicate")
         }
 

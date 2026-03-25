@@ -5,7 +5,6 @@ import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.domain.vo.ETag
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceConflictException
 import com.marcosbarbero.scim2.server.port.ResourceRepository
@@ -19,7 +18,7 @@ class InMemoryResourceRepository<T : ScimResource>(
 
     private val store = ConcurrentHashMap<String, T>()
 
-    override fun findById(id: ResourceId): T? = store[id.value]
+    override fun findById(id: String): T? = store[id]
 
     override fun create(resource: T): T {
         val id = resource.id ?: UUID.randomUUID().toString()
@@ -38,10 +37,10 @@ class InMemoryResourceRepository<T : ScimResource>(
         return stored
     }
 
-    override fun replace(id: ResourceId, resource: T, version: ETag?): T {
-        val existing = store[id.value]
-            ?: throw ResourceNotFoundException("Resource not found: ${id.value}")
-        if (version != null && existing.meta?.version != null && existing.meta?.version != version) {
+    override fun replace(id: String, resource: T, version: String?): T {
+        val existing = store[id]
+            ?: throw ResourceNotFoundException("Resource not found: $id")
+        if (version != null && existing.meta?.version != null && existing.meta?.version?.value != version) {
             throw ResourceConflictException("ETag mismatch")
         }
         val now = Instant.now()
@@ -51,18 +50,18 @@ class InMemoryResourceRepository<T : ScimResource>(
             lastModified = now,
             version = ETag("W/\"${UUID.randomUUID()}\"")
         )
-        val stored = copyWithIdAndMeta(resource, id.value, meta)
-        store[id.value] = stored
+        val stored = copyWithIdAndMeta(resource, id, meta)
+        store[id] = stored
         return stored
     }
 
-    override fun delete(id: ResourceId, version: ETag?) {
-        val existing = store[id.value]
-            ?: throw ResourceNotFoundException("Resource not found: ${id.value}")
-        if (version != null && existing.meta?.version != null && existing.meta?.version != version) {
+    override fun delete(id: String, version: String?) {
+        val existing = store[id]
+            ?: throw ResourceNotFoundException("Resource not found: $id")
+        if (version != null && existing.meta?.version != null && existing.meta?.version?.value != version) {
             throw ResourceConflictException("ETag mismatch")
         }
-        store.remove(id.value)
+        store.remove(id)
     }
 
     override fun search(request: SearchRequest): ListResponse<T> {

@@ -3,7 +3,6 @@ package com.marcosbarbero.scim2.test.contract
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
-import com.marcosbarbero.scim2.core.domain.vo.ResourceId
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import io.kotest.assertions.throwables.shouldThrow
@@ -64,14 +63,14 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     @Test
     fun `get returns created resource`() {
         val created = handler.create(sampleResource(), context)
-        val retrieved = handler.get(ResourceId(created.id!!), context)
+        val retrieved = handler.get(created.id!!, context)
         retrieved.id shouldBe created.id
     }
 
     @Test
     fun `get non-existent throws ResourceNotFoundException`() {
         shouldThrow<ResourceNotFoundException> {
-            handler.get(ResourceId("non-existent-id"), context)
+            handler.get("non-existent-id", context)
         }
     }
 
@@ -79,7 +78,7 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     fun `replace updates resource`() {
         val created = handler.create(sampleResource(), context)
         val modified = modifiedResource(created)
-        val replaced = handler.replace(ResourceId(created.id!!), modified, null, context)
+        val replaced = handler.replace(created.id!!, modified, null, context)
         replaced.id shouldBe created.id
         replaced.meta.shouldNotBeNull()
         replaced.meta!!.lastModified.shouldNotBeNull()
@@ -88,7 +87,7 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     @Test
     fun `replace non-existent throws ResourceNotFoundException`() {
         shouldThrow<ResourceNotFoundException> {
-            handler.replace(ResourceId("non-existent-id"), sampleResource(), null, context)
+            handler.replace("non-existent-id", sampleResource(), null, context)
         }
     }
 
@@ -96,7 +95,7 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     fun `replace preserves created timestamp`() {
         val created = handler.create(sampleResource(), context)
         val modified = modifiedResource(created)
-        val replaced = handler.replace(ResourceId(created.id!!), modified, null, context)
+        val replaced = handler.replace(created.id!!, modified, null, context)
         replaced.meta!!.created shouldBe created.meta!!.created
     }
 
@@ -104,7 +103,7 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     fun `replace updates lastModified timestamp`() {
         val created = handler.create(sampleResource(), context)
         val modified = modifiedResource(created)
-        val replaced = handler.replace(ResourceId(created.id!!), modified, null, context)
+        val replaced = handler.replace(created.id!!, modified, null, context)
         replaced.meta!!.lastModified shouldNotBe null
     }
 
@@ -112,23 +111,23 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     fun `replace updates version`() {
         val created = handler.create(sampleResource(), context)
         val modified = modifiedResource(created)
-        val replaced = handler.replace(ResourceId(created.id!!), modified, null, context)
+        val replaced = handler.replace(created.id!!, modified, null, context)
         replaced.meta!!.version shouldNotBe created.meta!!.version
     }
 
     @Test
     fun `delete removes resource`() {
         val created = handler.create(sampleResource(), context)
-        handler.delete(ResourceId(created.id!!), null, context)
+        handler.delete(created.id!!, null, context)
         shouldThrow<ResourceNotFoundException> {
-            handler.get(ResourceId(created.id!!), context)
+            handler.get(created.id!!, context)
         }
     }
 
     @Test
     fun `delete non-existent throws ResourceNotFoundException`() {
         shouldThrow<ResourceNotFoundException> {
-            handler.delete(ResourceId("non-existent-id"), null, context)
+            handler.delete("non-existent-id", null, context)
         }
     }
 
@@ -183,7 +182,7 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     @Test
     fun `create then get returns same id`() {
         val created = handler.create(sampleResource(), context)
-        val retrieved = handler.get(ResourceId(created.id!!), context)
+        val retrieved = handler.get(created.id!!, context)
         retrieved.id shouldBe created.id
     }
 
@@ -197,7 +196,7 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     @Test
     fun `delete then create allows reuse of search`() {
         val created = handler.create(sampleResource(), context)
-        handler.delete(ResourceId(created.id!!), null, context)
+        handler.delete(created.id!!, null, context)
         val result = handler.search(SearchRequest(), context)
         result.totalResults shouldBe 0
     }
@@ -206,8 +205,8 @@ abstract class ResourceHandlerContractTest<T : ScimResource> {
     fun `replace then get returns updated resource`() {
         val created = handler.create(sampleResource(), context)
         val modified = modifiedResource(created)
-        handler.replace(ResourceId(created.id!!), modified, null, context)
-        val retrieved = handler.get(ResourceId(created.id!!), context)
+        handler.replace(created.id!!, modified, null, context)
+        val retrieved = handler.get(created.id!!, context)
         retrieved.id shouldBe created.id
     }
 
