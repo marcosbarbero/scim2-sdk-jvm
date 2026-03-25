@@ -39,4 +39,4 @@ out/
 # Test
 *.log
 hs_err_pid*
-.claude/worktrees/
+.claude/

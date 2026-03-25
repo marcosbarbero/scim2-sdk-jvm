@@ -54,6 +54,8 @@ class ScimResourceTest {
             val country = faker.address.country()
             val groupId = java.util.UUID.randomUUID().toString()
             val groupDisplay = faker.name.name()
+            val entitlement = faker.name.firstName().lowercase()
+            val role = faker.name.firstName().lowercase()
             val user = User(
                 id = id,
                 externalId = externalId,
@@ -113,10 +115,10 @@ class ScimResourceTest {
                     GroupMembership(value = groupId, display = groupDisplay)
                 ),
                 entitlements = listOf(
-                    MultiValuedAttribute(value = "admin")
+                    MultiValuedAttribute(value = entitlement)
                 ),
                 roles = listOf(
-                    MultiValuedAttribute(value = "manager")
+                    MultiValuedAttribute(value = role)
                 ),
                 x509Certificates = emptyList()
             )
