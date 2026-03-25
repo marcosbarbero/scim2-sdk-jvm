@@ -39,7 +39,7 @@ internal class DefaultScimClient(
         val request = buildRequest("POST", "$baseUrl$endpoint", body)
         val response = executeRequest(request)
         checkForErrors(response)
-        val value = serializer.deserialize(response.body!!, type)
+        val value = serializer.deserialize(requireResponseBody(response), type)
         return toScimResponse(value, response)
     }
 
@@ -47,7 +47,7 @@ internal class DefaultScimClient(
         val request = buildRequest("GET", "$baseUrl$endpoint/$id")
         val response = executeRequest(request)
         checkForErrors(response)
-        val value = serializer.deserialize(response.body!!, type)
+        val value = serializer.deserialize(requireResponseBody(response), type)
         return toScimResponse(value, response)
     }
 
@@ -56,7 +56,7 @@ internal class DefaultScimClient(
         val request = buildRequest("PUT", "$baseUrl$endpoint/$id", body)
         val response = executeRequest(request)
         checkForErrors(response)
-        val value = serializer.deserialize(response.body!!, type)
+        val value = serializer.deserialize(requireResponseBody(response), type)
         return toScimResponse(value, response)
     }
 
@@ -65,7 +65,7 @@ internal class DefaultScimClient(
         val request = buildRequest("PATCH", "$baseUrl$endpoint/$id", body)
         val response = executeRequest(request)
         checkForErrors(response)
-        val value = serializer.deserialize(response.body!!, type)
+        val value = serializer.deserialize(requireResponseBody(response), type)
         return toScimResponse(value, response)
     }
 
@@ -81,7 +81,7 @@ internal class DefaultScimClient(
         val response = executeRequest(request)
         checkForErrors(response)
         @Suppress("UNCHECKED_CAST")
-        val listResponse = serializer.deserialize(response.body!!, ListResponse::class) as ListResponse<T>
+        val listResponse = serializer.deserialize(requireResponseBody(response), ListResponse::class) as ListResponse<T>
         return toScimResponse(listResponse, response)
     }
 
@@ -90,7 +90,7 @@ internal class DefaultScimClient(
         val request = buildRequest("POST", "$baseUrl/Bulk", body)
         val response = executeRequest(request)
         checkForErrors(response)
-        val value = serializer.deserialize(response.body!!, BulkResponse::class)
+        val value = serializer.deserialize(requireResponseBody(response), BulkResponse::class)
         return toScimResponse(value, response)
     }
 
@@ -98,7 +98,7 @@ internal class DefaultScimClient(
         val request = buildRequest("GET", "$baseUrl/ServiceProviderConfig")
         val response = executeRequest(request)
         checkForErrors(response)
-        val value = serializer.deserialize(response.body!!, ServiceProviderConfig::class)
+        val value = serializer.deserialize(requireResponseBody(response), ServiceProviderConfig::class)
         return toScimResponse(value, response)
     }
 
@@ -107,7 +107,7 @@ internal class DefaultScimClient(
         val response = executeRequest(request)
         checkForErrors(response)
         @Suppress("UNCHECKED_CAST")
-        val value = serializer.deserialize(response.body!!, ListResponse::class) as ListResponse<Schema>
+        val value = serializer.deserialize(requireResponseBody(response), ListResponse::class) as ListResponse<Schema>
         return toScimResponse(value, response)
     }
 
@@ -116,7 +116,7 @@ internal class DefaultScimClient(
         val response = executeRequest(request)
         checkForErrors(response)
         @Suppress("UNCHECKED_CAST")
-        val value = serializer.deserialize(response.body!!, ListResponse::class) as ListResponse<ResourceType>
+        val value = serializer.deserialize(requireResponseBody(response), ListResponse::class) as ListResponse<ResourceType>
         return toScimResponse(value, response)
     }
 
@@ -152,6 +152,14 @@ internal class DefaultScimClient(
                 scimError = scimError
             )
         }
+    }
+
+    private fun requireResponseBody(response: HttpResponse): ByteArray {
+        return response.body
+            ?: throw ScimClientException(
+                statusCode = response.statusCode,
+                message = "Expected response body but got empty response (status=${response.statusCode}, headers=${response.headers.keys})"
+            )
     }
 
     private fun <T> toScimResponse(value: T, response: HttpResponse): ScimResponse<T> {
