@@ -11,6 +11,7 @@ import com.marcosbarbero.scim2.core.filter.ast.NotExpression
 import com.marcosbarbero.scim2.core.filter.ast.PresentExpression
 import com.marcosbarbero.scim2.core.filter.ast.ScimValue
 import com.marcosbarbero.scim2.core.filter.ast.ValuePathExpression
+import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -20,6 +21,8 @@ import org.junit.jupiter.api.Test
 
 class FilterParserTest {
 
+    private val faker = Faker()
+
     private fun parse(filter: String): FilterNode = FilterParser.parse(filter)
 
     @Nested
@@ -27,15 +30,17 @@ class FilterParserTest {
 
         @Test
         fun `should parse string equality`() {
-            val node = parse("userName eq \"john\"")
+            val name = faker.name.firstName()
+            val node = parse("userName eq \"$name\"")
             node.shouldBeInstanceOf<AttributeExpression>()
             node.path shouldBe AttributePath(attributeName = "userName")
             node.operator shouldBe ComparisonOperator.EQ
-            node.value shouldBe ScimValue.StringValue("john")
+            node.value shouldBe ScimValue.StringValue(name)
         }
 
         @Test
         fun `should parse all comparison operators`() {
+            val value = faker.name.name()
             val ops = mapOf(
                 "eq" to ComparisonOperator.EQ,
                 "ne" to ComparisonOperator.NE,
@@ -48,7 +53,7 @@ class FilterParserTest {
                 "le" to ComparisonOperator.LE
             )
             for ((op, expected) in ops) {
-                val node = parse("attr $op \"val\"")
+                val node = parse("attr $op \"$value\"")
                 node.shouldBeInstanceOf<AttributeExpression>()
                 node.operator shouldBe expected
             }
@@ -86,7 +91,8 @@ class FilterParserTest {
 
         @Test
         fun `should parse dotted attribute path`() {
-            val node = parse("name.familyName eq \"Jensen\"")
+            val familyName = faker.name.lastName()
+            val node = parse("name.familyName eq \"$familyName\"")
             node.shouldBeInstanceOf<AttributeExpression>()
             node.path shouldBe AttributePath(attributeName = "name", subAttribute = "familyName")
         }
@@ -115,7 +121,8 @@ class FilterParserTest {
 
         @Test
         fun `should parse AND expression`() {
-            val node = parse("userName eq \"john\" and active eq true")
+            val name = faker.name.firstName()
+            val node = parse("userName eq \"$name\" and active eq true")
             node.shouldBeInstanceOf<LogicalExpression>()
             node.operator shouldBe LogicalOperator.AND
             node.left.shouldBeInstanceOf<AttributeExpression>()
@@ -124,15 +131,20 @@ class FilterParserTest {
 
         @Test
         fun `should parse OR expression`() {
-            val node = parse("userName eq \"john\" or userName eq \"jane\"")
+            val name1 = faker.name.firstName()
+            val name2 = faker.name.firstName()
+            val node = parse("userName eq \"$name1\" or userName eq \"$name2\"")
             node.shouldBeInstanceOf<LogicalExpression>()
             node.operator shouldBe LogicalOperator.OR
         }
 
         @Test
         fun `should handle AND higher precedence than OR`() {
-            // a eq "1" or b eq "2" and c eq "3" → OR(a=1, AND(b=2, c=3))
-            val node = parse("a eq \"1\" or b eq \"2\" and c eq \"3\"")
+            // a eq "1" or b eq "2" and c eq "3" -> OR(a=1, AND(b=2, c=3))
+            val val1 = faker.name.name()
+            val val2 = faker.name.name()
+            val val3 = faker.name.name()
+            val node = parse("a eq \"$val1\" or b eq \"$val2\" and c eq \"$val3\"")
             node.shouldBeInstanceOf<LogicalExpression>()
             node.operator shouldBe LogicalOperator.OR
             node.left.shouldBeInstanceOf<AttributeExpression>()
@@ -143,15 +155,18 @@ class FilterParserTest {
 
         @Test
         fun `should parse NOT expression`() {
-            val node = parse("not userName eq \"john\"")
+            val name = faker.name.firstName()
+            val node = parse("not userName eq \"$name\"")
             node.shouldBeInstanceOf<NotExpression>()
             node.operand.shouldBeInstanceOf<AttributeExpression>()
         }
 
         @Test
         fun `should parse NOT with higher precedence than AND`() {
-            // not a eq "1" and b eq "2" → AND(NOT(a=1), b=2)
-            val node = parse("not a eq \"1\" and b eq \"2\"")
+            // not a eq "1" and b eq "2" -> AND(NOT(a=1), b=2)
+            val val1 = faker.name.name()
+            val val2 = faker.name.name()
+            val node = parse("not a eq \"$val1\" and b eq \"$val2\"")
             node.shouldBeInstanceOf<LogicalExpression>()
             node.operator shouldBe LogicalOperator.AND
             node.left.shouldBeInstanceOf<NotExpression>()
@@ -164,14 +179,18 @@ class FilterParserTest {
 
         @Test
         fun `should parse parenthesized expression`() {
-            val node = parse("(userName eq \"john\")")
+            val name = faker.name.firstName()
+            val node = parse("(userName eq \"$name\")")
             node.shouldBeInstanceOf<AttributeExpression>()
         }
 
         @Test
         fun `should override precedence with parentheses`() {
-            // (a eq "1" or b eq "2") and c eq "3" → AND(OR(a=1, b=2), c=3)
-            val node = parse("(a eq \"1\" or b eq \"2\") and c eq \"3\"")
+            // (a eq "1" or b eq "2") and c eq "3" -> AND(OR(a=1, b=2), c=3)
+            val val1 = faker.name.name()
+            val val2 = faker.name.name()
+            val val3 = faker.name.name()
+            val node = parse("(a eq \"$val1\" or b eq \"$val2\") and c eq \"$val3\"")
             node.shouldBeInstanceOf<LogicalExpression>()
             node.operator shouldBe LogicalOperator.AND
             node.left.shouldBeInstanceOf<LogicalExpression>()
@@ -184,7 +203,8 @@ class FilterParserTest {
 
         @Test
         fun `should parse simple value path`() {
-            val node = parse("emails[type eq \"work\"]")
+            val filterVal = faker.name.name()
+            val node = parse("emails[type eq \"$filterVal\"]")
             node.shouldBeInstanceOf<ValuePathExpression>()
             node.attributePath shouldBe "emails"
             node.filter.shouldBeInstanceOf<AttributeExpression>()
@@ -193,7 +213,8 @@ class FilterParserTest {
 
         @Test
         fun `should parse value path with sub-attribute`() {
-            val node = parse("emails[type eq \"work\"].value")
+            val filterVal = faker.name.name()
+            val node = parse("emails[type eq \"$filterVal\"].value")
             node.shouldBeInstanceOf<ValuePathExpression>()
             node.attributePath shouldBe "emails"
             node.subAttribute shouldBe "value"
@@ -201,7 +222,8 @@ class FilterParserTest {
 
         @Test
         fun `should parse value path with complex inner filter`() {
-            val node = parse("emails[type eq \"work\" and value co \"@example.com\"]")
+            val domain = faker.internet.domain()
+            val node = parse("emails[type eq \"work\" and value co \"@$domain\"]")
             node.shouldBeInstanceOf<ValuePathExpression>()
             node.filter.shouldBeInstanceOf<LogicalExpression>()
         }
@@ -212,7 +234,8 @@ class FilterParserTest {
 
         @Test
         fun `should parse URN-prefixed attribute path`() {
-            val node = parse("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department eq \"Engineering\"")
+            val dept = faker.name.name()
+            val node = parse("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department eq \"$dept\"")
             node.shouldBeInstanceOf<AttributeExpression>()
             node.path.schemaUri shouldBe "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
             node.path.attributeName shouldBe "department"
@@ -232,16 +255,18 @@ class FilterParserTest {
 
         @Test
         fun `should throw on unclosed parenthesis`() {
+            val name = faker.name.firstName()
             val ex = shouldThrow<InvalidFilterException> {
-                parse("(userName eq \"john\"")
+                parse("(userName eq \"$name\"")
             }
             ex.detail shouldContain "position"
         }
 
         @Test
         fun `should throw on invalid operator`() {
+            val name = faker.name.firstName()
             val ex = shouldThrow<InvalidFilterException> {
-                parse("userName xx \"john\"")
+                parse("userName xx \"$name\"")
             }
             ex.detail shouldContain "position"
         }

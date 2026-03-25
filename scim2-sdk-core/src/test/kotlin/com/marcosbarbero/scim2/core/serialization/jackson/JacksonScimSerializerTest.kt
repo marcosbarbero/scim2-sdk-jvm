@@ -9,6 +9,7 @@ import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtensio
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.vo.ETag
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
@@ -19,6 +20,7 @@ import java.time.Instant
 
 class JacksonScimSerializerTest {
 
+    private val faker = Faker()
     private val serializer = JacksonScimSerializer()
 
     @Nested
@@ -26,18 +28,23 @@ class JacksonScimSerializerTest {
 
         @Test
         fun `should serialize and deserialize User round-trip`() {
+            val id = java.util.UUID.randomUUID().toString()
+            val email = faker.internet.email()
+            val familyName = faker.name.lastName()
+            val givenName = faker.name.firstName()
+            val displayName = faker.name.name()
             val user = User(
-                id = "2819c223-7f76-453a-919d-413861904646",
-                userName = "bjensen@example.com",
+                id = id,
+                userName = email,
                 name = Name(
-                    formatted = "Ms. Barbara J Jensen III",
-                    familyName = "Jensen",
-                    givenName = "Barbara"
+                    formatted = "$givenName $familyName",
+                    familyName = familyName,
+                    givenName = givenName
                 ),
-                displayName = "Babs Jensen",
+                displayName = displayName,
                 active = true,
                 emails = listOf(
-                    MultiValuedAttribute(value = "bjensen@example.com", type = "work", primary = true)
+                    MultiValuedAttribute(value = email, type = "work", primary = true)
                 )
             )
 
@@ -49,12 +56,13 @@ class JacksonScimSerializerTest {
             deserialized.displayName shouldBe user.displayName
             deserialized.active shouldBe true
             deserialized.emails.size shouldBe 1
-            deserialized.emails[0].value shouldBe "bjensen@example.com"
+            deserialized.emails[0].value shouldBe email
         }
 
         @Test
         fun `should exclude null fields from serialized output`() {
-            val user = User(userName = "bjensen")
+            val userName = faker.name.firstName().lowercase()
+            val user = User(userName = userName)
             val json = serializer.serializeToString(user)
 
             json shouldNotContain "\"displayName\""
@@ -68,7 +76,7 @@ class JacksonScimSerializerTest {
         fun `should serialize Instant as ISO-8601`() {
             val instant = Instant.parse("2025-04-01T12:00:00Z")
             val user = User(
-                userName = "bjensen",
+                userName = faker.name.firstName().lowercase(),
                 meta = Meta(
                     created = instant,
                     lastModified = instant
@@ -82,38 +90,47 @@ class JacksonScimSerializerTest {
 
         @Test
         fun `should serialize User with all attributes`() {
+            val email = faker.internet.email()
+            val familyName = faker.name.lastName()
+            val givenName = faker.name.firstName()
+            val streetAddress = faker.address.streetAddress()
+            val locality = faker.address.city()
+            val region = faker.address.state()
+            val groupId = java.util.UUID.randomUUID().toString()
+            val groupDisplay = faker.name.name()
+            val phone = faker.phoneNumber.phoneNumber()
             val user = User(
-                id = "123",
-                externalId = "ext-123",
-                userName = "bjensen@example.com",
+                id = java.util.UUID.randomUUID().toString(),
+                externalId = java.util.UUID.randomUUID().toString(),
+                userName = email,
                 name = Name(
-                    formatted = "Ms. Barbara J Jensen III",
-                    familyName = "Jensen",
-                    givenName = "Barbara",
-                    middleName = "Jane",
+                    formatted = "Ms. $givenName $familyName III",
+                    familyName = familyName,
+                    givenName = givenName,
+                    middleName = faker.name.firstName(),
                     honorificPrefix = "Ms.",
                     honorificSuffix = "III"
                 ),
-                displayName = "Babs Jensen",
-                nickName = "Babs",
-                profileUrl = URI.create("https://login.example.com/bjensen"),
-                title = "Tour Guide",
+                displayName = faker.name.name(),
+                nickName = faker.name.firstName(),
+                profileUrl = URI.create("https://login.example.com/${faker.name.firstName().lowercase()}"),
+                title = faker.name.name(),
                 userType = "Employee",
                 preferredLanguage = "en-US",
                 locale = "en-US",
                 timezone = "America/Los_Angeles",
                 active = true,
-                emails = listOf(MultiValuedAttribute(value = "bjensen@example.com", type = "work", primary = true)),
-                phoneNumbers = listOf(MultiValuedAttribute(value = "555-555-5555", type = "work")),
-                addresses = listOf(Address(streetAddress = "100 Universal City Plaza", locality = "Hollywood", region = "CA")),
-                groups = listOf(GroupMembership(value = "group-1", display = "Admins"))
+                emails = listOf(MultiValuedAttribute(value = email, type = "work", primary = true)),
+                phoneNumbers = listOf(MultiValuedAttribute(value = phone, type = "work")),
+                addresses = listOf(Address(streetAddress = streetAddress, locality = locality, region = region)),
+                groups = listOf(GroupMembership(value = groupId, display = groupDisplay))
             )
 
             val json = serializer.serializeToString(user)
             val deserialized = serializer.deserializeFromString(json, User::class)
 
-            deserialized.userName shouldBe "bjensen@example.com"
-            deserialized.name?.familyName shouldBe "Jensen"
+            deserialized.userName shouldBe email
+            deserialized.name?.familyName shouldBe familyName
             deserialized.addresses.size shouldBe 1
             deserialized.groups.size shouldBe 1
         }
@@ -124,14 +141,18 @@ class JacksonScimSerializerTest {
 
         @Test
         fun `should serialize and deserialize Group round-trip`() {
+            val groupId = java.util.UUID.randomUUID().toString()
+            val groupName = faker.name.name()
+            val memberId = java.util.UUID.randomUUID().toString()
+            val memberDisplay = faker.name.name()
             val group = Group(
-                id = "e9e30dba-f08f-4109-8486-d5c6a331660a",
-                displayName = "Tour Guides",
+                id = groupId,
+                displayName = groupName,
                 members = listOf(
                     GroupMembership(
-                        value = "2819c223",
-                        display = "Babs Jensen",
-                        ref = URI.create("https://example.com/v2/Users/2819c223"),
+                        value = memberId,
+                        display = memberDisplay,
+                        ref = URI.create("https://example.com/v2/Users/$memberId"),
                         type = "User"
                     )
                 )
@@ -140,9 +161,9 @@ class JacksonScimSerializerTest {
             val json = serializer.serializeToString(group)
             val deserialized = serializer.deserializeFromString(json, Group::class)
 
-            deserialized.displayName shouldBe "Tour Guides"
+            deserialized.displayName shouldBe groupName
             deserialized.members.size shouldBe 1
-            deserialized.members[0].display shouldBe "Babs Jensen"
+            deserialized.members[0].display shouldBe memberDisplay
         }
     }
 
@@ -151,28 +172,31 @@ class JacksonScimSerializerTest {
 
         @Test
         fun `should serialize and deserialize User with extension data`() {
-            val user = User(userName = "bjensen")
+            val employeeNumber = faker.random.nextInt(100000, 999999).toString()
+            val costCenter = faker.random.nextInt(1000, 9999).toString()
+            val organization = faker.name.name()
+            val user = User(userName = faker.name.firstName().lowercase())
             user.setExtension(
                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
                 mapOf(
-                    "employeeNumber" to "701984",
-                    "costCenter" to "4130",
-                    "organization" to "Universal Studios"
+                    "employeeNumber" to employeeNumber,
+                    "costCenter" to costCenter,
+                    "organization" to organization
                 )
             )
 
             val json = serializer.serializeToString(user)
             json shouldContain "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
-            json shouldContain "701984"
+            json shouldContain employeeNumber
 
             val deserialized = serializer.deserializeFromString(json, User::class)
             val ext = deserialized.getExtension<Map<*, *>>(
                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
             )
             ext shouldBe mapOf(
-                "employeeNumber" to "701984",
-                "costCenter" to "4130",
-                "organization" to "Universal Studios"
+                "employeeNumber" to employeeNumber,
+                "costCenter" to costCenter,
+                "organization" to organization
             )
         }
     }
@@ -182,12 +206,14 @@ class JacksonScimSerializerTest {
 
         @Test
         fun `should serialize to and deserialize from byte array`() {
-            val user = User(userName = "bjensen", displayName = "Babs")
+            val userName = faker.name.firstName().lowercase()
+            val displayName = faker.name.name()
+            val user = User(userName = userName, displayName = displayName)
             val bytes = serializer.serialize(user)
             val deserialized = serializer.deserialize(bytes, User::class)
 
-            deserialized.userName shouldBe "bjensen"
-            deserialized.displayName shouldBe "Babs"
+            deserialized.userName shouldBe userName
+            deserialized.displayName shouldBe displayName
         }
     }
 }

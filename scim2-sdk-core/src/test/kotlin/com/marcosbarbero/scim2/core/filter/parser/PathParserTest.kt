@@ -1,12 +1,15 @@
 package com.marcosbarbero.scim2.core.filter.parser
 
 import com.marcosbarbero.scim2.core.filter.ast.AttributeExpression
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class PathParserTest {
+
+    private val faker = Faker()
 
     @Nested
     inner class SimplePathParsing {
@@ -33,7 +36,8 @@ class PathParserTest {
 
         @Test
         fun `should parse filtered path`() {
-            val node = PathParser.parse("emails[type eq \"work\"]")
+            val filterVal = faker.name.name()
+            val node = PathParser.parse("emails[type eq \"$filterVal\"]")
             node.shouldBeInstanceOf<PathNode.FilteredPath>()
             node.attributeName shouldBe "emails"
             node.filter.shouldBeInstanceOf<AttributeExpression>()
@@ -42,7 +46,8 @@ class PathParserTest {
 
         @Test
         fun `should parse filtered path with sub-attribute`() {
-            val node = PathParser.parse("emails[type eq \"work\"].value")
+            val filterVal = faker.name.name()
+            val node = PathParser.parse("emails[type eq \"$filterVal\"].value")
             node.shouldBeInstanceOf<PathNode.FilteredPath>()
             node.attributeName shouldBe "emails"
             node.subAttribute shouldBe "value"

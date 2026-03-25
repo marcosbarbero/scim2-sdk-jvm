@@ -1,12 +1,15 @@
 package com.marcosbarbero.scim2.core.filter.visitor
 
 import com.marcosbarbero.scim2.core.filter.parser.FilterParser
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class FilterToPredicateVisitorTest {
 
+    private val faker = Faker()
     private val visitor = FilterToPredicateVisitor()
 
     private fun matches(filter: String, data: Map<String, Any?>): Boolean {
@@ -15,63 +18,82 @@ class FilterToPredicateVisitorTest {
         return predicate(data)
     }
 
-    private val sampleUser = mapOf<String, Any?>(
-        "userName" to "bjensen",
-        "active" to true,
-        "title" to "Tour Guide",
-        "age" to 30,
-        "name" to mapOf("familyName" to "Jensen", "givenName" to "Barbara"),
-        "emails" to listOf(
-            mapOf("type" to "work", "value" to "bjensen@example.com", "primary" to true),
-            mapOf("type" to "home", "value" to "babs@example.org", "primary" to false)
+    private lateinit var userName: String
+    private lateinit var title: String
+    private lateinit var familyName: String
+    private lateinit var givenName: String
+    private lateinit var workEmail: String
+    private lateinit var homeEmail: String
+    private lateinit var sampleUser: Map<String, Any?>
+
+    @BeforeEach
+    fun setUp() {
+        userName = faker.name.firstName().lowercase()
+        title = faker.name.name()
+        familyName = faker.name.lastName()
+        givenName = faker.name.firstName()
+        workEmail = faker.internet.email()
+        homeEmail = faker.internet.email()
+        sampleUser = mapOf(
+            "userName" to userName,
+            "active" to true,
+            "title" to title,
+            "age" to 30,
+            "name" to mapOf("familyName" to familyName, "givenName" to givenName),
+            "emails" to listOf(
+                mapOf("type" to "work", "value" to workEmail, "primary" to true),
+                mapOf("type" to "home", "value" to homeEmail, "primary" to false)
+            )
         )
-    )
+    }
 
     @Nested
     inner class ComparisonOperators {
 
         @Test
         fun `eq should match equal string`() {
-            matches("userName eq \"bjensen\"", sampleUser) shouldBe true
-            matches("userName eq \"other\"", sampleUser) shouldBe false
+            matches("userName eq \"$userName\"", sampleUser) shouldBe true
+            matches("userName eq \"${faker.name.firstName()}nonexistent\"", sampleUser) shouldBe false
         }
 
         @Test
         fun `eq should be case-insensitive for strings per RFC 7644`() {
-            matches("userName eq \"BJENSEN\"", sampleUser) shouldBe true
-            matches("userName eq \"Bjensen\"", sampleUser) shouldBe true
-            matches("userName eq \"bJeNsEn\"", sampleUser) shouldBe true
+            matches("userName eq \"${userName.uppercase()}\"", sampleUser) shouldBe true
+            matches("userName eq \"${userName.replaceFirstChar { it.uppercase() }}\"", sampleUser) shouldBe true
         }
 
         @Test
         fun `ne should match not equal`() {
-            matches("userName ne \"other\"", sampleUser) shouldBe true
-            matches("userName ne \"bjensen\"", sampleUser) shouldBe false
+            matches("userName ne \"${faker.name.firstName()}other\"", sampleUser) shouldBe true
+            matches("userName ne \"$userName\"", sampleUser) shouldBe false
         }
 
         @Test
         fun `ne should be case-insensitive for strings per RFC 7644`() {
-            matches("userName ne \"BJENSEN\"", sampleUser) shouldBe false
-            matches("userName ne \"Bjensen\"", sampleUser) shouldBe false
-            matches("userName ne \"OTHER\"", sampleUser) shouldBe true
+            matches("userName ne \"${userName.uppercase()}\"", sampleUser) shouldBe false
+            matches("userName ne \"${faker.name.firstName()}OTHER\"", sampleUser) shouldBe true
         }
 
         @Test
         fun `co should match contains`() {
-            matches("userName co \"jensen\"", sampleUser) shouldBe true
-            matches("userName co \"xyz\"", sampleUser) shouldBe false
+            // Use a substring of the actual userName
+            val substring = if (userName.length > 2) userName.substring(1, userName.length - 1) else userName
+            matches("userName co \"$substring\"", sampleUser) shouldBe true
+            matches("userName co \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
         }
 
         @Test
         fun `sw should match starts with`() {
-            matches("userName sw \"bjen\"", sampleUser) shouldBe true
-            matches("userName sw \"xyz\"", sampleUser) shouldBe false
+            val prefix = if (userName.length > 2) userName.substring(0, 3) else userName
+            matches("userName sw \"$prefix\"", sampleUser) shouldBe true
+            matches("userName sw \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
         }
 
         @Test
         fun `ew should match ends with`() {
-            matches("userName ew \"ensen\"", sampleUser) shouldBe true
-            matches("userName ew \"xyz\"", sampleUser) shouldBe false
+            val suffix = if (userName.length > 2) userName.substring(userName.length - 3) else userName
+            matches("userName ew \"$suffix\"", sampleUser) shouldBe true
+            matches("userName ew \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
         }
 
         @Test
@@ -130,20 +152,20 @@ class FilterToPredicateVisitorTest {
 
         @Test
         fun `and should require both conditions`() {
-            matches("userName eq \"bjensen\" and active eq true", sampleUser) shouldBe true
-            matches("userName eq \"bjensen\" and active eq false", sampleUser) shouldBe false
+            matches("userName eq \"$userName\" and active eq true", sampleUser) shouldBe true
+            matches("userName eq \"$userName\" and active eq false", sampleUser) shouldBe false
         }
 
         @Test
         fun `or should require at least one condition`() {
-            matches("userName eq \"bjensen\" or userName eq \"other\"", sampleUser) shouldBe true
-            matches("userName eq \"x\" or userName eq \"y\"", sampleUser) shouldBe false
+            matches("userName eq \"$userName\" or userName eq \"${faker.name.firstName()}other\"", sampleUser) shouldBe true
+            matches("userName eq \"${java.util.UUID.randomUUID().toString()}\" or userName eq \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
         }
 
         @Test
         fun `not should negate condition`() {
-            matches("not userName eq \"other\"", sampleUser) shouldBe true
-            matches("not userName eq \"bjensen\"", sampleUser) shouldBe false
+            matches("not userName eq \"${faker.name.firstName()}other\"", sampleUser) shouldBe true
+            matches("not userName eq \"$userName\"", sampleUser) shouldBe false
         }
     }
 
@@ -152,8 +174,8 @@ class FilterToPredicateVisitorTest {
 
         @Test
         fun `should resolve dotted attribute path`() {
-            matches("name.familyName eq \"Jensen\"", sampleUser) shouldBe true
-            matches("name.familyName eq \"Smith\"", sampleUser) shouldBe false
+            matches("name.familyName eq \"$familyName\"", sampleUser) shouldBe true
+            matches("name.familyName eq \"${faker.name.lastName()}Other\"", sampleUser) shouldBe false
         }
     }
 
@@ -163,14 +185,14 @@ class FilterToPredicateVisitorTest {
         @Test
         fun `should filter multi-valued attribute`() {
             matches("emails[type eq \"work\"]", sampleUser) shouldBe true
-            matches("emails[type eq \"other\"]", sampleUser) shouldBe false
+            matches("emails[type eq \"${faker.name.name()}\"]", sampleUser) shouldBe false
         }
 
         @Test
         fun `should filter value path with sub-attribute`() {
             // emails[type eq "work"].value - checks that a matching email has a value sub-attribute
             matches("emails[type eq \"work\"].value", sampleUser) shouldBe true
-            matches("emails[type eq \"other\"].value", sampleUser) shouldBe false
+            matches("emails[type eq \"${faker.name.name()}\"].value", sampleUser) shouldBe false
         }
     }
 }

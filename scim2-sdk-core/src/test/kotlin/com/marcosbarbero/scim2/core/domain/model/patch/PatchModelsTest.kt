@@ -1,0 +1,47 @@
+package com.marcosbarbero.scim2.core.domain.model.patch
+
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
+import io.github.serpro69.kfaker.Faker
+import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.Test
+
+class PatchModelsTest {
+
+    private val faker = Faker()
+    private val mapper = jacksonObjectMapper()
+
+    @Test
+    fun `should serialize and deserialize PatchRequest`() {
+        val displayName = faker.name.name()
+        val userName = faker.name.firstName().lowercase()
+        val request = PatchRequest(
+            operations = listOf(
+                PatchOperation(op = PatchOp.ADD, path = "displayName", value = mapper.valueToTree(displayName)),
+                PatchOperation(op = PatchOp.REMOVE, path = "title"),
+                PatchOperation(op = PatchOp.REPLACE, path = "userName", value = mapper.valueToTree(userName))
+            )
+        )
+
+        val json = mapper.writeValueAsString(request)
+        val deserialized = mapper.readValue<PatchRequest>(json)
+
+        deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:PatchOp")
+        deserialized.operations.size shouldBe 3
+        deserialized.operations[0].op shouldBe PatchOp.ADD
+        deserialized.operations[1].op shouldBe PatchOp.REMOVE
+        deserialized.operations[2].op shouldBe PatchOp.REPLACE
+    }
+
+    @Test
+    fun `PatchOp should serialize to lowercase`() {
+        val json = mapper.writeValueAsString(PatchOp.ADD)
+        json shouldBe "\"add\""
+    }
+
+    @Test
+    fun `PatchOp should deserialize from lowercase`() {
+        val op = mapper.readValue<PatchOp>("\"replace\"")
+        op shouldBe PatchOp.REPLACE
+    }
+}

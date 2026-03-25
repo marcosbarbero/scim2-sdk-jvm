@@ -63,5 +63,10 @@
             <artifactId>mockk-jvm</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.github.serpro69</groupId>
+            <artifactId>kotlin-faker</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

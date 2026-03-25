@@ -1,6 +1,7 @@
 package com.marcosbarbero.scim2.core.filter.lexer
 
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidFilterException
+import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class FilterLexerTest {
+
+    private val faker = Faker()
 
     private fun tokenize(input: String): List<Token> = FilterLexer(input).tokenize()
 
@@ -49,10 +52,11 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize quoted string`() {
-            val tokens = tokenize("\"hello world\"")
+            val value = faker.name.name()
+            val tokens = tokenize("\"$value\"")
             tokens shouldHaveSize 2
             tokens[0].type shouldBe TokenType.STRING_VALUE
-            tokens[0].value shouldBe "hello world"
+            tokens[0].value shouldBe value
         }
 
         @Test
@@ -149,7 +153,9 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize and`() {
-            tokenTypes("a eq \"1\" and b eq \"2\"") shouldBe listOf(
+            val val1 = faker.name.firstName()
+            val val2 = faker.name.lastName()
+            tokenTypes("a eq \"$val1\" and b eq \"$val2\"") shouldBe listOf(
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
                 TokenType.OP_AND,
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE
@@ -158,7 +164,9 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize or`() {
-            tokenTypes("a eq \"1\" or b eq \"2\"") shouldBe listOf(
+            val val1 = faker.name.firstName()
+            val val2 = faker.name.lastName()
+            tokenTypes("a eq \"$val1\" or b eq \"$val2\"") shouldBe listOf(
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
                 TokenType.OP_OR,
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE
@@ -167,7 +175,8 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize not`() {
-            tokenTypes("not a eq \"1\"") shouldBe listOf(
+            val value = faker.name.firstName()
+            tokenTypes("not a eq \"$value\"") shouldBe listOf(
                 TokenType.OP_NOT, TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE
             )
         }
@@ -178,14 +187,16 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize parentheses`() {
-            tokenTypes("(a eq \"1\")") shouldBe listOf(
+            val value = faker.name.firstName()
+            tokenTypes("(a eq \"$value\")") shouldBe listOf(
                 TokenType.LPAREN, TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE, TokenType.RPAREN
             )
         }
 
         @Test
         fun `should tokenize brackets`() {
-            tokenTypes("emails[type eq \"work\"]") shouldBe listOf(
+            val value = faker.name.name()
+            tokenTypes("emails[type eq \"$value\"]") shouldBe listOf(
                 TokenType.ATTR_PATH, TokenType.LBRACKET,
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
                 TokenType.RBRACKET
@@ -198,7 +209,8 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize complex filter with multiple operators`() {
-            tokenTypes("userName eq \"john\" and active eq true or title pr") shouldBe listOf(
+            val name = faker.name.firstName()
+            tokenTypes("userName eq \"$name\" and active eq true or title pr") shouldBe listOf(
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
                 TokenType.OP_AND,
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.BOOLEAN_VALUE,
@@ -209,7 +221,8 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize value path filter`() {
-            tokenTypes("emails[type eq \"work\" and value co \"@example.com\"]") shouldBe listOf(
+            val domain = faker.internet.domain()
+            tokenTypes("emails[type eq \"work\" and value co \"@$domain\"]") shouldBe listOf(
                 TokenType.ATTR_PATH, TokenType.LBRACKET,
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
                 TokenType.OP_AND,

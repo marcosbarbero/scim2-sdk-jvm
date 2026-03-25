@@ -6,6 +6,7 @@ import com.marcosbarbero.scim2.core.domain.model.common.Meta
 import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.common.Name
 import com.marcosbarbero.scim2.core.domain.vo.ETag
+import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainKey
@@ -19,42 +20,62 @@ import java.time.Instant
 
 class ScimResourceTest {
 
+    private val faker = Faker()
+
     @Nested
     inner class UserTest {
 
         @Test
         fun `should create User with required userName`() {
-            val user = User(userName = "bjensen")
-            user.userName shouldBe "bjensen"
+            val userName = faker.name.firstName().lowercase()
+            val user = User(userName = userName)
+            user.userName shouldBe userName
             user.schemas shouldContain "urn:ietf:params:scim:schemas:core:2.0:User"
         }
 
         @Test
         fun `should create User with all attributes`() {
             val now = Instant.now()
+            val id = java.util.UUID.randomUUID().toString()
+            val externalId = faker.name.firstName().lowercase()
+            val email = faker.internet.email()
+            val familyName = faker.name.lastName()
+            val givenName = faker.name.firstName()
+            val middleName = faker.name.firstName()
+            val displayName = faker.name.name()
+            val nickName = faker.name.firstName()
+            val title = faker.name.name()
+            val phone = faker.phoneNumber.phoneNumber()
+            val streetAddress = faker.address.streetAddress()
+            val locality = faker.address.city()
+            val region = faker.address.state()
+            val postalCode = faker.address.postcode()
+            val country = faker.address.country()
+            val groupId = java.util.UUID.randomUUID().toString()
+            val groupDisplay = faker.name.name()
             val user = User(
-                id = "2819c223-7f76-453a-919d-413861904646",
-                externalId = "bjensen",
+                id = id,
+                externalId = externalId,
                 meta = Meta(
                     resourceType = "User",
                     created = now,
                     lastModified = now,
-                    location = URI.create("https://example.com/v2/Users/2819c223"),
-                    version = ETag("W/\"a330bc54f0671c9\"")
+                    location = URI.create("https://example.com/v2/Users/$id"),
+                    version = ETag("W/\"${java.util.UUID.randomUUID().toString()}\"")
                 ),
-                userName = "bjensen@example.com",
+                userName = email,
                 name = Name(
-                    formatted = "Ms. Barbara J Jensen III",
-                    familyName = "Jensen",
-                    givenName = "Barbara",
-                    middleName = "Jane",
+                    formatted = "Ms. $givenName $middleName $familyName III",
+                    familyName = familyName,
+                    givenName = givenName,
+                    middleName = middleName,
                     honorificPrefix = "Ms.",
                     honorificSuffix = "III"
                 ),
-                displayName = "Babs Jensen",
-                nickName = "Babs",
-                profileUrl = URI.create("https://login.example.com/bjensen"),
-                title = "Tour Guide",
+                displayName = displayName,
+                nickName = nickName,
+                profileUrl = URI.create("https://login.example.com/$externalId"),
+                title = title,
                 userType = "Employee",
                 preferredLanguage = "en-US",
                 locale = "en-US",
@@ -62,33 +83,33 @@ class ScimResourceTest {
                 active = true,
                 password = null,
                 emails = listOf(
-                    MultiValuedAttribute(value = "bjensen@example.com", type = "work", primary = true)
+                    MultiValuedAttribute(value = email, type = "work", primary = true)
                 ),
                 phoneNumbers = listOf(
-                    MultiValuedAttribute(value = "555-555-5555", type = "work")
+                    MultiValuedAttribute(value = phone, type = "work")
                 ),
                 ims = listOf(
-                    MultiValuedAttribute(value = "someaimhandle", type = "aim")
+                    MultiValuedAttribute(value = faker.name.firstName().lowercase(), type = "aim")
                 ),
                 photos = listOf(
                     MultiValuedAttribute(
-                        value = "https://photos.example.com/profilephoto/72930000000Ccne/F",
+                        value = "https://photos.example.com/profilephoto/${java.util.UUID.randomUUID().toString()}/F",
                         type = "photo"
                     )
                 ),
                 addresses = listOf(
                     Address(
-                        streetAddress = "100 Universal City Plaza",
-                        locality = "Hollywood",
-                        region = "CA",
-                        postalCode = "91608",
-                        country = "US",
+                        streetAddress = streetAddress,
+                        locality = locality,
+                        region = region,
+                        postalCode = postalCode,
+                        country = country,
                         type = "work",
                         primary = true
                     )
                 ),
                 groups = listOf(
-                    GroupMembership(value = "e9e30dba-f08f-4109-8486-d5c6a331660a", display = "Tour Guides")
+                    GroupMembership(value = groupId, display = groupDisplay)
                 ),
                 entitlements = listOf(
                     MultiValuedAttribute(value = "admin")
@@ -99,10 +120,10 @@ class ScimResourceTest {
                 x509Certificates = emptyList()
             )
 
-            user.userName shouldBe "bjensen@example.com"
+            user.userName shouldBe email
             user.name.shouldNotBeNull()
-            user.name!!.familyName shouldBe "Jensen"
-            user.displayName shouldBe "Babs Jensen"
+            user.name!!.familyName shouldBe familyName
+            user.displayName shouldBe displayName
             user.active shouldBe true
             user.emails shouldHaveSize 1
             user.addresses shouldHaveSize 1
@@ -113,7 +134,7 @@ class ScimResourceTest {
 
         @Test
         fun `should default optional fields to null or empty`() {
-            val user = User(userName = "simple")
+            val user = User(userName = faker.name.firstName().lowercase())
             user.name.shouldBeNull()
             user.displayName.shouldBeNull()
             user.active.shouldBeNull()
@@ -125,13 +146,18 @@ class ScimResourceTest {
 
         @Test
         fun `should support extensions via map`() {
-            val user = User(userName = "bjensen")
+            val user = User(userName = faker.name.firstName().lowercase())
+            val employeeNumber = faker.random.nextInt(100000, 999999).toString()
+            val costCenter = faker.random.nextInt(1000, 9999).toString()
+            val organization = faker.name.name()
+            val division = faker.name.name()
+            val department = faker.name.name()
             val ext = EnterpriseUserExtension(
-                employeeNumber = "701984",
-                costCenter = "4130",
-                organization = "Universal Studios",
-                division = "Theme Park",
-                department = "Tour Operations"
+                employeeNumber = employeeNumber,
+                costCenter = costCenter,
+                organization = organization,
+                division = division,
+                department = department
             )
             user.setExtension("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User", ext)
 
@@ -140,7 +166,7 @@ class ScimResourceTest {
                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
             )
             retrieved.shouldNotBeNull()
-            retrieved.employeeNumber shouldBe "701984"
+            retrieved.employeeNumber shouldBe employeeNumber
         }
     }
 
@@ -149,27 +175,30 @@ class ScimResourceTest {
 
         @Test
         fun `should create Group with required displayName`() {
-            val group = Group(displayName = "Tour Guides")
-            group.displayName shouldBe "Tour Guides"
+            val groupName = faker.name.name()
+            val group = Group(displayName = groupName)
+            group.displayName shouldBe groupName
             group.schemas shouldContain "urn:ietf:params:scim:schemas:core:2.0:Group"
         }
 
         @Test
         fun `should create Group with members`() {
+            val memberId = java.util.UUID.randomUUID().toString()
+            val memberDisplay = faker.name.name()
             val group = Group(
-                displayName = "Tour Guides",
+                displayName = faker.name.name(),
                 members = listOf(
                     GroupMembership(
-                        value = "2819c223-7f76-453a-919d-413861904646",
-                        display = "Babs Jensen",
-                        ref = URI.create("https://example.com/v2/Users/2819c223"),
+                        value = memberId,
+                        display = memberDisplay,
+                        ref = URI.create("https://example.com/v2/Users/$memberId"),
                         type = "User"
                     )
                 )
             )
 
             group.members shouldHaveSize 1
-            group.members[0].display shouldBe "Babs Jensen"
+            group.members[0].display shouldBe memberDisplay
         }
     }
 
@@ -178,22 +207,29 @@ class ScimResourceTest {
 
         @Test
         fun `should create extension with all fields`() {
+            val employeeNumber = faker.random.nextInt(100000, 999999).toString()
+            val costCenter = faker.random.nextInt(1000, 9999).toString()
+            val organization = faker.name.name()
+            val division = faker.name.name()
+            val department = faker.name.name()
+            val managerId = java.util.UUID.randomUUID().toString()
+            val managerName = faker.name.name()
             val ext = EnterpriseUserExtension(
-                employeeNumber = "701984",
-                costCenter = "4130",
-                organization = "Universal Studios",
-                division = "Theme Park",
-                department = "Tour Operations",
+                employeeNumber = employeeNumber,
+                costCenter = costCenter,
+                organization = organization,
+                division = division,
+                department = department,
                 manager = com.marcosbarbero.scim2.core.domain.model.common.Manager(
-                    value = "26118915-6090-4610-87e4-49d8ca9f808d",
-                    ref = URI.create("https://example.com/v2/Users/26118915"),
-                    displayName = "John Smith"
+                    value = managerId,
+                    ref = URI.create("https://example.com/v2/Users/$managerId"),
+                    displayName = managerName
                 )
             )
 
-            ext.employeeNumber shouldBe "701984"
+            ext.employeeNumber shouldBe employeeNumber
             ext.manager.shouldNotBeNull()
-            ext.manager!!.displayName shouldBe "John Smith"
+            ext.manager!!.displayName shouldBe managerName
         }
 
         @Test
