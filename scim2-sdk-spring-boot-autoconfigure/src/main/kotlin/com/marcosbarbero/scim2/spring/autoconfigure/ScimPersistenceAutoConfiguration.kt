@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.boot.autoconfigure.domain.EntityScan
+import org.springframework.boot.autoconfigure.orm.jpa.HibernatePropertiesCustomizer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
@@ -22,6 +23,15 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 @EnableJpaRepositories(basePackages = ["com.marcosbarbero.scim2.spring.persistence.repository"])
 @EntityScan(basePackages = ["com.marcosbarbero.scim2.spring.persistence.entity"])
 class ScimPersistenceAutoConfiguration {
+
+    @Bean
+    fun scimHibernateProperties(properties: ScimProperties): HibernatePropertiesCustomizer {
+        return HibernatePropertiesCustomizer { hibernateProperties ->
+            properties.persistence.schemaName?.let {
+                hibernateProperties["hibernate.default_schema"] = it
+            }
+        }
+    }
 
     @Bean
     @ConditionalOnMissingBean(name = ["scimUserRepository"])
