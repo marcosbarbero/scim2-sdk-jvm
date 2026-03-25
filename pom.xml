@@ -38,6 +38,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <java.version>25</java.version>
+        <kotlin.jvm-target>23</kotlin.jvm-target>
         <kotlin.version>2.1.20</kotlin.version>
         <jackson.version>2.18.3</jackson.version>
         <junit.version>5.11.4</junit.version>
@@ -197,7 +198,7 @@
                     <artifactId>kotlin-maven-plugin</artifactId>
                     <version>${kotlin.version}</version>
                     <configuration>
-                        <jvmTarget>${java.version}</jvmTarget>
+                        <jvmTarget>${kotlin.jvm-target}</jvmTarget>
                     </configuration>
                     <executions>
                         <execution>
