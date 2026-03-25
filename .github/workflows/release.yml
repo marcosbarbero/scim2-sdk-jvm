@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*'
+  release:
+    types: [published]
 
 permissions:
   contents: read
@@ -36,7 +38,12 @@ jobs:
 
       - name: Set release version from tag
         run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/}"
+          fi
+          VERSION="${VERSION#v}"
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build, test, and deploy
