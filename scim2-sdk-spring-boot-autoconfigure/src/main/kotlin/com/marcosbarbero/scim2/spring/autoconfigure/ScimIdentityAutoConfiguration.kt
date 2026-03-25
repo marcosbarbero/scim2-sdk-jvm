@@ -25,7 +25,7 @@ import org.springframework.context.annotation.Bean
 @AutoConfiguration
 @ConditionalOnClass(name = ["org.springframework.security.oauth2.jwt.Jwt"])
 @EnableConfigurationProperties(ScimProperties::class)
-class ScimIdentityAutoConfiguration {
+open class ScimIdentityAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)

@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("\${scim.base-path:/scim/v2}")
-class ScimController(private val dispatcher: ScimEndpointDispatcher) {
+open class ScimController(private val dispatcher: ScimEndpointDispatcher) {
 
     @RequestMapping("/**")
     fun handle(request: HttpServletRequest): ResponseEntity<ByteArray> {

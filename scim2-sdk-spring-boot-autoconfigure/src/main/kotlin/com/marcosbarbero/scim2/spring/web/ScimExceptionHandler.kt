@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
 
 @ControllerAdvice
-class ScimExceptionHandler(private val serializer: ScimSerializer) {
+open class ScimExceptionHandler(private val serializer: ScimSerializer) {
 
     @ExceptionHandler(ScimException::class)
     fun handleScimException(ex: ScimException, request: HttpServletRequest): ResponseEntity<ByteArray> {

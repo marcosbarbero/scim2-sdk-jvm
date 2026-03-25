@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Bean
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnClass(HttpServletRequest::class, ScimEndpointDispatcher::class)
 @ConditionalOnBean(ScimEndpointDispatcher::class)
-class ScimWebAutoConfiguration {
+open class ScimWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean

@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean
 
 @AutoConfiguration(after = [ScimServerAutoConfiguration::class])
 @ConditionalOnClass(MeterRegistry::class)
-class ScimObservabilityAutoConfiguration {
+open class ScimObservabilityAutoConfiguration {
 
     @Bean
     @ConditionalOnBean(MeterRegistry::class)
