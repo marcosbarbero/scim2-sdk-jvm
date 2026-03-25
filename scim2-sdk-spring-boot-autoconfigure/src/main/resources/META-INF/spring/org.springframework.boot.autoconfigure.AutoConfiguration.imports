@@ -1,0 +1,5 @@
+com.marcosbarbero.scim2.spring.autoconfigure.ScimJacksonAutoConfiguration
+com.marcosbarbero.scim2.spring.autoconfigure.ScimServerAutoConfiguration
+com.marcosbarbero.scim2.spring.autoconfigure.ScimClientAutoConfiguration
+com.marcosbarbero.scim2.spring.autoconfigure.ScimWebAutoConfiguration
+com.marcosbarbero.scim2.spring.autoconfigure.ScimObservabilityAutoConfiguration
