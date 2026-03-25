@@ -17,6 +17,14 @@ import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.domain.vo.ETag
 import com.marcosbarbero.scim2.core.domain.vo.ResourceId
+import com.marcosbarbero.scim2.core.event.ResourceCreatedEvent
+import com.marcosbarbero.scim2.core.event.ResourceDeletedEvent
+import com.marcosbarbero.scim2.core.event.ResourcePatchedEvent
+import com.marcosbarbero.scim2.core.event.ResourceReplacedEvent
+import com.marcosbarbero.scim2.core.event.ScimEvent
+import com.marcosbarbero.scim2.core.event.ScimEventPublisher
+import com.marcosbarbero.scim2.core.observability.ScimMetrics
+import com.marcosbarbero.scim2.core.observability.ScimTracer
 import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.adapter.discovery.DiscoveryService
@@ -31,11 +39,14 @@ import com.marcosbarbero.scim2.server.port.BulkHandler
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import io.github.serpro69.kfaker.Faker
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import kotlin.reflect.KClass
 
 class ScimEndpointDispatcherTest {
@@ -552,6 +563,211 @@ class ScimEndpointDispatcherTest {
         val response = dispatcherWithAuth(null).dispatch(request)
 
         response.status shouldBe 201
+    }
+
+    // --- Event publisher tests ---
+
+    private class TestEventPublisher : ScimEventPublisher {
+        val events = mutableListOf<ScimEvent>()
+        override fun publish(event: ScimEvent) { events.add(event) }
+    }
+
+    private class TestMetrics : ScimMetrics {
+        val operations = mutableListOf<String>()
+        var activeRequests = 0
+        override fun recordOperation(endpoint: String, method: String, status: Int, duration: Duration) {
+            operations.add("$method $endpoint $status")
+        }
+        override fun recordFilterParse(duration: Duration, success: Boolean) {}
+        override fun recordPatchOperations(endpoint: String, operationCount: Int, duration: Duration) {}
+        override fun recordBulkOperation(operationCount: Int, failureCount: Int, duration: Duration) {}
+        override fun recordSearchResults(endpoint: String, totalResults: Int, duration: Duration) {}
+        override fun incrementActiveRequests(endpoint: String) { activeRequests++ }
+        override fun decrementActiveRequests(endpoint: String) { activeRequests-- }
+    }
+
+    private class TestTracer(private val correlationId: String? = "test-corr-id") : ScimTracer {
+        val traces = mutableListOf<String>()
+        override fun <T> trace(operationName: String, attributes: Map<String, String>, block: () -> T): T {
+            traces.add(operationName)
+            return block()
+        }
+        override fun currentCorrelationId(): String? = correlationId
+    }
+
+    private fun dispatcherWithObservability(
+        eventPublisher: ScimEventPublisher = TestEventPublisher(),
+        metrics: ScimMetrics = TestMetrics(),
+        tracer: ScimTracer = TestTracer()
+    ) = ScimEndpointDispatcher(
+        handlers = listOf(userHandler),
+        bulkHandler = null,
+        meHandler = null,
+        discoveryService = discoveryService,
+        config = config,
+        serializer = serializer,
+        eventPublisher = eventPublisher,
+        metrics = metrics,
+        tracer = tracer
+    )
+
+    @Test
+    fun `after create, eventPublisher receives ResourceCreatedEvent`() {
+        val publisher = TestEventPublisher()
+        val d = dispatcherWithObservability(eventPublisher = publisher)
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName())
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body
+        )
+
+        d.dispatch(request)
+
+        publisher.events shouldHaveSize 1
+        publisher.events[0].shouldBeInstanceOf<ResourceCreatedEvent>()
+        (publisher.events[0] as ResourceCreatedEvent).resourceType shouldBe "User"
+    }
+
+    @Test
+    fun `after replace, eventPublisher receives ResourceReplacedEvent`() {
+        val publisher = TestEventPublisher()
+        val d = dispatcherWithObservability(eventPublisher = publisher)
+        val user = createTestUser()
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName())
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.PUT,
+            path = "${config.basePath}/Users/${user.id}",
+            body = body
+        )
+
+        d.dispatch(request)
+
+        publisher.events shouldHaveSize 1
+        publisher.events[0].shouldBeInstanceOf<ResourceReplacedEvent>()
+        (publisher.events[0] as ResourceReplacedEvent).resourceId shouldBe user.id
+    }
+
+    @Test
+    fun `after patch, eventPublisher receives ResourcePatchedEvent with operationCount`() {
+        val publisher = TestEventPublisher()
+        val d = dispatcherWithObservability(eventPublisher = publisher)
+        val user = createTestUser()
+        val patchRequest = PatchRequest(
+            operations = listOf(
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree("New Name")),
+                PatchOperation(op = PatchOp.REPLACE, path = "nickName", value = objectMapper.valueToTree("Nick"))
+            )
+        )
+        val body = objectMapper.writeValueAsBytes(patchRequest)
+        val request = ScimHttpRequest(
+            method = HttpMethod.PATCH,
+            path = "${config.basePath}/Users/${user.id}",
+            body = body
+        )
+
+        d.dispatch(request)
+
+        publisher.events shouldHaveSize 1
+        val event = publisher.events[0]
+        event.shouldBeInstanceOf<ResourcePatchedEvent>()
+        (event as ResourcePatchedEvent).operationCount shouldBe 2
+    }
+
+    @Test
+    fun `after delete, eventPublisher receives ResourceDeletedEvent`() {
+        val publisher = TestEventPublisher()
+        val d = dispatcherWithObservability(eventPublisher = publisher)
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.DELETE,
+            path = "${config.basePath}/Users/${user.id}"
+        )
+
+        d.dispatch(request)
+
+        publisher.events shouldHaveSize 1
+        publisher.events[0].shouldBeInstanceOf<ResourceDeletedEvent>()
+        (publisher.events[0] as ResourceDeletedEvent).resourceId shouldBe user.id
+    }
+
+    @Test
+    fun `metrics recorded for operations`() {
+        val metrics = TestMetrics()
+        val d = dispatcherWithObservability(metrics = metrics)
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName())
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body
+        )
+
+        d.dispatch(request)
+
+        metrics.operations shouldHaveSize 1
+        metrics.operations[0] shouldBe "POST /Users 201"
+        metrics.activeRequests shouldBe 0
+    }
+
+    @Test
+    fun `metrics activeRequests balanced after error`() {
+        val metrics = TestMetrics()
+        val d = dispatcherWithObservability(metrics = metrics)
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/nonexistent"
+        )
+
+        d.dispatch(request)
+
+        metrics.activeRequests shouldBe 0
+        metrics.operations shouldHaveSize 1
+        metrics.operations[0] shouldBe "GET /Users 404"
+    }
+
+    @Test
+    fun `correlation ID propagated to events`() {
+        val publisher = TestEventPublisher()
+        val tracer = TestTracer("my-correlation-id")
+        val d = dispatcherWithObservability(eventPublisher = publisher, tracer = tracer)
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName())
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body
+        )
+
+        d.dispatch(request)
+
+        publisher.events shouldHaveSize 1
+        publisher.events[0].correlationId shouldBe "my-correlation-id"
+    }
+
+    @Test
+    fun `tracer trace is invoked for operations`() {
+        val tracer = TestTracer()
+        val d = dispatcherWithObservability(tracer = tracer)
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName())
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body
+        )
+
+        d.dispatch(request)
+
+        tracer.traces shouldHaveSize 1
+        tracer.traces[0] shouldBe "scim.post./Users"
     }
 
     private fun createTestUser(): User {

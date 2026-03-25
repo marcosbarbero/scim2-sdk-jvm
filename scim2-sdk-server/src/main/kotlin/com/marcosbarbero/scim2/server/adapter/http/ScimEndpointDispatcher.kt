@@ -6,6 +6,17 @@ import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.domain.vo.ResourceId
+import com.marcosbarbero.scim2.core.event.BulkOperationCompletedEvent
+import com.marcosbarbero.scim2.core.event.NoOpEventPublisher
+import com.marcosbarbero.scim2.core.event.ResourceCreatedEvent
+import com.marcosbarbero.scim2.core.event.ResourceDeletedEvent
+import com.marcosbarbero.scim2.core.event.ResourcePatchedEvent
+import com.marcosbarbero.scim2.core.event.ResourceReplacedEvent
+import com.marcosbarbero.scim2.core.event.ScimEventPublisher
+import com.marcosbarbero.scim2.core.observability.NoOpScimMetrics
+import com.marcosbarbero.scim2.core.observability.NoOpScimTracer
+import com.marcosbarbero.scim2.core.observability.ScimMetrics
+import com.marcosbarbero.scim2.core.observability.ScimTracer
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.adapter.discovery.DiscoveryService
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
@@ -21,6 +32,9 @@ import com.marcosbarbero.scim2.server.port.MeHandler
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import org.slf4j.LoggerFactory
+import org.slf4j.MDC
+import java.time.Duration
+import java.time.Instant
 
 class ScimEndpointDispatcher(
     private val handlers: List<ResourceHandler<*>>,
@@ -32,7 +46,10 @@ class ScimEndpointDispatcher(
     private val etagEngine: ETagEngine = ETagEngine(),
     private val interceptors: List<ScimInterceptor> = emptyList(),
     private val identityResolver: IdentityResolver? = null,
-    private val authorizationEvaluator: AuthorizationEvaluator? = null
+    private val authorizationEvaluator: AuthorizationEvaluator? = null,
+    private val eventPublisher: ScimEventPublisher = NoOpEventPublisher,
+    private val metrics: ScimMetrics = NoOpScimMetrics,
+    private val tracer: ScimTracer = NoOpScimTracer
 ) {
 
     private val logger = LoggerFactory.getLogger(ScimEndpointDispatcher::class.java)
@@ -40,37 +57,86 @@ class ScimEndpointDispatcher(
 
     fun dispatch(request: ScimHttpRequest): ScimHttpResponse {
         val context = buildContext(request)
+        val relativePath = request.path.removePrefix(config.basePath)
+        val endpoint = resolveEndpoint(relativePath)
+        val method = request.method.name
+        val correlationId = tracer.currentCorrelationId()
 
-        var processedRequest = request
-        for (interceptor in sortedInterceptors) {
-            processedRequest = interceptor.preHandle(processedRequest, context)
-        }
+        MDC.put("scim.correlationId", correlationId ?: "")
+        MDC.put("scim.operation", "${request.method} $relativePath")
+        MDC.put("scim.resourceType", resolveResourceType(relativePath))
 
-        val response = try {
-            route(processedRequest, context)
-        } catch (e: ScimException) {
-            val processedException = sortedInterceptors.fold(e) { ex, interceptor ->
-                interceptor.onError(processedRequest, ex, context)
+        metrics.incrementActiveRequests(endpoint)
+        val start = Instant.now()
+
+        try {
+            var processedRequest = request
+            for (interceptor in sortedInterceptors) {
+                processedRequest = interceptor.preHandle(processedRequest, context)
             }
-            val errorBody = serializer.serialize(processedException.toScimError())
-            ScimHttpResponse.error(processedException.status, errorBody)
-        } catch (e: Exception) {
-            logger.error("Unexpected error processing request: {} {}", request.method, request.path, e)
-            val errorBody = serializer.serialize(
-                com.marcosbarbero.scim2.core.domain.model.error.ScimError(
-                    status = "500",
-                    detail = "Internal server error"
+
+            val response = try {
+                tracer.trace(
+                    "scim.${method.lowercase()}.$endpoint",
+                    mapOf("endpoint" to endpoint, "method" to method)
+                ) {
+                    route(processedRequest, context)
+                }
+            } catch (e: ScimException) {
+                val processedException = sortedInterceptors.fold(e) { ex, interceptor ->
+                    interceptor.onError(processedRequest, ex, context)
+                }
+                val errorBody = serializer.serialize(processedException.toScimError())
+                ScimHttpResponse.error(processedException.status, errorBody)
+            } catch (e: Exception) {
+                logger.error("Unexpected error processing request: {} {}", request.method, request.path, e)
+                val errorBody = serializer.serialize(
+                    com.marcosbarbero.scim2.core.domain.model.error.ScimError(
+                        status = "500",
+                        detail = "Internal server error"
+                    )
                 )
-            )
-            ScimHttpResponse.error(500, errorBody)
-        }
+                ScimHttpResponse.error(500, errorBody)
+            }
 
-        var processedResponse = response
-        for (interceptor in sortedInterceptors) {
-            processedResponse = interceptor.postHandle(processedRequest, processedResponse, context)
-        }
+            val duration = Duration.between(start, Instant.now())
+            metrics.recordOperation(endpoint, method, response.status, duration)
 
-        return processedResponse
+            var processedResponse = response
+            for (interceptor in sortedInterceptors) {
+                processedResponse = interceptor.postHandle(processedRequest, processedResponse, context)
+            }
+
+            return processedResponse
+        } finally {
+            metrics.decrementActiveRequests(endpoint)
+            MDC.remove("scim.correlationId")
+            MDC.remove("scim.operation")
+            MDC.remove("scim.resourceType")
+        }
+    }
+
+    private fun resolveEndpoint(relativePath: String): String {
+        val handler = findHandler(relativePath)
+        if (handler != null) return handler.endpoint
+        return when {
+            relativePath.startsWith("/ServiceProviderConfig") -> "/ServiceProviderConfig"
+            relativePath.startsWith("/Schemas") -> "/Schemas"
+            relativePath.startsWith("/ResourceTypes") -> "/ResourceTypes"
+            relativePath == "/Bulk" -> "/Bulk"
+            relativePath == "/Me" -> "/Me"
+            else -> relativePath
+        }
+    }
+
+    private fun resolveResourceType(relativePath: String): String {
+        val handler = findHandler(relativePath)
+        if (handler != null) return handler.resourceType.simpleName ?: "Unknown"
+        return when {
+            relativePath == "/Bulk" -> "Bulk"
+            relativePath == "/Me" -> "Me"
+            else -> "Unknown"
+        }
     }
 
     private fun route(request: ScimHttpRequest, context: ScimRequestContext): ScimHttpResponse {
@@ -104,6 +170,14 @@ class ScimEndpointDispatcher(
                 requireAuthorization { it.canBulk(context) }
                 val bulkRequest = deserializeBody<com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest>(request)
                 val result = handler.processBulk(bulkRequest, context)
+                val failureCount = result.operations.count { !it.status.startsWith("2") }
+                eventPublisher.publish(
+                    BulkOperationCompletedEvent(
+                        correlationId = tracer.currentCorrelationId(),
+                        operationCount = result.operations.size,
+                        failureCount = failureCount
+                    )
+                )
                 ok(result)
             }
 
@@ -125,6 +199,7 @@ class ScimEndpointDispatcher(
             ?: throw ResourceNotFoundException("No handler found for path: $relativePath")
 
         val pathAfterEndpoint = relativePath.removePrefix(handler.endpoint)
+        val resourceTypeName = handler.resourceType.simpleName ?: "Unknown"
 
         // POST /{endpoint}/.search
         if (request.method == HttpMethod.POST && pathAfterEndpoint == "/.search") {
@@ -146,6 +221,13 @@ class ScimEndpointDispatcher(
                 val resource = deserializeBody(request, handler.resourceType)
                 val created = handler.create(resource, context)
                 val location = "${config.basePath}${handler.endpoint}/${created.id}"
+                eventPublisher.publish(
+                    ResourceCreatedEvent(
+                        resourceType = resourceTypeName,
+                        resourceId = created.id ?: "",
+                        correlationId = tracer.currentCorrelationId()
+                    )
+                )
                 ScimHttpResponse.created(serializer.serialize(created), location)
             }
 
@@ -178,6 +260,13 @@ class ScimEndpointDispatcher(
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val resource = deserializeBody(request, handler.resourceType)
                 val result = handler.replace(ResourceId(resourceId), resource, ifMatch, context)
+                eventPublisher.publish(
+                    ResourceReplacedEvent(
+                        resourceType = resourceTypeName,
+                        resourceId = resourceId,
+                        correlationId = tracer.currentCorrelationId()
+                    )
+                )
                 ok(result)
             }
 
@@ -187,6 +276,14 @@ class ScimEndpointDispatcher(
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val patchRequest = deserializeBody<PatchRequest>(request)
                 val result = handler.patch(ResourceId(resourceId), patchRequest, ifMatch, context)
+                eventPublisher.publish(
+                    ResourcePatchedEvent(
+                        resourceType = resourceTypeName,
+                        resourceId = resourceId,
+                        correlationId = tracer.currentCorrelationId(),
+                        operationCount = patchRequest.operations.size
+                    )
+                )
                 ok(result)
             }
 
@@ -195,6 +292,13 @@ class ScimEndpointDispatcher(
                 requireAuthorization { it.canDelete(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
                 handler.delete(ResourceId(resourceId), ifMatch, context)
+                eventPublisher.publish(
+                    ResourceDeletedEvent(
+                        resourceType = resourceTypeName,
+                        resourceId = resourceId,
+                        correlationId = tracer.currentCorrelationId()
+                    )
+                )
                 ScimHttpResponse.noContent()
             }
         }
