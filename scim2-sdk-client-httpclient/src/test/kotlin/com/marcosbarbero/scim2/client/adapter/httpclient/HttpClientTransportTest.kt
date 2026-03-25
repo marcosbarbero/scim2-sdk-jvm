@@ -10,18 +10,18 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 
-class JavaHttpClientTransportTest {
+class HttpClientTransportTest {
 
     private val faker = Faker()
     private lateinit var server: HttpServer
-    private lateinit var transport: JavaHttpClientTransport
+    private lateinit var transport: HttpClientTransport
     private var port: Int = 0
 
     @BeforeEach
     fun setUp() {
         server = HttpServer.create(InetSocketAddress(0), 0)
         port = server.address.port
-        transport = JavaHttpClientTransport()
+        transport = HttpClientTransport()
     }
 
     @AfterEach

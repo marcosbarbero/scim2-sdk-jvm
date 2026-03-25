@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.spring.autoconfigure
 
-import com.marcosbarbero.scim2.client.adapter.httpclient.JavaHttpClientTransport
+import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport
 import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder
 import com.marcosbarbero.scim2.client.port.AuthenticationStrategy
@@ -22,7 +22,7 @@ class ScimClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(HttpTransport::class)
-    fun httpTransport(): HttpTransport = JavaHttpClientTransport()
+    fun httpTransport(): HttpTransport = HttpClientTransport()
 
     @Bean
     @ConditionalOnMissingBean(ScimClient::class)

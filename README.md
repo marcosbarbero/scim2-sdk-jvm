@@ -150,7 +150,7 @@ See [sample-server-plain](scim2-sdk-samples/sample-server-plain/) for a complete
 // Create client
 val client = ScimClientBuilder()
     .baseUrl("https://scim.example.com/scim/v2")
-    .transport(JavaHttpClientTransport())
+    .transport(HttpClientTransport())
     .serializer(JacksonScimSerializer())
     .authentication(BearerTokenAuthentication("your-token"))
     .build()
@@ -180,7 +180,7 @@ val results = client.search("/Users", searchRequest, User::class)
 ```java
 ScimClient client = new ScimClientBuilder()
     .baseUrl("https://scim.example.com/scim/v2")
-    .transport(new JavaHttpClientTransport())
+    .transport(new HttpClientTransport())
     .serializer(new JacksonScimSerializer())
     .authentication(new BearerTokenAuthentication("your-token"))
     .build();

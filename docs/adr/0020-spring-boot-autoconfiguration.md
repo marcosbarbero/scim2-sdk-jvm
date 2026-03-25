@@ -20,7 +20,7 @@ Five auto-configuration classes, ordered by dependency:
 
 2. **ScimServerAutoConfiguration** - Wires `ScimServerConfig` from `ScimProperties` (`@ConfigurationProperties(prefix = "scim")`), creates `SchemaRegistry` (auto-registers resource types from all `ResourceHandler` beans), `DiscoveryService`, and `ScimEndpointDispatcher`. Optional beans (`BulkHandler`, `MeHandler`, `IdentityResolver`, `AuthorizationEvaluator`, `ScimEventPublisher`, `ScimMetrics`, `ScimTracer`, `ScimInterceptor`) are injected via `ObjectProvider` with graceful fallbacks.
 
-3. **ScimClientAutoConfiguration** - Creates `HttpTransport` (defaults to `JavaHttpClientTransport`) and `ScimClient` when `scim.client.base-url` is set. Optional `AuthenticationStrategy` bean is auto-detected.
+3. **ScimClientAutoConfiguration** - Creates `HttpTransport` (defaults to `HttpClientTransport`) and `ScimClient` when `scim.client.base-url` is set. Optional `AuthenticationStrategy` bean is auto-detected.
 
 4. **ScimWebAutoConfiguration** - Registers `ScimController` (Spring MVC adapter mapping `${scim.base-path}/**` to `ScimEndpointDispatcher`) and `ScimExceptionHandler` (`@ControllerAdvice` converting `ScimException` to SCIM JSON error responses). Only activates in servlet web applications.
 
