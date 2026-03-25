@@ -1,7 +1,9 @@
 package com.marcosbarbero.scim2.core.domain.model.search
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
+
 data class SearchRequest(
-    val schemas: List<String> = listOf("urn:ietf:params:scim:api:messages:2.0:SearchRequest"),
+    val schemas: List<String> = listOf(ScimUrns.SEARCH_REQUEST),
     val filter: String? = null,
     val sortBy: String? = null,
     val sortOrder: SortOrder? = null,

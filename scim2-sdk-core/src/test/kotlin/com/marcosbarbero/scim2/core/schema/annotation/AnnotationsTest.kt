@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.schema.annotation
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtension
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
@@ -16,7 +17,7 @@ class AnnotationsTest {
     fun `User class should have ScimResource annotation`() {
         val annotation = User::class.java.getAnnotation(ScimResource::class.java)
         annotation.shouldNotBeNull()
-        annotation.schema shouldBe "urn:ietf:params:scim:schemas:core:2.0:User"
+        annotation.schema shouldBe ScimUrns.USER
         annotation.name shouldBe "User"
         annotation.endpoint shouldBe "/Users"
     }
@@ -25,7 +26,7 @@ class AnnotationsTest {
     fun `Group class should have ScimResource annotation`() {
         val annotation = Group::class.java.getAnnotation(ScimResource::class.java)
         annotation.shouldNotBeNull()
-        annotation.schema shouldBe "urn:ietf:params:scim:schemas:core:2.0:Group"
+        annotation.schema shouldBe ScimUrns.GROUP
         annotation.name shouldBe "Group"
         annotation.endpoint shouldBe "/Groups"
     }
@@ -34,7 +35,7 @@ class AnnotationsTest {
     fun `EnterpriseUserExtension should have ScimExtension annotation`() {
         val annotation = EnterpriseUserExtension::class.java.getAnnotation(ScimExtension::class.java)
         annotation.shouldNotBeNull()
-        annotation.schema shouldBe "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+        annotation.schema shouldBe ScimUrns.ENTERPRISE_USER
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.marcosbarbero.scim2.core.domain.model.common.GroupMembership
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
 import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.common.Name
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.schema.annotation.ScimAttribute
 import com.marcosbarbero.scim2.core.schema.annotation.Mutability
 import com.marcosbarbero.scim2.core.schema.annotation.Returned
@@ -12,7 +13,7 @@ import com.marcosbarbero.scim2.core.schema.annotation.Uniqueness
 import java.net.URI
 
 @com.marcosbarbero.scim2.core.schema.annotation.ScimResource(
-    schema = "urn:ietf:params:scim:schemas:core:2.0:User",
+    schema = ScimUrns.USER,
     name = "User",
     description = "User Account",
     endpoint = "/Users"
@@ -49,7 +50,7 @@ data class User(
     val roles: List<MultiValuedAttribute> = emptyList(),
     val x509Certificates: List<MultiValuedAttribute> = emptyList()
 ) : ScimResource(
-    schemas = listOf("urn:ietf:params:scim:schemas:core:2.0:User"),
+    schemas = listOf(ScimUrns.USER),
     id = id,
     externalId = externalId,
     meta = meta
