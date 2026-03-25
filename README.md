@@ -198,16 +198,17 @@ ScimClients.getGroup(client, id);
 
 ## Modules
 
-| Module | Description |
-|---|---|
-| `scim2-sdk-core` | Domain model, filter/path parsing, PATCH engine, serialization SPI |
-| `scim2-sdk-server` | Server framework with hexagonal architecture (ports + adapters) |
-| `scim2-sdk-client` | Fluent client API with Kotlin DSLs |
-| `scim2-sdk-client-httpclient` | Java HttpClient transport adapter |
-| `scim2-sdk-client-okhttp` | OkHttp transport adapter |
-| `scim2-sdk-spring-boot-autoconfigure` | Spring Boot auto-configuration |
-| `scim2-sdk-spring-boot-starter` | Spring Boot starter (aggregates dependencies) |
-| `scim2-sdk-test` | Test fixtures, contract tests, in-memory server |
+| Module | Description | Details |
+|---|---|---|
+| [`scim2-sdk-core`](scim2-sdk-core/) | Domain model, filter/path parsing, PATCH engine, serialization SPI | [README](scim2-sdk-core/README.md) |
+| [`scim2-sdk-server`](scim2-sdk-server/) | SCIM Service Provider framework (ports + adapters) | [README](scim2-sdk-server/README.md) |
+| [`scim2-sdk-client`](scim2-sdk-client/) | Fluent client API with Kotlin DSLs | [README](scim2-sdk-client/README.md) |
+| [`scim2-sdk-client-httpclient`](scim2-sdk-client-httpclient/) | Java HttpClient transport adapter | [README](scim2-sdk-client-httpclient/README.md) |
+| [`scim2-sdk-client-okhttp`](scim2-sdk-client-okhttp/) | OkHttp transport adapter | [README](scim2-sdk-client-okhttp/README.md) |
+| [`scim2-sdk-spring-boot-autoconfigure`](scim2-sdk-spring-boot-autoconfigure/) | Spring Boot auto-configuration | [README](scim2-sdk-spring-boot-autoconfigure/README.md) |
+| [`scim2-sdk-spring-boot-starter`](scim2-sdk-spring-boot-starter/) | Spring Boot starter (aggregates dependencies) | [README](scim2-sdk-spring-boot-starter/README.md) |
+| [`scim2-sdk-test`](scim2-sdk-test/) | Test fixtures, contract tests, in-memory server | [README](scim2-sdk-test/README.md) |
+| [`scim2-sdk-bom`](scim2-sdk-bom/) | Bill of Materials for version management | [README](scim2-sdk-bom/README.md) |
 
 ## Configuration Properties
 
@@ -230,10 +231,31 @@ All properties are optional with sensible defaults:
 
 ## Database Support
 
-When `scim.persistence.enabled=true`, the JPA adapter stores resources as JSON. Reference schemas are provided for:
-- PostgreSQL, MySQL, Oracle, MS SQL Server, H2
+When `scim.persistence.enabled=true`, the JPA adapter stores SCIM resources as JSON in a single table:
 
-Find them in `scim2-sdk-spring-boot-autoconfigure/src/main/resources/db/scim/`.
+```sql
+CREATE TABLE scim_resources (
+    id              VARCHAR(255) NOT NULL PRIMARY KEY,
+    resource_type   VARCHAR(100) NOT NULL,    -- "User", "Group", etc.
+    external_id     VARCHAR(255),
+    display_name    VARCHAR(500),
+    resource_json   TEXT NOT NULL,             -- Full SCIM resource as JSON
+    version         BIGINT NOT NULL DEFAULT 1, -- ETag version
+    created         TIMESTAMP NOT NULL,
+    last_modified   TIMESTAMP NOT NULL
+);
+```
+
+This design stores any SCIM resource type in one table, discriminated by `resource_type`. The full resource is preserved as JSON in `resource_json`, enabling schema-less flexibility while maintaining queryable metadata columns.
+
+Reference schemas for specific databases:
+- [PostgreSQL](scim2-sdk-spring-boot-autoconfigure/src/main/resources/db/scim/schema-postgresql.sql)
+- [MySQL](scim2-sdk-spring-boot-autoconfigure/src/main/resources/db/scim/schema-mysql.sql)
+- [Oracle](scim2-sdk-spring-boot-autoconfigure/src/main/resources/db/scim/schema-oracle.sql)
+- [MS SQL Server](scim2-sdk-spring-boot-autoconfigure/src/main/resources/db/scim/schema-mssql.sql)
+- [H2 (testing)](scim2-sdk-spring-boot-autoconfigure/src/main/resources/db/scim/schema-h2.sql)
+
+Opt-in auto-migration via Flyway: set `scim.persistence.auto-migrate=true`.
 
 ### Database Migration
 

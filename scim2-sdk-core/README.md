@@ -19,24 +19,49 @@ Pre-built Kotlin data classes for all SCIM 2.0 resource types:
 
 ### Filter Parser
 A complete recursive-descent parser for SCIM filter expressions:
+
+#### Kotlin
 ```kotlin
 val filter = FilterParser.parse("userName eq \"john\" and active eq true")
 // Produces an AST: LogicalExpression(AND, AttributeExpression(...), AttributeExpression(...))
 ```
+
+#### Java
+```java
+var filter = FilterParser.parse("userName eq \"john\" and active eq true");
+// Produces an AST: LogicalExpression(AND, AttributeExpression(...), AttributeExpression(...))
+```
+
 Includes `FilterVisitor<T>` for transforming filters (to SQL, to predicates, to string, etc.)
 
 ### Path Parser
 Parses SCIM PATCH path expressions:
+
+#### Kotlin
 ```kotlin
 val path = PathParser.parse("emails[type eq \"work\"].value")
 // FilteredPath(attributeName="emails", filter=..., subAttribute="value")
 ```
 
+#### Java
+```java
+var path = PathParser.parse("emails[type eq \"work\"].value");
+// FilteredPath(attributeName="emails", filter=..., subAttribute="value")
+```
+
 ### PATCH Engine
 Applies SCIM PATCH operations to resources immutably:
+
+#### Kotlin
 ```kotlin
 val engine = PatchEngine(objectMapper)
 val updated = engine.apply(user, patchRequest)
+```
+
+#### Java
+```java
+var engine = new PatchEngine(objectMapper);
+var updated = engine.apply(user, patchRequest);
 ```
 
 ### Serialization SPI

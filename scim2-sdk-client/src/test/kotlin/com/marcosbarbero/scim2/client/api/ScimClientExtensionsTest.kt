@@ -6,6 +6,7 @@ import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -19,14 +20,20 @@ import kotlin.reflect.KClass
 
 class ScimClientExtensionsTest {
 
+    private val faker = Faker()
     private lateinit var client: ScimClient
 
+    private val userId = java.util.UUID.randomUUID().toString()
+    private val groupId = java.util.UUID.randomUUID().toString()
+    private val userName = "john_${System.nanoTime()}"
+    private val groupName = "admins_${System.nanoTime()}"
+
     private val userResponse = ScimResponse(
-        value = User(id = "u1", userName = "john"),
+        value = User(id = userId, userName = userName),
         statusCode = 200
     )
     private val groupResponse = ScimResponse(
-        value = Group(id = "g1", displayName = "admins"),
+        value = Group(id = groupId, displayName = groupName),
         statusCode = 200
     )
 
@@ -39,8 +46,8 @@ class ScimClientExtensionsTest {
 
     @Test
     fun `createUser calls create with Users endpoint and User class`() {
-        val user = User(userName = "john")
-        val expected = ScimResponse(value = User(id = "u1", userName = "john"), statusCode = 201)
+        val user = User(userName = userName)
+        val expected = ScimResponse(value = User(id = userId, userName = userName), statusCode = 201)
         every { client.create("/Users", user, User::class) } returns expected
 
         val result = client.createUser(user)
@@ -51,39 +58,40 @@ class ScimClientExtensionsTest {
 
     @Test
     fun `getUser calls get with Users endpoint and User class`() {
-        every { client.get("/Users", "u1", User::class) } returns userResponse
+        every { client.get("/Users", userId, User::class) } returns userResponse
 
-        val result = client.getUser("u1")
+        val result = client.getUser(userId)
 
         result shouldBe userResponse
-        verify { client.get("/Users", "u1", User::class) }
+        verify { client.get("/Users", userId, User::class) }
     }
 
     @Test
     fun `replaceUser calls replace with Users endpoint and User class`() {
-        val user = User(id = "u1", userName = "updated")
-        every { client.replace("/Users", "u1", user, User::class) } returns userResponse
+        val updatedName = faker.name.firstName().lowercase()
+        val user = User(id = userId, userName = updatedName)
+        every { client.replace("/Users", userId, user, User::class) } returns userResponse
 
-        client.replaceUser("u1", user)
+        client.replaceUser(userId, user)
 
-        verify { client.replace("/Users", "u1", user, User::class) }
+        verify { client.replace("/Users", userId, user, User::class) }
     }
 
     @Test
     fun `patchUser calls patch with Users endpoint and User class`() {
         val patch = PatchRequest()
-        every { client.patch("/Users", "u1", patch, User::class) } returns userResponse
+        every { client.patch("/Users", userId, patch, User::class) } returns userResponse
 
-        client.patchUser("u1", patch)
+        client.patchUser(userId, patch)
 
-        verify { client.patch("/Users", "u1", patch, User::class) }
+        verify { client.patch("/Users", userId, patch, User::class) }
     }
 
     @Test
     fun `deleteUser calls delete with Users endpoint`() {
-        client.deleteUser("u1")
+        client.deleteUser(userId)
 
-        verify { client.delete("/Users", "u1") }
+        verify { client.delete("/Users", userId) }
     }
 
     @Test
@@ -101,24 +109,25 @@ class ScimClientExtensionsTest {
 
     @Test
     fun `searchUsers with filter string builds SearchRequest`() {
+        val searchName = faker.name.firstName().lowercase()
         val listResponse = ScimResponse(
-            value = ListResponse<User>(totalResults = 1, resources = listOf(User(userName = "john"))),
+            value = ListResponse<User>(totalResults = 1, resources = listOf(User(userName = searchName))),
             statusCode = 200
         )
         val requestSlot = slot<SearchRequest>()
         every { client.search("/Users", capture(requestSlot), User::class) } returns listResponse
 
-        client.searchUsers("userName sw \"john\"")
+        client.searchUsers("userName sw \"$searchName\"")
 
-        requestSlot.captured.filter shouldBe "userName sw \"john\""
+        requestSlot.captured.filter shouldBe "userName sw \"$searchName\""
     }
 
     // ===== Group Operations =====
 
     @Test
     fun `createGroup calls create with Groups endpoint and Group class`() {
-        val group = Group(displayName = "admins")
-        val expected = ScimResponse(value = Group(id = "g1", displayName = "admins"), statusCode = 201)
+        val group = Group(displayName = groupName)
+        val expected = ScimResponse(value = Group(id = groupId, displayName = groupName), statusCode = 201)
         every { client.create("/Groups", group, Group::class) } returns expected
 
         val result = client.createGroup(group)
@@ -129,39 +138,40 @@ class ScimClientExtensionsTest {
 
     @Test
     fun `getGroup calls get with Groups endpoint and Group class`() {
-        every { client.get("/Groups", "g1", Group::class) } returns groupResponse
+        every { client.get("/Groups", groupId, Group::class) } returns groupResponse
 
-        val result = client.getGroup("g1")
+        val result = client.getGroup(groupId)
 
         result shouldBe groupResponse
-        verify { client.get("/Groups", "g1", Group::class) }
+        verify { client.get("/Groups", groupId, Group::class) }
     }
 
     @Test
     fun `replaceGroup calls replace with Groups endpoint and Group class`() {
-        val group = Group(id = "g1", displayName = "updated")
-        every { client.replace("/Groups", "g1", group, Group::class) } returns groupResponse
+        val updatedGroupName = faker.name.name()
+        val group = Group(id = groupId, displayName = updatedGroupName)
+        every { client.replace("/Groups", groupId, group, Group::class) } returns groupResponse
 
-        client.replaceGroup("g1", group)
+        client.replaceGroup(groupId, group)
 
-        verify { client.replace("/Groups", "g1", group, Group::class) }
+        verify { client.replace("/Groups", groupId, group, Group::class) }
     }
 
     @Test
     fun `patchGroup calls patch with Groups endpoint and Group class`() {
         val patch = PatchRequest()
-        every { client.patch("/Groups", "g1", patch, Group::class) } returns groupResponse
+        every { client.patch("/Groups", groupId, patch, Group::class) } returns groupResponse
 
-        client.patchGroup("g1", patch)
+        client.patchGroup(groupId, patch)
 
-        verify { client.patch("/Groups", "g1", patch, Group::class) }
+        verify { client.patch("/Groups", groupId, patch, Group::class) }
     }
 
     @Test
     fun `deleteGroup calls delete with Groups endpoint`() {
-        client.deleteGroup("g1")
+        client.deleteGroup(groupId)
 
-        verify { client.delete("/Groups", "g1") }
+        verify { client.delete("/Groups", groupId) }
     }
 
     @Test
@@ -181,8 +191,8 @@ class ScimClientExtensionsTest {
 
     @Test
     fun `createResource reads ScimResource annotation for User`() {
-        val user = User(userName = "john")
-        val expected = ScimResponse(value = User(id = "u1", userName = "john"), statusCode = 201)
+        val user = User(userName = userName)
+        val expected = ScimResponse(value = User(id = userId, userName = userName), statusCode = 201)
         every { client.create("/Users", user, User::class) } returns expected
 
         val result = client.createResource(user)
@@ -193,8 +203,8 @@ class ScimClientExtensionsTest {
 
     @Test
     fun `createResource reads ScimResource annotation for Group`() {
-        val group = Group(displayName = "admins")
-        val expected = ScimResponse(value = Group(id = "g1", displayName = "admins"), statusCode = 201)
+        val group = Group(displayName = groupName)
+        val expected = ScimResponse(value = Group(id = groupId, displayName = groupName), statusCode = 201)
         every { client.create("/Groups", group, Group::class) } returns expected
 
         val result = client.createResource(group)
@@ -216,12 +226,12 @@ class ScimClientExtensionsTest {
 
     @Test
     fun `getResource reads ScimResource annotation`() {
-        every { client.get("/Users", "u1", User::class) } returns userResponse
+        every { client.get("/Users", userId, User::class) } returns userResponse
 
-        val result = client.getResource<User>("u1")
+        val result = client.getResource<User>(userId)
 
         result shouldBe userResponse
-        verify { client.get("/Users", "u1", User::class) }
+        verify { client.get("/Users", userId, User::class) }
     }
 
     @Test

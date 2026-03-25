@@ -84,7 +84,8 @@ class DefaultScimClientTest {
     @Test
     fun `get sends GET request and returns 200 with resource`() {
         val userId = faker.random.randomString(10)
-        val user = User(id = userId, userName = "john")
+        val userName = faker.name.firstName().lowercase()
+        val user = User(id = userId, userName = userName)
         val responseBody = """{"id":"$userId"}""".toByteArray()
 
         every { serializer.deserialize(responseBody, User::class) } returns user
@@ -164,9 +165,10 @@ class DefaultScimClientTest {
 
     @Test
     fun `search sends POST to search endpoint`() {
-        val searchRequest = SearchRequest(filter = "userName eq \"john\"", startIndex = 1, count = 10)
-        val listResponse = ListResponse<User>(totalResults = 1, resources = listOf(User(userName = "john")))
-        val serializedBody = """{"filter":"userName eq \"john\""}""".toByteArray()
+        val searchUserName = faker.name.firstName().lowercase()
+        val searchRequest = SearchRequest(filter = "userName eq \"$searchUserName\"", startIndex = 1, count = 10)
+        val listResponse = ListResponse<User>(totalResults = 1, resources = listOf(User(userName = searchUserName)))
+        val serializedBody = """{"filter":"userName eq \"$searchUserName\""}""".toByteArray()
         val responseBody = """{"totalResults":1}""".toByteArray()
 
         every { serializer.serialize(searchRequest) } returns serializedBody
