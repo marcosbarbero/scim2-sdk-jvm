@@ -770,6 +770,100 @@ class ScimEndpointDispatcherTest {
         tracer.traces[0] shouldBe "scim.post./Users"
     }
 
+    // --- Case-insensitive routing tests ---
+
+    @Test
+    fun `GET users lowercase should work same as Users`() {
+        val user = createTestUser()
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/users/${user.id}"
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.get("userName").asText() shouldBe user.userName
+    }
+
+    @Test
+    fun `GET USERS uppercase should work same as Users`() {
+        val user = createTestUser()
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/USERS/${user.id}"
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.get("userName").asText() shouldBe user.userName
+    }
+
+    @Test
+    fun `GET serviceproviderconfig lowercase returns config`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/serviceproviderconfig"
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.get("patch").get("supported").asBoolean() shouldBe true
+    }
+
+    @Test
+    fun `POST bulk lowercase works`() {
+        val bulkHandler = object : BulkHandler {
+            override fun processBulk(request: BulkRequest, context: ScimRequestContext): BulkResponse =
+                BulkResponse(operations = emptyList())
+        }
+
+        val dispatcherWithBulk = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = bulkHandler,
+            meHandler = null,
+            discoveryService = discoveryService,
+            config = config,
+            serializer = serializer
+        )
+
+        val bulkRequest = BulkRequest(operations = emptyList())
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/bulk",
+            body = objectMapper.writeValueAsBytes(bulkRequest)
+        )
+
+        val response = dispatcherWithBulk.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
+    @Test
+    fun `POST users dot Search case insensitive should delegate to search`() {
+        createTestUser()
+
+        val searchRequest = SearchRequest(filter = "userName eq \"test\"")
+        val body = objectMapper.writeValueAsBytes(searchRequest)
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/users/.Search",
+            body = body
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
     private fun createTestUser(): User {
         val id = java.util.UUID.randomUUID().toString()
         val user = User(id = id, userName = faker.name.firstName())
