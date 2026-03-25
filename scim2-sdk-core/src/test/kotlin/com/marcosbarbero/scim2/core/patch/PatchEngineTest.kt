@@ -1,11 +1,9 @@
 package com.marcosbarbero.scim2.core.patch
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.DeserializationFeature
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.SerializationFeature
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
-import com.fasterxml.jackson.module.kotlin.KotlinModule
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidPathException
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
@@ -26,13 +24,13 @@ class PatchEngineTest {
 
     private val faker = Faker()
 
-    private val objectMapper = ObjectMapper().apply {
-        registerModule(KotlinModule.Builder().build())
-        registerModule(JavaTimeModule())
-        configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
-        setSerializationInclusion(JsonInclude.Include.NON_NULL)
-    }
+    private val objectMapper = JsonMapper.builder()
+        .addModule(KotlinModule.Builder().build())
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        .changeDefaultPropertyInclusion { incl ->
+            incl.withValueInclusion(JsonInclude.Include.NON_NULL)
+        }
+        .build()
 
     private val engine = PatchEngine(objectMapper)
 

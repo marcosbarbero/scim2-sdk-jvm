@@ -1,7 +1,7 @@
 package com.marcosbarbero.scim2.core.attribute
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ObjectNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ObjectNode
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 
@@ -35,7 +35,7 @@ class AttributeProjector(private val objectMapper: ObjectMapper) {
     private fun applyInclude(node: ObjectNode, attributes: List<String>) {
         val include = attributes.map { it.lowercase() }.toSet() + ALWAYS_RETURNED
         val fieldsToRemove = mutableListOf<String>()
-        node.fieldNames().forEach { field ->
+        node.propertyNames().forEach { field ->
             if (field.lowercase() !in include) {
                 fieldsToRemove.add(field)
             }
@@ -46,7 +46,7 @@ class AttributeProjector(private val objectMapper: ObjectMapper) {
     private fun applyExclude(node: ObjectNode, excludedAttributes: List<String>) {
         val exclude = excludedAttributes.map { it.lowercase() }.toSet()
         val fieldsToRemove = mutableListOf<String>()
-        node.fieldNames().forEach { field ->
+        node.propertyNames().forEach { field ->
             if (field.lowercase() in exclude && field.lowercase() !in ALWAYS_RETURNED) {
                 fieldsToRemove.add(field)
             }

@@ -1,7 +1,7 @@
 package com.marcosbarbero.scim2.client.dsl
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.TextNode
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.node.StringNode
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
@@ -28,11 +28,11 @@ class PatchBuilder {
     }
 
     fun add(path: String, value: String) {
-        add(path, TextNode(value))
+        add(path, StringNode(value))
     }
 
     fun replace(path: String, value: String) {
-        replace(path, TextNode(value))
+        replace(path, StringNode(value))
     }
 
     fun build() = PatchRequest(operations = operations.toList())

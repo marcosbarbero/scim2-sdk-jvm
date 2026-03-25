@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.model.bulk
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 
 data class BulkOperation(
     val method: String,

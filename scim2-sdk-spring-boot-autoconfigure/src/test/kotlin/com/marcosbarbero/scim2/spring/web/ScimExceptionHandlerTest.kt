@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.spring.web
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidFilterException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.error.ScimError

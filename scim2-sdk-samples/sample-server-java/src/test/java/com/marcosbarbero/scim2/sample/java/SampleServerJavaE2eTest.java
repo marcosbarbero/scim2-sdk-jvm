@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.sample.java;
 
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.StringNode;
 import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport;
 import com.marcosbarbero.scim2.client.api.ScimClient;
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder;
@@ -144,7 +144,7 @@ class SampleServerJavaE2eTest {
                         new PatchOperation(
                                 PatchOp.REPLACE,
                                 "displayName",
-                                new TextNode("Patched via Java")
+                                new StringNode("Patched via Java")
                         )
                 )
         );
@@ -180,7 +180,7 @@ class SampleServerJavaE2eTest {
                         new PatchOperation(
                                 PatchOp.REPLACE,
                                 "displayName",
-                                new TextNode("Updated via Java")
+                                new StringNode("Updated via Java")
                         )
                 )
         );

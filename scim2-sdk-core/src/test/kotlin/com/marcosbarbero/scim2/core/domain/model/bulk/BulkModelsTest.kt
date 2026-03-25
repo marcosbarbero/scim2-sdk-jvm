@@ -1,8 +1,8 @@
 package com.marcosbarbero.scim2.core.domain.model.bulk
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test

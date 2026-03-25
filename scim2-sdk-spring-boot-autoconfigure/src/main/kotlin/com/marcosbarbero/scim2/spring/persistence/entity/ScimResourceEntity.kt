@@ -3,13 +3,12 @@ package com.marcosbarbero.scim2.spring.persistence.entity
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
-import jakarta.persistence.Lob
 import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
 @Table(name = "scim_resources")
-open class ScimResourceEntity(
+class ScimResourceEntity(
     @Id
     @Column(name = "id", length = 255)
     open var id: String = "",
@@ -23,7 +22,6 @@ open class ScimResourceEntity(
     @Column(name = "display_name", length = 500)
     open var displayName: String? = null,
 
-    @Lob
     @Column(name = "resource_json", nullable = false, columnDefinition = "TEXT")
     open var resourceJson: String = "",
 

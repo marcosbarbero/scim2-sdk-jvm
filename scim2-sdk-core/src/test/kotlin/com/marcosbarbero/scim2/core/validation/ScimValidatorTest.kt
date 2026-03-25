@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.core.validation
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest

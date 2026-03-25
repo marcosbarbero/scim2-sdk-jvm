@@ -15,23 +15,33 @@ import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
-import com.fasterxml.jackson.databind.node.TextNode
+import tools.jackson.databind.node.StringNode
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-import org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
+import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.web.SecurityFilterChain
 
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration"]
-)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(SampleServerE2eTest.NoSecurityConfig::class)
 class SampleServerE2eTest(@LocalServerPort val port: Int) {
+
+    @TestConfiguration
+    class NoSecurityConfig {
+        @Bean
+        fun permitAllFilterChain(http: HttpSecurity): SecurityFilterChain = http
+            .authorizeHttpRequests { it.anyRequest().permitAll() }
+            .csrf { it.disable() }
+            .build()
+    }
 
     private lateinit var client: ScimClient
 
@@ -113,7 +123,7 @@ class SampleServerE2eTest(@LocalServerPort val port: Int) {
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "displayName",
-                    value = TextNode("Patched Name")
+                    value = StringNode("Patched Name")
                 )
             )
         )

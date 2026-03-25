@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.sample.spring
 
-import com.fasterxml.jackson.databind.node.TextNode
+import tools.jackson.databind.node.StringNode
 import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport
 import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder
@@ -197,7 +197,7 @@ class KeycloakE2eTest {
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "displayName",
-                    value = TextNode("Updated via Keycloak JWT")
+                    value = StringNode("Updated via Keycloak JWT")
                 )
             )
         )

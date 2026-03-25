@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.core.serialization.jackson
 
-import com.fasterxml.jackson.databind.module.SimpleModule
+import tools.jackson.databind.module.SimpleModule
 
 class ScimModule : SimpleModule() {
 
