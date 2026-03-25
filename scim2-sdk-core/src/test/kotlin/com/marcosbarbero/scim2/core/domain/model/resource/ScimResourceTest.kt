@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.model.resource
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.common.Address
 import com.marcosbarbero.scim2.core.domain.model.common.GroupMembership
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
@@ -30,7 +31,7 @@ class ScimResourceTest {
             val userName = faker.name.firstName().lowercase()
             val user = User(userName = userName)
             user.userName shouldBe userName
-            user.schemas shouldContain "urn:ietf:params:scim:schemas:core:2.0:User"
+            user.schemas shouldContain ScimUrns.USER
         }
 
         @Test
@@ -159,11 +160,11 @@ class ScimResourceTest {
                 division = division,
                 department = department
             )
-            user.setExtension("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User", ext)
+            user.setExtension(ScimUrns.ENTERPRISE_USER, ext)
 
-            user.extensions shouldContainKey "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+            user.extensions shouldContainKey ScimUrns.ENTERPRISE_USER
             val retrieved = user.getExtension<EnterpriseUserExtension>(
-                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+                ScimUrns.ENTERPRISE_USER
             )
             retrieved.shouldNotBeNull()
             retrieved.employeeNumber shouldBe employeeNumber
@@ -178,7 +179,7 @@ class ScimResourceTest {
             val groupName = faker.name.name()
             val group = Group(displayName = groupName)
             group.displayName shouldBe groupName
-            group.schemas shouldContain "urn:ietf:params:scim:schemas:core:2.0:Group"
+            group.schemas shouldContain ScimUrns.GROUP
         }
 
         @Test

@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.model.error
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -143,7 +144,7 @@ class ScimErrorTest {
         fun `should serialize ScimError to JSON`() {
             val detail = faker.name.name()
             val error = ScimError(
-                schemas = listOf("urn:ietf:params:scim:api:messages:2.0:Error"),
+                schemas = listOf(ScimUrns.ERROR),
                 status = "400",
                 scimType = "invalidFilter",
                 detail = detail
@@ -155,7 +156,7 @@ class ScimErrorTest {
             deserialized.status shouldBe "400"
             deserialized.scimType shouldBe "invalidFilter"
             deserialized.detail shouldBe detail
-            deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:Error")
+            deserialized.schemas shouldBe listOf(ScimUrns.ERROR)
         }
 
         @Test
@@ -184,7 +185,7 @@ class ScimErrorTest {
             error.status shouldBe "400"
             error.scimType shouldBe "invalidFilter"
             error.detail shouldBe detail
-            error.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:Error")
+            error.schemas shouldBe listOf(ScimUrns.ERROR)
         }
     }
 }

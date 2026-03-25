@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.schema.introspector
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtension
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
@@ -27,7 +28,7 @@ class SchemaIntrospectorTest {
         @Test
         fun `should introspect User schema with correct id and name`() {
             val schema = introspector.introspect(User::class)
-            schema.id shouldBe "urn:ietf:params:scim:schemas:core:2.0:User"
+            schema.id shouldBe ScimUrns.USER
             schema.name shouldBe "User"
             schema.description shouldBe "User Account"
         }
@@ -120,7 +121,7 @@ class SchemaIntrospectorTest {
         @Test
         fun `should introspect Group schema with correct id`() {
             val schema = introspector.introspect(Group::class)
-            schema.id shouldBe "urn:ietf:params:scim:schemas:core:2.0:Group"
+            schema.id shouldBe ScimUrns.GROUP
             schema.name shouldBe "Group"
         }
 
@@ -150,7 +151,7 @@ class SchemaIntrospectorTest {
             resourceType.id shouldBe "User"
             resourceType.name shouldBe "User"
             resourceType.endpoint shouldBe "/Users"
-            resourceType.schema shouldBe "urn:ietf:params:scim:schemas:core:2.0:User"
+            resourceType.schema shouldBe ScimUrns.USER
         }
 
         @Test
@@ -159,7 +160,7 @@ class SchemaIntrospectorTest {
             resourceType.id shouldBe "Group"
             resourceType.name shouldBe "Group"
             resourceType.endpoint shouldBe "/Groups"
-            resourceType.schema shouldBe "urn:ietf:params:scim:schemas:core:2.0:Group"
+            resourceType.schema shouldBe ScimUrns.GROUP
         }
     }
 
@@ -169,7 +170,7 @@ class SchemaIntrospectorTest {
         @Test
         fun `should introspect extension schema`() {
             val schema = introspector.introspect(EnterpriseUserExtension::class)
-            schema.id shouldBe "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+            schema.id shouldBe ScimUrns.ENTERPRISE_USER
             val attrNames = schema.attributes.map { it.name }
             attrNames shouldContain "employeeNumber"
             attrNames shouldContain "costCenter"

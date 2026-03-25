@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.filter.parser
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidFilterException
 import com.marcosbarbero.scim2.core.filter.ast.AttributeExpression
 import com.marcosbarbero.scim2.core.filter.ast.AttributePath
@@ -235,9 +236,9 @@ class FilterParserTest {
         @Test
         fun `should parse URN-prefixed attribute path`() {
             val dept = faker.name.name()
-            val node = parse("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department eq \"$dept\"")
+            val node = parse("${ScimUrns.ENTERPRISE_USER}:department eq \"$dept\"")
             node.shouldBeInstanceOf<AttributeExpression>()
-            node.path.schemaUri shouldBe "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+            node.path.schemaUri shouldBe ScimUrns.ENTERPRISE_USER
             node.path.attributeName shouldBe "department"
         }
     }

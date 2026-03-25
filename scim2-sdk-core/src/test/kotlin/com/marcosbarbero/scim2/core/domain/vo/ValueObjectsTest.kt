@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.vo
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -36,7 +37,7 @@ class ValueObjectsTest {
 
         @Test
         fun `toString returns the value`() {
-            val urn = "urn:ietf:params:scim:schemas:core:2.0:User"
+            val urn = ScimUrns.USER
             val uri = SchemaUri(urn)
             uri.toString() shouldBe urn
         }

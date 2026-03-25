@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.model.search
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
@@ -26,7 +27,7 @@ class SearchModelsTest {
         val json = mapper.writeValueAsString(request)
         val deserialized = mapper.readValue<SearchRequest>(json)
 
-        deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:SearchRequest")
+        deserialized.schemas shouldBe listOf(ScimUrns.SEARCH_REQUEST)
         deserialized.filter shouldBe "userName eq \"$userName\""
         deserialized.sortBy shouldBe "userName"
         deserialized.sortOrder shouldBe SortOrder.DESCENDING
@@ -49,7 +50,7 @@ class SearchModelsTest {
         val json = mapper.writeValueAsString(response)
         val deserialized = mapper.readValue<ListResponse<Map<String, String>>>(json)
 
-        deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:ListResponse")
+        deserialized.schemas shouldBe listOf(ScimUrns.LIST_RESPONSE)
         deserialized.totalResults shouldBe 100
         deserialized.itemsPerPage shouldBe 10
         deserialized.resources.size shouldBe 2

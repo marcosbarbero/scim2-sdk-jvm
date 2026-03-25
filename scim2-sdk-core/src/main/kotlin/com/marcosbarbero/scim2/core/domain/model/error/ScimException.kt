@@ -1,5 +1,7 @@
 package com.marcosbarbero.scim2.core.domain.model.error
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
+
 open class ScimException(
     val status: Int,
     val scimType: ScimErrorType? = null,
@@ -7,7 +9,7 @@ open class ScimException(
 ) : RuntimeException(detail) {
 
     fun toScimError(): ScimError = ScimError(
-        schemas = listOf("urn:ietf:params:scim:api:messages:2.0:Error"),
+        schemas = listOf(ScimUrns.ERROR),
         status = status.toString(),
         scimType = scimType?.value,
         detail = detail

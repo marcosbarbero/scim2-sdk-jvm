@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.model.patch
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
@@ -26,7 +27,7 @@ class PatchModelsTest {
         val json = mapper.writeValueAsString(request)
         val deserialized = mapper.readValue<PatchRequest>(json)
 
-        deserialized.schemas shouldBe listOf("urn:ietf:params:scim:api:messages:2.0:PatchOp")
+        deserialized.schemas shouldBe listOf(ScimUrns.PATCH_OP)
         deserialized.operations.size shouldBe 3
         deserialized.operations[0].op shouldBe PatchOp.ADD
         deserialized.operations[1].op shouldBe PatchOp.REMOVE

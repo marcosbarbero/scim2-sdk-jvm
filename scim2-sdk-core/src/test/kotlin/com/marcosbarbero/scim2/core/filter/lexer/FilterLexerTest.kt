@@ -1,5 +1,6 @@
 package com.marcosbarbero.scim2.core.filter.lexer
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidFilterException
 import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
@@ -40,10 +41,10 @@ class FilterLexerTest {
 
         @Test
         fun `should tokenize URN-prefixed attribute path`() {
-            val tokens = tokenize("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department")
+            val tokens = tokenize("${ScimUrns.ENTERPRISE_USER}:department")
             tokens shouldHaveSize 2
             tokens[0].type shouldBe TokenType.ATTR_PATH
-            tokens[0].value shouldBe "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:department"
+            tokens[0].value shouldBe "${ScimUrns.ENTERPRISE_USER}:department"
         }
     }
 
