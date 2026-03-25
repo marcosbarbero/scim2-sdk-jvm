@@ -16,25 +16,25 @@ class ScimController(private val dispatcher: ScimEndpointDispatcher) {
 
     @RequestMapping("/**")
     fun handle(request: HttpServletRequest): ResponseEntity<ByteArray> {
-        val scimRequest = toScimHttpRequest(request)
+        val scimRequest = request.toScimHttpRequest()
         val scimResponse = dispatcher.dispatch(scimRequest)
-        return toResponseEntity(scimResponse)
+        return scimResponse.toResponseEntity()
     }
 
-    private fun toScimHttpRequest(request: HttpServletRequest): ScimHttpRequest {
-        val method = HttpMethod.valueOf(request.method.uppercase())
-        val path = request.requestURI
+    private fun HttpServletRequest.toScimHttpRequest(): ScimHttpRequest {
+        val method = HttpMethod.valueOf(this.method.uppercase())
+        val path = requestURI
         val headers = mutableMapOf<String, List<String>>()
-        val headerNames = request.headerNames
+        val headerNames = this.headerNames
         while (headerNames.hasMoreElements()) {
             val name = headerNames.nextElement()
-            headers[name] = request.getHeaders(name).toList()
+            headers[name] = getHeaders(name).toList()
         }
         val queryParameters = mutableMapOf<String, List<String>>()
-        request.parameterMap.forEach { (key, values) ->
+        parameterMap.forEach { (key, values) ->
             queryParameters[key] = values.toList()
         }
-        val body = request.inputStream.readAllBytes().takeIf { it.isNotEmpty() }
+        val body = inputStream.readAllBytes().takeIf { it.isNotEmpty() }
 
         return ScimHttpRequest(
             method = method,
@@ -45,12 +45,12 @@ class ScimController(private val dispatcher: ScimEndpointDispatcher) {
         )
     }
 
-    private fun toResponseEntity(response: ScimHttpResponse): ResponseEntity<ByteArray> {
+    private fun ScimHttpResponse.toResponseEntity(): ResponseEntity<ByteArray> {
         val headers = HttpHeaders()
-        response.headers.forEach { (key, value) -> headers.add(key, value) }
+        this.headers.forEach { (key, value) -> headers.add(key, value) }
         return ResponseEntity
-            .status(response.status)
+            .status(status)
             .headers(headers)
-            .body(response.body)
+            .body(body)
     }
 }
