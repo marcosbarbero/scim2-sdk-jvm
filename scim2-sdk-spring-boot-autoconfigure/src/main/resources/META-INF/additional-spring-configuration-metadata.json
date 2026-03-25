@@ -103,7 +103,7 @@
     {
       "name": "scim.persistence.auto-migrate",
       "type": "java.lang.Boolean",
-      "description": "Whether to automatically create the SCIM resources table on startup.",
+      "description": "Whether to automatically run Flyway migrations for the SCIM schema. When enabled, creates the scim_resources table on startup.",
       "defaultValue": false
     }
   ]

@@ -1,0 +1,38 @@
+{
+  "realm": "scim-test",
+  "enabled": true,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      {
+        "name": "scim-admin",
+        "description": "SCIM administrator role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "scim-client",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "scim-secret",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocol": "openid-connect",
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email"
+      ]
+    }
+  ],
+  "scopeMappings": [
+    {
+      "client": "scim-client",
+      "roles": [
+        "scim-admin"
+      ]
+    }
+  ]
+}

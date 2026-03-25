@@ -32,6 +32,7 @@
         <module>scim2-sdk-spring-boot-starter</module>
         <module>scim2-sdk-test</module>
         <module>scim2-sdk-samples/sample-server-spring</module>
+        <module>scim2-sdk-samples/sample-server-java</module>
         <module>scim2-sdk-samples/sample-server-plain</module>
     </modules>
 
