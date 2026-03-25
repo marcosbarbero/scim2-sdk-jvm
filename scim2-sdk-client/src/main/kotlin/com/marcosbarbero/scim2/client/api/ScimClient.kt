@@ -1,0 +1,50 @@
+package com.marcosbarbero.scim2.client.api
+
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
+import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
+import com.marcosbarbero.scim2.core.domain.model.schema.ResourceType
+import com.marcosbarbero.scim2.core.domain.model.schema.Schema
+import com.marcosbarbero.scim2.core.domain.model.schema.ServiceProviderConfig
+import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
+import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import kotlin.reflect.KClass
+
+interface ScimClient : AutoCloseable {
+
+    fun <T : ScimResource> create(endpoint: String, resource: T, type: KClass<T>): ScimResponse<T>
+
+    fun <T : ScimResource> get(endpoint: String, id: String, type: KClass<T>): ScimResponse<T>
+
+    fun <T : ScimResource> replace(endpoint: String, id: String, resource: T, type: KClass<T>): ScimResponse<T>
+
+    fun <T : ScimResource> patch(endpoint: String, id: String, patchRequest: PatchRequest, type: KClass<T>): ScimResponse<T>
+
+    fun delete(endpoint: String, id: String)
+
+    fun <T : ScimResource> search(endpoint: String, searchRequest: SearchRequest, type: KClass<T>): ScimResponse<ListResponse<T>>
+
+    fun bulk(bulkRequest: BulkRequest): ScimResponse<BulkResponse>
+
+    fun getServiceProviderConfig(): ScimResponse<ServiceProviderConfig>
+
+    fun getSchemas(): ScimResponse<ListResponse<Schema>>
+
+    fun getResourceTypes(): ScimResponse<ListResponse<ResourceType>>
+}
+
+inline fun <reified T : ScimResource> ScimClient.create(endpoint: String, resource: T): ScimResponse<T> =
+    create(endpoint, resource, T::class)
+
+inline fun <reified T : ScimResource> ScimClient.get(endpoint: String, id: String): ScimResponse<T> =
+    get(endpoint, id, T::class)
+
+inline fun <reified T : ScimResource> ScimClient.replace(endpoint: String, id: String, resource: T): ScimResponse<T> =
+    replace(endpoint, id, resource, T::class)
+
+inline fun <reified T : ScimResource> ScimClient.patch(endpoint: String, id: String, patchRequest: PatchRequest): ScimResponse<T> =
+    patch(endpoint, id, patchRequest, T::class)
+
+inline fun <reified T : ScimResource> ScimClient.search(endpoint: String, searchRequest: SearchRequest): ScimResponse<ListResponse<T>> =
+    search(endpoint, searchRequest, T::class)
