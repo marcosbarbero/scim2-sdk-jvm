@@ -456,6 +456,40 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>4.6</version>
+                <configuration>
+                    <licenseSets>
+                        <licenseSet>
+                            <header>${maven.multiModuleProjectDirectory}/src/main/resources/license-header.txt</header>
+                            <includes>
+                                <include>**/*.kt</include>
+                                <include>**/*.java</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/target/**</exclude>
+                            </excludes>
+                        </licenseSet>
+                    </licenseSets>
+                    <properties>
+                        <year>2026</year>
+                    </properties>
+                    <mapping>
+                        <kt>SLASHSTAR_STYLE</kt>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>check-license</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
