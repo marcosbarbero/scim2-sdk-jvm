@@ -47,6 +47,11 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
             <optional>true</optional>
@@ -99,4 +104,11 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <!--
+        Note: spring-boot-configuration-processor (kapt) doesn't generate metadata for Kotlin
+        data classes with constructor binding. We use additional-spring-configuration-metadata.json
+        instead (src/main/resources/META-INF/), which is the recommended approach for Kotlin.
+        See: https://docs.spring.io/spring-boot/reference/features/developing-auto-configuration.html
+    -->
 </project>
