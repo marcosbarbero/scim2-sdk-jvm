@@ -63,6 +63,35 @@ class CustomUserHandler(private val userService: UserService) : ResourceHandler<
 }
 ```
 
+#### Java equivalent
+
+```java
+@Component
+public class CustomUserHandler implements ResourceHandler<User> {
+    private final UserService userService;
+
+    public CustomUserHandler(UserService userService) {
+        this.userService = userService;
+    }
+
+    @Override public Class<User> getResourceType() { return User.class; }
+    @Override public String getEndpoint() { return "/Users"; }
+
+    @Override
+    public User create(User resource, ScimRequestContext context) {
+        return userService.create(resource);
+    }
+
+    @Override
+    public User get(ResourceId id, ScimRequestContext context) {
+        return userService.findById(id.getValue());
+    }
+    // ... other methods
+}
+```
+
+See [sample-server-java](scim2-sdk-samples/sample-server-java/) for a complete Java example.
+
 ### Without Spring Boot
 
 ```kotlin
@@ -130,6 +159,45 @@ val patch = PatchRequest(
 client.patch("/Users", userId, patch, User::class)
 ```
 
+#### Java client usage
+
+```java
+import kotlin.jvm.JvmClassMappingKt;
+import kotlin.reflect.KClass;
+
+// Helper to convert Java Class to Kotlin KClass (one-line utility)
+static <T> KClass<T> kclass(Class<T> c) { return JvmClassMappingKt.getKotlinClass(c); }
+
+ScimClient client = new ScimClientBuilder()
+    .baseUrl("https://scim.example.com/scim/v2")
+    .transport(new JavaHttpClientTransport())
+    .serializer(new JacksonScimSerializer())
+    .authentication(new BearerTokenAuthentication("your-token"))
+    .build();
+
+// Create a user — all fields except userName are optional (null)
+User user = new User(
+    null, null, null,        // id, externalId, meta
+    "john.doe",              // userName (required)
+    null, "John Doe", null, null, null, null, null, null, null, null, null,
+    List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of()
+);
+ScimResponse<User> response = client.create("/Users", user, kclass(User.class));
+
+// Search — schemas is non-null, use ScimUrns.SEARCH_REQUEST
+SearchRequest searchRequest = new SearchRequest(
+    List.of(ScimUrns.SEARCH_REQUEST),  // schemas
+    "userName sw \"john\"",            // filter
+    "userName",                        // sortBy
+    null,                              // sortOrder
+    1,                                 // startIndex
+    25,                                // count
+    null,                              // attributes
+    null                               // excludedAttributes
+);
+ScimResponse<ListResponse<User>> results = client.search("/Users", searchRequest, kclass(User.class));
+```
+
 ## Modules
 
 | Module | Description |
@@ -168,6 +236,24 @@ When `scim.persistence.enabled=true`, the JPA adapter stores resources as JSON. 
 - PostgreSQL, MySQL, Oracle, MS SQL Server, H2
 
 Find them in `scim2-sdk-spring-boot-autoconfigure/src/main/resources/db/scim/`.
+
+### Database Migration
+
+Three options for managing the SCIM schema:
+
+1. **Hibernate DDL (development)**: Set `spring.jpa.hibernate.ddl-auto=create-drop` — used in samples.
+
+2. **Manual migration**: Copy the reference schema from `db/scim/schema-{database}.sql` into your own Flyway/Liquibase migrations.
+
+3. **Auto-migration (opt-in)**: Enable the built-in Flyway migration:
+   ```yaml
+   scim:
+     persistence:
+       enabled: true
+       auto-migrate: true        # runs Flyway migration for SCIM tables
+       schema-name: my_schema    # optional, defaults to the datasource default schema
+   ```
+   This uses a separate Flyway history table (`scim_flyway_history`) so it does not conflict with your application's migrations. Requires `org.flywaydb:flyway-core` on the classpath.
 
 ## Requirements
 
