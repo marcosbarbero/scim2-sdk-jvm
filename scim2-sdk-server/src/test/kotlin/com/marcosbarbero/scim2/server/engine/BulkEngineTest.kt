@@ -1,0 +1,184 @@
+package com.marcosbarbero.scim2.server.engine
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkOperation
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
+import com.marcosbarbero.scim2.core.domain.model.common.Meta
+import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
+import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
+import com.marcosbarbero.scim2.core.domain.model.resource.User
+import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
+import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import com.marcosbarbero.scim2.core.domain.vo.ETag
+import com.marcosbarbero.scim2.core.domain.vo.ResourceId
+import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
+import com.marcosbarbero.scim2.server.config.ScimServerConfig
+import com.marcosbarbero.scim2.server.port.ResourceHandler
+import com.marcosbarbero.scim2.server.port.ScimRequestContext
+import io.github.serpro69.kfaker.Faker
+import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import kotlin.reflect.KClass
+
+class BulkEngineTest {
+
+    private val faker = Faker()
+    private val objectMapper = jacksonObjectMapper()
+    private val config = ScimServerConfig()
+    private val context = ScimRequestContext()
+    private val users = mutableMapOf<String, User>()
+
+    private val serializer = object : ScimSerializer {
+        override fun <T : Any> serialize(value: T): ByteArray = objectMapper.writeValueAsBytes(value)
+        override fun <T : Any> deserialize(bytes: ByteArray, type: KClass<T>): T = objectMapper.readValue(bytes, type.java)
+        override fun serializeToString(value: Any): String = objectMapper.writeValueAsString(value)
+        override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
+    }
+
+    private val userHandler = object : ResourceHandler<User> {
+        override val resourceType: Class<User> = User::class.java
+        override val endpoint: String = "/Users"
+
+        override fun get(id: ResourceId, context: ScimRequestContext): User =
+            users[id.value] ?: throw ResourceNotFoundException("User not found: ${id.value}")
+
+        override fun create(resource: User, context: ScimRequestContext): User {
+            val id = java.util.UUID.randomUUID().toString()
+            val created = resource.copy(id = id)
+            users[id] = created
+            return created
+        }
+
+        override fun replace(id: ResourceId, resource: User, version: ETag?, context: ScimRequestContext): User {
+            val replaced = resource.copy(id = id.value)
+            users[id.value] = replaced
+            return replaced
+        }
+
+        override fun patch(id: ResourceId, request: PatchRequest, version: ETag?, context: ScimRequestContext): User {
+            val existing = users[id.value] ?: throw ResourceNotFoundException("User not found: ${id.value}")
+            return existing
+        }
+
+        override fun delete(id: ResourceId, version: ETag?, context: ScimRequestContext) {
+            users.remove(id.value) ?: throw ResourceNotFoundException("User not found: ${id.value}")
+        }
+
+        override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> =
+            ListResponse(totalResults = users.size, resources = users.values.toList())
+    }
+
+    private val engine = BulkEngine(listOf(userHandler), serializer, config)
+
+    @Test
+    fun `execute should process POST operation`() {
+        val userName = faker.name.firstName()
+        val userData = objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
+            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to userName)
+        )
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "POST", path = "/Users", bulkId = "user1", data = userData)
+            )
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "201"
+        response.operations[0].bulkId shouldBe "user1"
+    }
+
+    @Test
+    fun `execute should process DELETE operation`() {
+        val id = java.util.UUID.randomUUID().toString()
+        users[id] = User(id = id, userName = faker.name.firstName())
+
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "DELETE", path = "/Users/$id")
+            )
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "204"
+    }
+
+    @Test
+    fun `execute should resolve bulkId cross-references`() {
+        val userName1 = faker.name.firstName()
+        val userName2 = faker.name.firstName()
+        val user1Data = objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
+            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to userName1)
+        )
+        val user2Data = objectMapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(
+            mapOf("schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"), "userName" to userName2)
+        )
+
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "POST", path = "/Users", bulkId = "user1", data = user1Data),
+                BulkOperation(method = "POST", path = "/Users", bulkId = "user2", data = user2Data)
+            )
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 2
+        response.operations[0].status shouldBe "201"
+        response.operations[1].status shouldBe "201"
+    }
+
+    @Test
+    fun `execute should stop after failOnErrors threshold`() {
+        val request = BulkRequest(
+            failOnErrors = 1,
+            operations = listOf(
+                BulkOperation(method = "DELETE", path = "/Users/nonexistent1"),
+                BulkOperation(method = "DELETE", path = "/Users/nonexistent2"),
+                BulkOperation(method = "DELETE", path = "/Users/nonexistent3")
+            )
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "404"
+    }
+
+    @Test
+    fun `execute should reject requests exceeding max operations`() {
+        val tinyConfig = config.copy(bulkMaxOperations = 2)
+        val smallEngine = BulkEngine(listOf(userHandler), serializer, tinyConfig)
+
+        val request = BulkRequest(
+            operations = (1..5).map {
+                BulkOperation(method = "DELETE", path = "/Users/${java.util.UUID.randomUUID()}")
+            }
+        )
+
+        assertThrows<IllegalArgumentException> {
+            smallEngine.execute(request, context)
+        }
+    }
+
+    @Test
+    fun `execute should return 404 for unknown endpoint`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "DELETE", path = "/Unknown/123")
+            )
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations[0].status shouldBe "404"
+    }
+}
