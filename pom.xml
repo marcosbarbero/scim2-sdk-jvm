@@ -31,6 +31,8 @@
         <module>scim2-sdk-spring-boot-autoconfigure</module>
         <module>scim2-sdk-spring-boot-starter</module>
         <module>scim2-sdk-test</module>
+        <module>scim2-sdk-samples/sample-server-spring</module>
+        <module>scim2-sdk-samples/sample-server-plain</module>
     </modules>
 
     <properties>
