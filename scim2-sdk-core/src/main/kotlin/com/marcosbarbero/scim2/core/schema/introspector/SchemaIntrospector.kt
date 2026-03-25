@@ -77,7 +77,7 @@ class SchemaIntrospector {
 
         return SchemaAttribute(
             name = annotation?.name?.takeIf { it.isNotEmpty() } ?: property.name,
-            type = annotation?.type?.takeIf { it != AttributeType.STRING } ?: attrType,
+            type = if (annotation != null) annotation.type else attrType,
             multiValued = isMultiValued,
             description = annotation?.description ?: "",
             required = annotation?.required ?: false,

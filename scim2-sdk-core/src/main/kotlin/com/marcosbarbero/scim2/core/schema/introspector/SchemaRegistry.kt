@@ -36,19 +36,18 @@ class SchemaRegistry {
                 "Class ${resourceType.simpleName} must be annotated with @ScimResource"
             )
 
-        val existing = resourceTypes[rtAnnotation.name]
-            ?: throw IllegalStateException(
-                "Resource type ${rtAnnotation.name} must be registered before adding extensions"
-            )
-
         val extension = ResourceType.SchemaExtension(
             schema = extensionAnnotation.schema,
             required = false
         )
 
-        resourceTypes[existing.name] = existing.copy(
-            schemaExtensions = existing.schemaExtensions + extension
-        )
+        resourceTypes.compute(rtAnnotation.name) { _, existing ->
+            existing
+                ?: throw IllegalStateException(
+                    "Resource type ${rtAnnotation.name} must be registered before adding extensions"
+                )
+            existing.copy(schemaExtensions = existing.schemaExtensions + extension)
+        }
     }
 
     fun getSchema(uri: String): Schema? = schemas[uri]
