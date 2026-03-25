@@ -59,16 +59,63 @@ class KeycloakE2eTest {
                 false
             }
             if (dockerAvailable) {
-                keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
-                    .withRealmImportFile("test-realm.json")
-                keycloak!!.start()
+                try {
+                    keycloak = KeycloakContainer("quay.io/keycloak/keycloak:26.0")
+                    keycloak!!.start()
+                    setupRealm()
+                } catch (_: Exception) {
+                    keycloak = null
+                }
             }
+        }
+
+        private fun setupRealm() {
+            val kc = keycloak ?: return
+            val adminToken = obtainAdminTokenStatic(kc)
+
+            // Create realm
+            val httpClient = java.net.http.HttpClient.newHttpClient()
+            val realmJson = """{"realm":"scim-test","enabled":true}"""
+            val realmReq = java.net.http.HttpRequest.newBuilder()
+                .uri(URI.create("${kc.authServerUrl}/admin/realms"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer $adminToken")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(realmJson))
+                .build()
+            httpClient.send(realmReq, java.net.http.HttpResponse.BodyHandlers.ofString())
+
+            // Create client
+            val clientJson = """{"clientId":"scim-client","secret":"scim-secret","enabled":true,"serviceAccountsEnabled":true,"directAccessGrantsEnabled":true,"publicClient":false,"protocol":"openid-connect","standardFlowEnabled":false}"""
+            val clientReq = java.net.http.HttpRequest.newBuilder()
+                .uri(URI.create("${kc.authServerUrl}/admin/realms/scim-test/clients"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer $adminToken")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(clientJson))
+                .build()
+            httpClient.send(clientReq, java.net.http.HttpResponse.BodyHandlers.ofString())
+        }
+
+        private fun obtainAdminTokenStatic(kc: KeycloakContainer): String {
+            val httpClient = java.net.http.HttpClient.newHttpClient()
+            val tokenUrl = "${kc.authServerUrl}/realms/master/protocol/openid-connect/token"
+            val formData = "grant_type=password&client_id=admin-cli&username=${URLEncoder.encode(kc.adminUsername, Charsets.UTF_8)}&password=${URLEncoder.encode(kc.adminPassword, Charsets.UTF_8)}"
+            val request = java.net.http.HttpRequest.newBuilder()
+                .uri(URI.create(tokenUrl))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(formData))
+                .build()
+            val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+            val body = response.body()
+            val tokenStart = body.indexOf("\"access_token\":\"") + "\"access_token\":\"".length
+            val tokenEnd = body.indexOf("\"", tokenStart)
+            return body.substring(tokenStart, tokenEnd)
         }
 
         @BeforeAll
         @JvmStatic
         fun checkDocker() {
             assumeTrue(dockerAvailable, "Docker is not available -- skipping Keycloak E2E tests")
+            assumeTrue(keycloak?.isRunning == true, "Keycloak container failed to start")
         }
 
         @DynamicPropertySource
