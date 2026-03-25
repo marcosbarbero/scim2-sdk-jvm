@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.spring.autoconfigure
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import com.marcosbarbero.scim2.core.event.ScimEventPublisher
 import com.marcosbarbero.scim2.core.observability.ScimMetrics
 import com.marcosbarbero.scim2.core.observability.ScimTracer

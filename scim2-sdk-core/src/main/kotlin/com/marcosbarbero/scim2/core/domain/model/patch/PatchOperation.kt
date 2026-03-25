@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.core.domain.model.patch
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 
 data class PatchOperation(
     val op: PatchOp,

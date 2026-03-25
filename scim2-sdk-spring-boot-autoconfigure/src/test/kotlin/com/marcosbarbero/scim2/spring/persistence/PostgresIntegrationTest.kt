@@ -26,7 +26,7 @@ class PostgresIntegrationTest {
 
     companion object {
         @Container
-        val postgres = PostgreSQLContainer("postgres:16-alpine")
+        val postgres = PostgreSQLContainer("postgres:17-alpine")
 
         @JvmStatic
         @DynamicPropertySource
@@ -36,6 +36,7 @@ class PostgresIntegrationTest {
             registry.add("spring.datasource.password") { postgres.password }
             registry.add("spring.jpa.hibernate.ddl-auto") { "create-drop" }
             registry.add("scim.persistence.enabled") { "true" }
+            registry.add("spring.flyway.enabled") { "false" }
         }
     }
 

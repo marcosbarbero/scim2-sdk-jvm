@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.server.adapter.http
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse

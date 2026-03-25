@@ -21,7 +21,7 @@ class PostgresCustomSchemaTest {
 
     companion object {
         @Container
-        val postgres = PostgreSQLContainer("postgres:16-alpine")
+        val postgres = PostgreSQLContainer("postgres:17-alpine")
             .withInitScript("create-custom-schema.sql")
 
         @JvmStatic
@@ -33,6 +33,7 @@ class PostgresCustomSchemaTest {
             registry.add("spring.jpa.hibernate.ddl-auto") { "create-drop" }
             registry.add("scim.persistence.enabled") { "true" }
             registry.add("scim.persistence.schema-name") { "custom_scim" }
+            registry.add("spring.flyway.enabled") { "false" }
         }
     }
 

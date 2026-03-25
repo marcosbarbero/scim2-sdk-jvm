@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.client.dsl
 
-import com.fasterxml.jackson.databind.node.TextNode
+import tools.jackson.databind.node.StringNode
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import io.kotest.matchers.collections.shouldHaveSize
@@ -19,7 +19,7 @@ class PatchDslTest {
         request.operations shouldHaveSize 2
         request.operations[0].op shouldBe PatchOp.ADD
         request.operations[0].path shouldBe "displayName"
-        request.operations[0].value shouldBe TextNode("John")
+        request.operations[0].value shouldBe StringNode("John")
         request.operations[1].op shouldBe PatchOp.REMOVE
         request.operations[1].path shouldBe "title"
         request.operations[1].value shouldBe null
@@ -31,12 +31,12 @@ class PatchDslTest {
         request.operations shouldHaveSize 1
         request.operations[0].op shouldBe PatchOp.REPLACE
         request.operations[0].path shouldBe "userName"
-        request.operations[0].value shouldBe TextNode("newUser")
+        request.operations[0].value shouldBe StringNode("newUser")
     }
 
     @Test
     fun `scimPatch with JsonNode add`() {
-        val jsonNode = TextNode("jsonValue")
+        val jsonNode = StringNode("jsonValue")
         val request = scimPatch { add("field", jsonNode) }
         request.operations shouldHaveSize 1
         request.operations[0].op shouldBe PatchOp.ADD
@@ -45,7 +45,7 @@ class PatchDslTest {
 
     @Test
     fun `scimPatch with no path on add`() {
-        val jsonNode = TextNode("value")
+        val jsonNode = StringNode("value")
         val request = scimPatch { add(value = jsonNode) }
         request.operations shouldHaveSize 1
         request.operations[0].op shouldBe PatchOp.ADD

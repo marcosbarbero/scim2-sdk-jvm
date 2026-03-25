@@ -1,8 +1,9 @@
 package com.marcosbarbero.scim2.core.patch
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.ObjectNode
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ArrayNode
+import tools.jackson.databind.node.ObjectNode
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidPathException
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
@@ -37,8 +38,8 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
 
         path ?: run {
             // No path: value must be an object, merge its attributes into the resource
-            (value as? ObjectNode)?.fieldNames()?.forEach { fieldName ->
-                node.set<com.fasterxml.jackson.databind.JsonNode>(fieldName, value.get(fieldName))
+            (value as? ObjectNode)?.propertyNames()?.forEach { fieldName ->
+                node.set(fieldName, value.get(fieldName))
             } ?: throw InvalidValueException("ADD operation with no path requires an object value")
             return node
         }
@@ -59,7 +60,7 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
             val array = existing as ArrayNode
             value?.takeIf { it.isArray }?.forEach { array.add(it) } ?: array.add(value)
         } else {
-            node.set<com.fasterxml.jackson.databind.JsonNode>(path, value)
+            node.set(path, value)
         }
         return node
     }
@@ -86,13 +87,13 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
 
         path ?: run {
             // No path: value must be an object, replace its attributes
-            (value as? ObjectNode)?.fieldNames()?.forEach { fieldName ->
-                node.set<com.fasterxml.jackson.databind.JsonNode>(fieldName, value.get(fieldName))
+            (value as? ObjectNode)?.propertyNames()?.forEach { fieldName ->
+                node.set(fieldName, value.get(fieldName))
             } ?: throw InvalidValueException("REPLACE operation with no path requires an object value")
             return node
         }
 
-        node.set<com.fasterxml.jackson.databind.JsonNode>(path, value)
+        node.set(path, value)
         return node
     }
 
@@ -101,15 +102,15 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         attrName: String,
         filterAttr: String,
         filterValue: String,
-        value: com.fasterxml.jackson.databind.JsonNode?
+        value: JsonNode?
     ) {
         val array = node.get(attrName) as? ArrayNode ?: return
         for (i in 0 until array.size()) {
             val element = array.get(i) as? ObjectNode ?: continue
             val fieldValue = element.get(filterAttr)?.asText()
             if (fieldValue.equals(filterValue, ignoreCase = true)) {
-                (value as? ObjectNode)?.fieldNames()?.forEach { field ->
-                    element.set<com.fasterxml.jackson.databind.JsonNode>(field, value.get(field))
+                (value as? ObjectNode)?.propertyNames()?.forEach { field ->
+                    element.set(field, value.get(field))
                 } ?: throw InvalidValueException("Filtered multi-valued attribute update requires an object value")
             }
         }
@@ -130,7 +131,7 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
                 newArray.add(array.get(i))
             }
         }
-        node.set<com.fasterxml.jackson.databind.JsonNode>(attrName, newArray)
+        node.set(attrName, newArray)
     }
 
     companion object {

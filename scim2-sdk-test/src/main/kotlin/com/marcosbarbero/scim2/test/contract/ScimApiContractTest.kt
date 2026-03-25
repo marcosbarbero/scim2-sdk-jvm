@@ -1,6 +1,6 @@
 package com.marcosbarbero.scim2.test.contract
 
-import com.fasterxml.jackson.databind.JsonNode
+import tools.jackson.databind.JsonNode
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
