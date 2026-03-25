@@ -1,3 +1,8 @@
+[![Build](https://github.com/marcosbarbero/scim2-sdk-jvm/actions/workflows/ci.yml/badge.svg)](https://github.com/marcosbarbero/scim2-sdk-jvm/actions/workflows/ci.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/com.marcosbarbero/scim2-sdk-core)](https://central.sonatype.com/search?q=com.marcosbarbero.scim2-sdk)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.1-purple.svg)](https://kotlinlang.org)
+
 # SCIM 2.0 SDK for JVM
 
 A modern, Kotlin-first SCIM 2.0 (RFC 7643/7644) SDK for the JVM with full Java interop.

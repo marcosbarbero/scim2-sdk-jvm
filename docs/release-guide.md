@@ -1,0 +1,115 @@
+# Release Guide
+
+## Prerequisites
+
+### 1. Sonatype Central Portal Account
+
+Register at [central.sonatype.com](https://central.sonatype.com) and claim the `com.marcosbarbero` namespace.
+
+Verification: Add a DNS TXT record to `marcosbarbero.com` with the verification code provided by Sonatype, or use the GitHub-based verification if available.
+
+### 2. GPG Key
+
+Generate a GPG key for signing artifacts:
+
+```bash
+gpg --full-generate-key
+# Choose RSA, 4096 bits, no expiration, your name and email
+
+# Export and publish the public key
+gpg --keyserver keyserver.ubuntu.com --send-keys YOUR_KEY_ID
+gpg --keyserver keys.openpgp.org --send-keys YOUR_KEY_ID
+
+# Export the private key for CI (base64 encoded)
+gpg --export-secret-keys YOUR_KEY_ID | base64 > gpg-private-key.b64
+```
+
+### 3. GitHub Repository Secrets
+
+Configure these secrets in the repository settings (Settings > Secrets > Actions):
+
+| Secret | Description |
+|---|---|
+| `SONATYPE_USERNAME` | Sonatype Central Portal username (or token) |
+| `SONATYPE_PASSWORD` | Sonatype Central Portal password (or token) |
+| `GPG_PRIVATE_KEY` | Base64-encoded GPG private key |
+| `GPG_PASSPHRASE` | Passphrase for the GPG key |
+
+### 4. Maven Settings
+
+The CI workflow uses these secrets automatically. For local releases, configure `~/.m2/settings.xml`:
+
+```xml
+<settings>
+    <servers>
+        <server>
+            <id>central</id>
+            <username>${env.SONATYPE_USERNAME}</username>
+            <password>${env.SONATYPE_PASSWORD}</password>
+        </server>
+    </servers>
+</settings>
+```
+
+## Release Process
+
+### 1. Prepare the release
+
+```bash
+# Ensure main is up to date
+git checkout main && git pull
+
+# Verify the build
+mvn clean verify -B
+
+# Run mutation tests
+mvn verify -Pmutation -pl scim2-sdk-core -B
+```
+
+### 2. Create a release
+
+#### Option A: Release via GitHub UI (Recommended)
+
+1. Go to the repository -> Releases -> "Create a new release"
+2. Create a new tag (e.g., `v1.0.0-M1`)
+3. Add release title and notes
+4. Click "Publish release"
+5. GitHub Actions automatically builds, tests, signs, and deploys to Maven Central
+
+#### Option B: Release via command line
+
+```bash
+# Create and push a tag
+git tag v1.0.0-M1
+git push origin v1.0.0-M1
+
+# Then create GitHub Release
+gh release create v1.0.0-M1 --title "1.0.0-M1" --generate-notes
+```
+
+### 3. GitHub Actions handles the rest
+
+The `release.yml` workflow triggers on `v*` tags and GitHub Release publication:
+1. Builds all modules
+2. Runs all tests
+3. Signs artifacts with GPG
+4. Deploys to Sonatype Central Portal
+5. The artifacts are automatically published to Maven Central
+
+## Version Management
+
+The project uses `${revision}` with `flatten-maven-plugin` for CI-friendly versioning:
+- Development: `0.1.0-SNAPSHOT` (set in parent pom.xml)
+- Release: version from tag, passed as `-Drevision=1.0.0-M1`
+
+## Checklist for 1.0.0-M1
+
+- [ ] All tests pass (`mvn clean verify`)
+- [ ] Mutation tests pass (`mvn verify -Pmutation -pl scim2-sdk-core`)
+- [ ] Pact contract tests pass
+- [ ] Documentation is up to date
+- [ ] CLAUDE.md is current
+- [ ] ADRs are complete
+- [ ] GPG key published to key servers
+- [ ] GitHub secrets configured
+- [ ] Sonatype namespace claimed and verified
