@@ -1,0 +1,87 @@
+{
+  "properties": [
+    {
+      "name": "scim.base-path",
+      "type": "java.lang.String",
+      "description": "Base path for all SCIM 2.0 endpoints.",
+      "defaultValue": "/scim/v2"
+    },
+    {
+      "name": "scim.bulk.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether SCIM bulk operations are enabled.",
+      "defaultValue": true
+    },
+    {
+      "name": "scim.bulk.max-operations",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of operations in a single bulk request.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "scim.bulk.max-payload-size",
+      "type": "java.lang.Long",
+      "description": "Maximum payload size in bytes for bulk requests.",
+      "defaultValue": 1048576
+    },
+    {
+      "name": "scim.filter.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether SCIM filtering is enabled.",
+      "defaultValue": true
+    },
+    {
+      "name": "scim.filter.max-results",
+      "type": "java.lang.Integer",
+      "description": "Maximum number of results returned by a filtered query.",
+      "defaultValue": 200
+    },
+    {
+      "name": "scim.pagination.default-page-size",
+      "type": "java.lang.Integer",
+      "description": "Default page size when count is not specified.",
+      "defaultValue": 100
+    },
+    {
+      "name": "scim.pagination.max-page-size",
+      "type": "java.lang.Integer",
+      "description": "Maximum allowed page size.",
+      "defaultValue": 1000
+    },
+    {
+      "name": "scim.etag.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether ETag support is enabled for optimistic concurrency.",
+      "defaultValue": true
+    },
+    {
+      "name": "scim.patch.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether SCIM PATCH operations are enabled.",
+      "defaultValue": true
+    },
+    {
+      "name": "scim.sort.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Whether SCIM sorting is enabled.",
+      "defaultValue": false
+    },
+    {
+      "name": "scim.client.base-url",
+      "type": "java.lang.String",
+      "description": "Base URL of the remote SCIM service provider."
+    },
+    {
+      "name": "scim.client.connect-timeout",
+      "type": "java.time.Duration",
+      "description": "Connection timeout for the SCIM client.",
+      "defaultValue": "10s"
+    },
+    {
+      "name": "scim.client.read-timeout",
+      "type": "java.time.Duration",
+      "description": "Read timeout for the SCIM client.",
+      "defaultValue": "30s"
+    }
+  ]
+}
