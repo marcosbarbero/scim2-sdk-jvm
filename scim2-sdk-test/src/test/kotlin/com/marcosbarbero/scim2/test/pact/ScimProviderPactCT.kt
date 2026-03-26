@@ -54,7 +54,7 @@ import java.net.URI
 @Provider("ScimServiceProvider")
 @PactFolder("../../scim2-sdk-client/target/pacts")
 @EnabledIf("pactFilesExist")
-class ScimProviderPactVerificationTest {
+class ScimProviderPactCT {
 
     companion object {
         private var serverPort: Int = 0

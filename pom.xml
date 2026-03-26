@@ -296,6 +296,15 @@
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>${argLine}</argLine>
+                        <!-- Unit tests only: exclude CT (contract), IT (integration), E2E -->
+                        <excludes>
+                            <exclude>**/*CT.java</exclude>
+                            <exclude>**/*CT.kt</exclude>
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IT.kt</exclude>
+                            <exclude>**/*E2E.java</exclude>
+                            <exclude>**/*E2E.kt</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -304,6 +313,11 @@
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>${argLine}</argLine>
+                        <!-- Integration tests: *IT files only -->
+                        <includes>
+                            <include>**/*IT.java</include>
+                            <include>**/*IT.kt</include>
+                        </includes>
                     </configuration>
                     <executions>
                         <execution>
@@ -551,6 +565,46 @@
     </build>
 
     <profiles>
+        <!-- mvn verify -Pcontract-tests -->
+        <profile>
+            <id>contract-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override" />
+                            <includes>
+                                <include>**/*CT.java</include>
+                                <include>**/*CT.kt</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- mvn verify -Pe2e -->
+        <profile>
+            <id>e2e</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override" />
+                            <includes>
+                                <include>**/*E2E.java</include>
+                                <include>**/*E2E.kt</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>mutation</id>
             <build>

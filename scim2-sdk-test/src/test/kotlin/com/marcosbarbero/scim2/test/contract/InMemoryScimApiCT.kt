@@ -26,7 +26,7 @@ import com.marcosbarbero.scim2.test.handler.InMemoryResourceHandler
 import com.marcosbarbero.scim2.test.repository.InMemoryResourceRepository
 import io.github.serpro69.kfaker.Faker
 
-class InMemoryScimApiContractIT : ScimApiContractTest() {
+class InMemoryScimApiCT : ScimApiContractTest() {
 
     private val objectMapper = JacksonScimSerializer.defaultObjectMapper()
     private val faker = Faker()

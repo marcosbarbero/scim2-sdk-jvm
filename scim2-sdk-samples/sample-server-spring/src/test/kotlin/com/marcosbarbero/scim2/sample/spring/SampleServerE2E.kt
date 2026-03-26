@@ -45,8 +45,8 @@ import org.springframework.security.web.SecurityFilterChain
 import tools.jackson.databind.node.StringNode
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(SampleServerE2eTest.NoSecurityConfig::class)
-class SampleServerIT(@LocalServerPort val port: Int) {
+@Import(SampleServerE2E.NoSecurityConfig::class)
+class SampleServerE2E(@LocalServerPort val port: Int) {
 
     @TestConfiguration
     class NoSecurityConfig {

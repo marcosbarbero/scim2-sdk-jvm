@@ -51,7 +51,7 @@ import java.net.http.HttpClient
  */
 @PactConsumerTest
 @PactTestFor(providerName = "ScimServiceProvider")
-class ScimClientPactIT {
+class ScimClientPactCT {
 
     private val serializer = JacksonScimSerializer()
 
