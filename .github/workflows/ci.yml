@@ -51,7 +51,7 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    needs: [lint]
+    # Runs in parallel with lint — no dependency
     steps:
       - uses: actions/checkout@v4
 
