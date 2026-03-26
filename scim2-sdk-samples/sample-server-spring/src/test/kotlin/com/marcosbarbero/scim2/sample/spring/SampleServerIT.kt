@@ -46,7 +46,7 @@ import tools.jackson.databind.node.StringNode
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(SampleServerE2eTest.NoSecurityConfig::class)
-class SampleServerE2eTest(@LocalServerPort val port: Int) {
+class SampleServerIT(@LocalServerPort val port: Int) {
 
     @TestConfiguration
     class NoSecurityConfig {

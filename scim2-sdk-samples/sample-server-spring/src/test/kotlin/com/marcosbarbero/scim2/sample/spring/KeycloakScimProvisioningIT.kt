@@ -81,7 +81,7 @@ import java.net.http.HttpResponse
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class KeycloakScimProvisioningE2eTest {
+class KeycloakScimProvisioningIT {
 
     companion object {
         private const val REALM = "scim-test"

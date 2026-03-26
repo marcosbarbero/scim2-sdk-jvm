@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * using {@code JvmClassMappingKt.getKotlinClass(User.class)}. This is a one-line conversion.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class SampleServerJavaE2eTest {
+class SampleServerJavaIT {
 
     @LocalServerPort
     private int port;

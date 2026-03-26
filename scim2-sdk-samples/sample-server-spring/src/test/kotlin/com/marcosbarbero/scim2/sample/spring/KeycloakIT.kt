@@ -61,7 +61,7 @@ import java.net.http.HttpResponse
  * Requires Docker. Automatically skipped when Docker is not available.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class KeycloakE2eTest {
+class KeycloakIT {
 
     companion object {
         private var keycloak: KeycloakContainer? = null
