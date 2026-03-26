@@ -48,10 +48,9 @@ jobs:
         run: mvn spotless:check -B -T1C
 
   build:
-    name: Build & Test
+    name: Build & Unit Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    # Runs in parallel with lint — no dependency
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -69,8 +68,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build and test
-        run: mvn clean verify -B -U
+      - name: Build and unit test
+        run: mvn clean verify -DskipITs -B
 
       - name: Upload JaCoCo reports
         if: always()
@@ -85,6 +84,30 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Run integration tests
+        run: mvn verify -DskipTests -B
 
   mutation-tests:
     name: Mutation Tests
