@@ -95,7 +95,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Run contract tests (Pact + API contracts)
-        run: mvn verify -Pcontract-tests -B
+        run: mvn test -Pcontract-tests -B
 
   integration-tests:
     name: Integration Tests
@@ -135,7 +135,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
       - name: Run E2E tests (full app + Keycloak)
-        run: mvn verify -Pe2e -B
+        run: mvn test -Pe2e -B
 
   mutation-tests:
     name: Mutation Tests

@@ -565,7 +565,7 @@
     </build>
 
     <profiles>
-        <!-- mvn verify -Pcontract-tests -->
+        <!-- mvn test -Pcontract-tests -->
         <profile>
             <id>contract-tests</id>
             <build>
@@ -581,11 +581,18 @@
                             </includes>
                         </configuration>
                     </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
 
-        <!-- mvn verify -Pe2e -->
+        <!-- mvn test -Pe2e -->
         <profile>
             <id>e2e</id>
             <build>
@@ -599,6 +606,13 @@
                                 <include>**/*E2E.java</include>
                                 <include>**/*E2E.kt</include>
                             </includes>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
                         </configuration>
                     </plugin>
                 </plugins>
