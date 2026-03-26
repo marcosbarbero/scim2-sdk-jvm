@@ -15,15 +15,15 @@
  */
 package com.marcosbarbero.scim2.core.domain.model.resource
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.common.Address
 import com.marcosbarbero.scim2.core.domain.model.common.GroupMembership
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
 import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.common.Name
-import com.marcosbarbero.scim2.core.domain.ScimUrns
-import com.marcosbarbero.scim2.core.schema.annotation.ScimAttribute
 import com.marcosbarbero.scim2.core.schema.annotation.Mutability
 import com.marcosbarbero.scim2.core.schema.annotation.Returned
+import com.marcosbarbero.scim2.core.schema.annotation.ScimAttribute
 import com.marcosbarbero.scim2.core.schema.annotation.Uniqueness
 import java.net.URI
 
@@ -31,7 +31,7 @@ import java.net.URI
     schema = ScimUrns.USER,
     name = "User",
     description = "User Account",
-    endpoint = "/Users"
+    endpoint = "/Users",
 )
 data class User(
     override val id: String? = null,
@@ -63,10 +63,10 @@ data class User(
     val groups: List<GroupMembership> = emptyList(),
     val entitlements: List<MultiValuedAttribute> = emptyList(),
     val roles: List<MultiValuedAttribute> = emptyList(),
-    val x509Certificates: List<MultiValuedAttribute> = emptyList()
+    val x509Certificates: List<MultiValuedAttribute> = emptyList(),
 ) : ScimResource(
     schemas = listOf(ScimUrns.USER),
     id = id,
     externalId = externalId,
-    meta = meta
+    meta = meta,
 )

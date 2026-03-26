@@ -30,8 +30,6 @@ import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
-import tools.jackson.databind.node.StringNode
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldNotBeBlank
@@ -44,10 +42,11 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.web.SecurityFilterChain
+import tools.jackson.databind.node.StringNode
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(SampleServerE2eTest.NoSecurityConfig::class)
-class SampleServerE2eTest(@LocalServerPort val port: Int) {
+@Import(SampleServerE2E.NoSecurityConfig::class)
+class SampleServerE2E(@LocalServerPort val port: Int) {
 
     @TestConfiguration
     class NoSecurityConfig {
@@ -138,9 +137,9 @@ class SampleServerE2eTest(@LocalServerPort val port: Int) {
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "displayName",
-                    value = StringNode("Patched Name")
-                )
-            )
+                    value = StringNode("Patched Name"),
+                ),
+            ),
         )
         val response = client.patch<User>("/Users", id, patchRequest)
         response.statusCode shouldBe 200
@@ -169,7 +168,7 @@ class SampleServerE2eTest(@LocalServerPort val port: Int) {
         client.create<User>("/Users", user)
 
         val searchRequest = SearchRequest(
-            filter = "userName eq \"e2e.filter.$uniqueSuffix\""
+            filter = "userName eq \"e2e.filter.$uniqueSuffix\"",
         )
         val response = client.search<User>("/Users", searchRequest)
         response.statusCode shouldBe 200

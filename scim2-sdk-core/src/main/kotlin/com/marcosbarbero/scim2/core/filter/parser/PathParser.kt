@@ -66,7 +66,7 @@ object PathParser {
         return if (dotIdx >= 0) {
             PathNode.SimplePath(
                 attributeName = attrToken.value.substring(0, dotIdx),
-                subAttribute = attrToken.value.substring(dotIdx + 1)
+                subAttribute = attrToken.value.substring(dotIdx + 1),
             )
         } else {
             PathNode.SimplePath(attributeName = attrToken.value)

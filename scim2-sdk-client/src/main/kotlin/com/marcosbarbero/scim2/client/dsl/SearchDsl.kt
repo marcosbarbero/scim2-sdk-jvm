@@ -34,14 +34,30 @@ class SearchBuilder {
     private var attributes: List<String> = emptyList()
     private var excludedAttributes: List<String> = emptyList()
 
-    fun filter(value: String) { this.filter = value }
-    fun filter(block: FilterBuilder.() -> FilterNode) { this.filter = scimFilter(block).toFilterString() }
-    fun sortBy(value: String) { this.sortBy = value }
-    fun sortOrder(value: SortOrder) { this.sortOrder = value }
-    fun startIndex(value: Int) { this.startIndex = value }
-    fun count(value: Int) { this.count = value }
-    fun attributes(vararg attrs: String) { this.attributes = attrs.toList() }
-    fun excludedAttributes(vararg attrs: String) { this.excludedAttributes = attrs.toList() }
+    fun filter(value: String) {
+        this.filter = value
+    }
+    fun filter(block: FilterBuilder.() -> FilterNode) {
+        this.filter = scimFilter(block).toFilterString()
+    }
+    fun sortBy(value: String) {
+        this.sortBy = value
+    }
+    fun sortOrder(value: SortOrder) {
+        this.sortOrder = value
+    }
+    fun startIndex(value: Int) {
+        this.startIndex = value
+    }
+    fun count(value: Int) {
+        this.count = value
+    }
+    fun attributes(vararg attrs: String) {
+        this.attributes = attrs.toList()
+    }
+    fun excludedAttributes(vararg attrs: String) {
+        this.excludedAttributes = attrs.toList()
+    }
 
     fun build() = SearchRequest(
         filter = filter,
@@ -50,6 +66,6 @@ class SearchBuilder {
         startIndex = startIndex,
         count = count,
         attributes = attributes.ifEmpty { null },
-        excludedAttributes = excludedAttributes.ifEmpty { null }
+        excludedAttributes = excludedAttributes.ifEmpty { null },
     )
 }

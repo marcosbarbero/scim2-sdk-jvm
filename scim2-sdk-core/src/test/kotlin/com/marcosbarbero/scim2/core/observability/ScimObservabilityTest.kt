@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test
 import java.time.Duration
 
 class ScimObservabilityTest {
-
     @Test
     fun `NoOpScimMetrics should not throw on any method`() {
         val d = Duration.ofMillis(100)

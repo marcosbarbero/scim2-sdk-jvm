@@ -15,12 +15,12 @@
  */
 package com.marcosbarbero.scim2.client.dsl
 
-import tools.jackson.databind.node.StringNode
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.node.StringNode
 
 class PatchDslTest {
 

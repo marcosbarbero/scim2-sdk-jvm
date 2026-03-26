@@ -46,7 +46,7 @@ class ScimClientBuilder {
             transport = resolvedTransport,
             serializer = resolvedSerializer,
             authentication = authentication,
-            defaultHeaders = defaultHeaders
+            defaultHeaders = defaultHeaders,
         )
     }
 }

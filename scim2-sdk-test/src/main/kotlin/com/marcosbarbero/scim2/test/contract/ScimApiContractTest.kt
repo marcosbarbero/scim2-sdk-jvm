@@ -15,20 +15,19 @@
  */
 package com.marcosbarbero.scim2.test.contract
 
-import tools.jackson.databind.JsonNode
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.server.http.HttpMethod
 import com.marcosbarbero.scim2.server.http.ScimHttpRequest
 import com.marcosbarbero.scim2.server.http.ScimHttpResponse
-import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.JsonNode
 
 /**
  * Abstract contract test that validates HTTP-level RFC 7644 compliance.
@@ -214,9 +213,9 @@ abstract class ScimApiContractTest {
             mapOf(
                 "schemas" to listOf(ScimUrns.PATCH_OP),
                 "Operations" to listOf(
-                    mapOf("op" to "replace", "path" to "displayName", "value" to "Updated")
-                )
-            )
+                    mapOf("op" to "replace", "path" to "displayName", "value" to "Updated"),
+                ),
+            ),
         )
         val response = patch("/Users/$id", patchBody)
         response.status shouldBe 200
@@ -256,8 +255,8 @@ abstract class ScimApiContractTest {
             mapOf(
                 "schemas" to listOf(ScimUrns.SEARCH_REQUEST),
                 "startIndex" to 1,
-                "count" to 10
-            )
+                "count" to 10,
+            ),
         )
         val response = postSearch("/Users/.search", searchBody)
         response.status shouldBe 200
@@ -313,65 +312,58 @@ abstract class ScimApiContractTest {
 
     // === Helper methods ===
 
-    private fun post(path: String, body: ByteArray): ScimHttpResponse =
-        dispatcher.dispatch(
-            ScimHttpRequest(
-                method = HttpMethod.POST,
-                path = "${basePath()}$path",
-                body = body,
-                headers = mapOf("Content-Type" to listOf("application/scim+json"))
-            )
-        )
+    private fun post(path: String, body: ByteArray): ScimHttpResponse = dispatcher.dispatch(
+        ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${basePath()}$path",
+            body = body,
+            headers = mapOf("Content-Type" to listOf("application/scim+json")),
+        ),
+    )
 
-    private fun get(path: String, headers: Map<String, List<String>> = emptyMap()): ScimHttpResponse =
-        dispatcher.dispatch(
-            ScimHttpRequest(
-                method = HttpMethod.GET,
-                path = "${basePath()}$path",
-                headers = headers
-            )
-        )
+    private fun get(path: String, headers: Map<String, List<String>> = emptyMap()): ScimHttpResponse = dispatcher.dispatch(
+        ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${basePath()}$path",
+            headers = headers,
+        ),
+    )
 
-    private fun put(path: String, body: ByteArray): ScimHttpResponse =
-        dispatcher.dispatch(
-            ScimHttpRequest(
-                method = HttpMethod.PUT,
-                path = "${basePath()}$path",
-                body = body,
-                headers = mapOf("Content-Type" to listOf("application/scim+json"))
-            )
-        )
+    private fun put(path: String, body: ByteArray): ScimHttpResponse = dispatcher.dispatch(
+        ScimHttpRequest(
+            method = HttpMethod.PUT,
+            path = "${basePath()}$path",
+            body = body,
+            headers = mapOf("Content-Type" to listOf("application/scim+json")),
+        ),
+    )
 
-    private fun patch(path: String, body: ByteArray): ScimHttpResponse =
-        dispatcher.dispatch(
-            ScimHttpRequest(
-                method = HttpMethod.PATCH,
-                path = "${basePath()}$path",
-                body = body,
-                headers = mapOf("Content-Type" to listOf("application/scim+json"))
-            )
-        )
+    private fun patch(path: String, body: ByteArray): ScimHttpResponse = dispatcher.dispatch(
+        ScimHttpRequest(
+            method = HttpMethod.PATCH,
+            path = "${basePath()}$path",
+            body = body,
+            headers = mapOf("Content-Type" to listOf("application/scim+json")),
+        ),
+    )
 
-    private fun delete(path: String): ScimHttpResponse =
-        dispatcher.dispatch(
-            ScimHttpRequest(
-                method = HttpMethod.DELETE,
-                path = "${basePath()}$path"
-            )
-        )
+    private fun delete(path: String): ScimHttpResponse = dispatcher.dispatch(
+        ScimHttpRequest(
+            method = HttpMethod.DELETE,
+            path = "${basePath()}$path",
+        ),
+    )
 
-    private fun postSearch(path: String, body: ByteArray): ScimHttpResponse =
-        dispatcher.dispatch(
-            ScimHttpRequest(
-                method = HttpMethod.POST,
-                path = "${basePath()}$path",
-                body = body,
-                headers = mapOf("Content-Type" to listOf("application/scim+json"))
-            )
-        )
+    private fun postSearch(path: String, body: ByteArray): ScimHttpResponse = dispatcher.dispatch(
+        ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${basePath()}$path",
+            body = body,
+            headers = mapOf("Content-Type" to listOf("application/scim+json")),
+        ),
+    )
 
     private fun basePath(): String = "/scim/v2"
 
-    private fun parseJson(response: ScimHttpResponse): JsonNode =
-        objectMapper.readTree(response.body)
+    private fun parseJson(response: ScimHttpResponse): JsonNode = objectMapper.readTree(response.body)
 }

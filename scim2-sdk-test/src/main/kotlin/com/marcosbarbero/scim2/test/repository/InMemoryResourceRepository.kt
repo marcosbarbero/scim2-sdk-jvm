@@ -16,19 +16,19 @@
 package com.marcosbarbero.scim2.test.repository
 
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
+import com.marcosbarbero.scim2.core.domain.model.error.ResourceConflictException
+import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.domain.vo.ETag
-import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
-import com.marcosbarbero.scim2.core.domain.model.error.ResourceConflictException
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryResourceRepository<T : ScimResource>(
-    private val copyWithIdAndMeta: (T, String, Meta) -> T
+    private val copyWithIdAndMeta: (T, String, Meta) -> T,
 ) : ResourceRepository<T> {
 
     private val store = ConcurrentHashMap<String, T>()
@@ -45,7 +45,7 @@ class InMemoryResourceRepository<T : ScimResource>(
             resourceType = resource.schemas.firstOrNull()?.substringAfterLast(":"),
             created = now,
             lastModified = now,
-            version = ETag("W/\"${UUID.randomUUID()}\"")
+            version = ETag("W/\"${UUID.randomUUID()}\""),
         )
         val stored = copyWithIdAndMeta(resource, id, meta)
         store[id] = stored
@@ -63,7 +63,7 @@ class InMemoryResourceRepository<T : ScimResource>(
             resourceType = existing.meta?.resourceType,
             created = existing.meta?.created,
             lastModified = now,
-            version = ETag("W/\"${UUID.randomUUID()}\"")
+            version = ETag("W/\"${UUID.randomUUID()}\""),
         )
         val stored = copyWithIdAndMeta(resource, id, meta)
         store[id] = stored
@@ -90,7 +90,7 @@ class InMemoryResourceRepository<T : ScimResource>(
             totalResults = all.size,
             itemsPerPage = page.size,
             startIndex = startIndex,
-            resources = page
+            resources = page,
         )
     }
 
@@ -106,7 +106,7 @@ class InMemoryResourceRepository<T : ScimResource>(
             resourceType = resource.schemas.firstOrNull()?.substringAfterLast(":"),
             created = now,
             lastModified = now,
-            version = ETag("W/\"${UUID.randomUUID()}\"")
+            version = ETag("W/\"${UUID.randomUUID()}\""),
         )
         val stored = copyWithIdAndMeta(resource, id, meta)
         store[id] = stored

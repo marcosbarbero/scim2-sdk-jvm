@@ -15,10 +15,10 @@
  */
 package com.marcosbarbero.scim2.spring.autoconfigure
 
+import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.spring.web.ScimController
 import com.marcosbarbero.scim2.spring.web.ScimExceptionHandler
-import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import jakarta.servlet.http.HttpServletRequest
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
@@ -35,11 +35,9 @@ class ScimWebAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    fun scimController(dispatcher: ScimEndpointDispatcher): ScimController =
-        ScimController(dispatcher)
+    fun scimController(dispatcher: ScimEndpointDispatcher): ScimController = ScimController(dispatcher)
 
     @Bean
     @ConditionalOnMissingBean
-    fun scimExceptionHandler(serializer: ScimSerializer): ScimExceptionHandler =
-        ScimExceptionHandler(serializer)
+    fun scimExceptionHandler(serializer: ScimSerializer): ScimExceptionHandler = ScimExceptionHandler(serializer)
 }

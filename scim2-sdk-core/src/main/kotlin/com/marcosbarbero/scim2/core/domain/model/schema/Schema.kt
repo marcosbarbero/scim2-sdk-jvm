@@ -24,7 +24,7 @@ data class Schema(
     val id: String,
     val name: String?,
     val description: String?,
-    val attributes: List<SchemaAttribute>
+    val attributes: List<SchemaAttribute>,
 )
 
 data class SchemaAttribute(
@@ -39,5 +39,5 @@ data class SchemaAttribute(
     val returned: Returned = Returned.DEFAULT,
     val uniqueness: Uniqueness = Uniqueness.NONE,
     val referenceTypes: List<String> = emptyList(),
-    val subAttributes: List<SchemaAttribute> = emptyList()
+    val subAttributes: List<SchemaAttribute> = emptyList(),
 )

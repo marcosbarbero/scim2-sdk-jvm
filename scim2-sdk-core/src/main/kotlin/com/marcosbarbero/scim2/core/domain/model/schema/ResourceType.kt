@@ -21,7 +21,7 @@ data class ResourceType(
     val description: String?,
     val endpoint: String,
     val schema: String,
-    val schemaExtensions: List<SchemaExtension> = emptyList()
+    val schemaExtensions: List<SchemaExtension> = emptyList(),
 ) {
     data class SchemaExtension(val schema: String, val required: Boolean)
 }

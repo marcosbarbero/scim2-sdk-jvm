@@ -28,21 +28,15 @@ class InMemoryResourceHandler<T : ScimResource>(
     override val resourceType: Class<T>,
     override val endpoint: String,
     val repository: InMemoryResourceRepository<T>,
-    private val patchApplier: ((T, PatchRequest) -> T)? = null
+    private val patchApplier: ((T, PatchRequest) -> T)? = null,
 ) : ResourceHandler<T> {
 
-    override fun get(id: String, context: ScimRequestContext): T {
-        return repository.findById(id)
-            ?: throw ResourceNotFoundException("Resource not found: $id")
-    }
+    override fun get(id: String, context: ScimRequestContext): T = repository.findById(id)
+        ?: throw ResourceNotFoundException("Resource not found: $id")
 
-    override fun create(resource: T, context: ScimRequestContext): T {
-        return repository.create(resource)
-    }
+    override fun create(resource: T, context: ScimRequestContext): T = repository.create(resource)
 
-    override fun replace(id: String, resource: T, version: String?, context: ScimRequestContext): T {
-        return repository.replace(id, resource, version)
-    }
+    override fun replace(id: String, resource: T, version: String?, context: ScimRequestContext): T = repository.replace(id, resource, version)
 
     override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): T {
         val existing = repository.findById(id)
@@ -58,7 +52,5 @@ class InMemoryResourceHandler<T : ScimResource>(
         repository.delete(id, version)
     }
 
-    override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<T> {
-        return repository.search(request)
-    }
+    override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<T> = repository.search(request)
 }

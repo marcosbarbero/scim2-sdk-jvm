@@ -31,7 +31,7 @@ data class ResourceCreatedEvent(
     override val timestamp: Instant = Instant.now(),
     override val resourceType: String,
     override val resourceId: String,
-    override val correlationId: String? = null
+    override val correlationId: String? = null,
 ) : ScimEvent()
 
 data class ResourceReplacedEvent(
@@ -39,7 +39,7 @@ data class ResourceReplacedEvent(
     override val timestamp: Instant = Instant.now(),
     override val resourceType: String,
     override val resourceId: String,
-    override val correlationId: String? = null
+    override val correlationId: String? = null,
 ) : ScimEvent()
 
 data class ResourcePatchedEvent(
@@ -48,7 +48,7 @@ data class ResourcePatchedEvent(
     override val resourceType: String,
     override val resourceId: String,
     override val correlationId: String? = null,
-    val operationCount: Int = 0
+    val operationCount: Int = 0,
 ) : ScimEvent()
 
 data class ResourceDeletedEvent(
@@ -56,7 +56,7 @@ data class ResourceDeletedEvent(
     override val timestamp: Instant = Instant.now(),
     override val resourceType: String,
     override val resourceId: String,
-    override val correlationId: String? = null
+    override val correlationId: String? = null,
 ) : ScimEvent()
 
 data class BulkOperationCompletedEvent(
@@ -66,5 +66,5 @@ data class BulkOperationCompletedEvent(
     override val resourceId: String = "",
     override val correlationId: String? = null,
     val operationCount: Int = 0,
-    val failureCount: Int = 0
+    val failureCount: Int = 0,
 ) : ScimEvent()

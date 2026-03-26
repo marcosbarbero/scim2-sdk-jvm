@@ -23,5 +23,5 @@ data class GroupMembership(
     @JsonProperty("\$ref")
     val ref: URI? = null,
     val display: String? = null,
-    val type: String? = null
+    val type: String? = null,
 )

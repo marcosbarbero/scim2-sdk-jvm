@@ -29,12 +29,12 @@ interface ScimInterceptor {
     fun postHandle(
         request: ScimHttpRequest,
         response: ScimHttpResponse,
-        context: ScimRequestContext
+        context: ScimRequestContext,
     ): ScimHttpResponse = response
 
     fun onError(
         request: ScimHttpRequest,
         exception: ScimException,
-        context: ScimRequestContext
+        context: ScimRequestContext,
     ): ScimException = exception
 }

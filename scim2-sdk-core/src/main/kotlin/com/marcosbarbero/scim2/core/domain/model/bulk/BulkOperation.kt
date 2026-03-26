@@ -21,5 +21,5 @@ data class BulkOperation(
     val method: String,
     val path: String? = null,
     val bulkId: String? = null,
-    val data: JsonNode? = null
+    val data: JsonNode? = null,
 )

@@ -36,7 +36,7 @@ class FilterLexer(private val input: String) {
             "pr" to TokenType.OP_PR,
             "and" to TokenType.OP_AND,
             "or" to TokenType.OP_OR,
-            "not" to TokenType.OP_NOT
+            "not" to TokenType.OP_NOT,
         )
     }
 
@@ -48,15 +48,27 @@ class FilterLexer(private val input: String) {
             val ch = input[pos]
             when {
                 ch == '"' -> readString()
-                ch == '(' -> { tokens.add(Token(TokenType.LPAREN, "(", pos)); pos++ }
-                ch == ')' -> { tokens.add(Token(TokenType.RPAREN, ")", pos)); pos++ }
-                ch == '[' -> { tokens.add(Token(TokenType.LBRACKET, "[", pos)); pos++ }
-                ch == ']' -> { tokens.add(Token(TokenType.RBRACKET, "]", pos)); pos++ }
+                ch == '(' -> {
+                    tokens.add(Token(TokenType.LPAREN, "(", pos))
+                    pos++
+                }
+                ch == ')' -> {
+                    tokens.add(Token(TokenType.RPAREN, ")", pos))
+                    pos++
+                }
+                ch == '[' -> {
+                    tokens.add(Token(TokenType.LBRACKET, "[", pos))
+                    pos++
+                }
+                ch == ']' -> {
+                    tokens.add(Token(TokenType.RBRACKET, "]", pos))
+                    pos++
+                }
                 ch == '-' || ch.isDigit() -> readNumber()
                 ch.isLetter() || ch == '_' -> readWord()
                 ch == '.' && pos + 1 < input.length && input[pos + 1].isLetter() -> readWord()
                 else -> throw InvalidFilterException(
-                    "Unexpected character '$ch' at position $pos"
+                    "Unexpected character '$ch' at position $pos",
                 )
             }
         }
@@ -76,11 +88,26 @@ class FilterLexer(private val input: String) {
             val ch = input[pos]
             if (ch == '\\' && pos + 1 < input.length) {
                 when (input[pos + 1]) {
-                    '"' -> { sb.append('"'); pos += 2 }
-                    '\\' -> { sb.append('\\'); pos += 2 }
-                    'n' -> { sb.append('\n'); pos += 2 }
-                    't' -> { sb.append('\t'); pos += 2 }
-                    else -> { sb.append(ch); pos++ }
+                    '"' -> {
+                        sb.append('"')
+                        pos += 2
+                    }
+                    '\\' -> {
+                        sb.append('\\')
+                        pos += 2
+                    }
+                    'n' -> {
+                        sb.append('\n')
+                        pos += 2
+                    }
+                    't' -> {
+                        sb.append('\t')
+                        pos += 2
+                    }
+                    else -> {
+                        sb.append(ch)
+                        pos++
+                    }
                 }
             } else if (ch == '"') {
                 pos++ // skip closing quote

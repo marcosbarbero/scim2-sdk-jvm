@@ -31,7 +31,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 
 class SchemaRegistryTest {
-
     private val faker = Faker()
     private lateinit var registry: SchemaRegistry
 
@@ -42,7 +41,6 @@ class SchemaRegistryTest {
 
     @Nested
     inner class RegistrationTest {
-
         @Test
         fun `should register and retrieve User schema`() {
             registry.register(User::class)
@@ -95,7 +93,6 @@ class SchemaRegistryTest {
 
     @Nested
     inner class ExtensionRegistrationTest {
-
         @Test
         fun `should register extension and add to resource type`() {
             registry.register(User::class)
@@ -113,19 +110,25 @@ class SchemaRegistryTest {
             registry.register(User::class)
             registry.registerExtension(User::class, EnterpriseUserExtension::class)
 
-            val extSchema = registry.getSchema(
-                ScimUrns.ENTERPRISE_USER
-            )
+            val extSchema =
+                registry.getSchema(
+                    ScimUrns.ENTERPRISE_USER,
+                )
             extSchema.shouldNotBeNull()
-            extSchema.attributes.map { it.name }.toSet() shouldBe setOf(
-                "employeeNumber", "costCenter", "organization", "division", "department", "manager"
-            )
+            extSchema.attributes.map { it.name }.toSet() shouldBe
+                setOf(
+                    "employeeNumber",
+                    "costCenter",
+                    "organization",
+                    "division",
+                    "department",
+                    "manager",
+                )
         }
     }
 
     @Nested
     inner class ThreadSafetyTest {
-
         @Test
         fun `should handle concurrent reads safely`() {
             registry.register(User::class)
@@ -145,8 +148,10 @@ class SchemaRegistryTest {
                         val allTypes = registry.getAllResourceTypes()
                         synchronized(results) {
                             results.add(
-                                user != null && group != null &&
-                                    allSchemas.size == 2 && allTypes.size == 2
+                                user != null &&
+                                    group != null &&
+                                    allSchemas.size == 2 &&
+                                    allTypes.size == 2,
                             )
                         }
                     } finally {

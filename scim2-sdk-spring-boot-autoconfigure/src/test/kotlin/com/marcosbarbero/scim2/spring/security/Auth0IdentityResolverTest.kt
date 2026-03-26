@@ -76,8 +76,8 @@ class Auth0IdentityResolverTest {
         val jwt = mockJwt(
             mapOf(
                 "sub" to "auth0|user-1",
-                "https://my-app.auth0.com/roles" to listOf("admin", "editor")
-            )
+                "https://my-app.auth0.com/roles" to listOf("admin", "editor"),
+            ),
         )
         setAuthentication(jwt)
 
@@ -91,8 +91,8 @@ class Auth0IdentityResolverTest {
         val jwt = mockJwt(
             mapOf(
                 "sub" to "auth0|user-1",
-                "permissions" to listOf("read:users", "write:users")
-            )
+                "permissions" to listOf("read:users", "write:users"),
+            ),
         )
         setAuthentication(jwt)
 
@@ -107,8 +107,8 @@ class Auth0IdentityResolverTest {
             mapOf(
                 "sub" to "auth0|user-1",
                 "https://my-app.auth0.com/roles" to listOf("admin"),
-                "permissions" to listOf("read:users")
-            )
+                "permissions" to listOf("read:users"),
+            ),
         )
         setAuthentication(jwt)
 

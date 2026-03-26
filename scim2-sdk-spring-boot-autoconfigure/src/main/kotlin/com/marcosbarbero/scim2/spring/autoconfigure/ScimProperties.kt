@@ -29,13 +29,13 @@ data class ScimProperties(
     val pagination: PaginationProperties = PaginationProperties(),
     val client: ClientProperties = ClientProperties(),
     val persistence: PersistenceProperties = PersistenceProperties(),
-    val idp: IdpProperties = IdpProperties()
+    val idp: IdpProperties = IdpProperties(),
 ) {
     data class IdpProperties(
         val provider: String? = null,
         val clientId: String? = null,
         val namespace: String? = null,
-        val claims: ClaimMapping = ClaimMapping()
+        val claims: ClaimMapping = ClaimMapping(),
     )
 
     data class ClaimMapping(
@@ -62,51 +62,51 @@ data class ScimProperties(
         // Auth0-specific
         val permissions: String = "permissions",
         val nickname: String = "nickname",
-        val picture: String = "picture"
+        val picture: String = "picture",
     )
 
     data class BulkProperties(
         val enabled: Boolean = true,
         val maxOperations: Int = 1000,
-        val maxPayloadSize: Long = 1_048_576
+        val maxPayloadSize: Long = 1_048_576,
     )
 
     data class FilterProperties(
         val enabled: Boolean = true,
-        val maxResults: Int = 200
+        val maxResults: Int = 200,
     )
 
     data class SortProperties(
-        val enabled: Boolean = false
+        val enabled: Boolean = false,
     )
 
     data class EtagProperties(
-        val enabled: Boolean = true
+        val enabled: Boolean = true,
     )
 
     data class ChangePasswordProperties(
-        val enabled: Boolean = false
+        val enabled: Boolean = false,
     )
 
     data class PatchProperties(
-        val enabled: Boolean = true
+        val enabled: Boolean = true,
     )
 
     data class PaginationProperties(
         val defaultPageSize: Int = 100,
-        val maxPageSize: Int = 1000
+        val maxPageSize: Int = 1000,
     )
 
     data class ClientProperties(
         val baseUrl: String? = null,
         val connectTimeout: java.time.Duration = java.time.Duration.ofSeconds(10),
-        val readTimeout: java.time.Duration = java.time.Duration.ofSeconds(30)
+        val readTimeout: java.time.Duration = java.time.Duration.ofSeconds(30),
     )
 
     data class PersistenceProperties(
         val enabled: Boolean = false,
         val tableName: String = "scim_resources",
         val schemaName: String? = null,
-        val autoMigrate: Boolean = false
+        val autoMigrate: Boolean = false,
     )
 }

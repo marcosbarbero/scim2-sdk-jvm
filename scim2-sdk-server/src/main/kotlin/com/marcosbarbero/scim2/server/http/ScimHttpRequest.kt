@@ -20,19 +20,16 @@ data class ScimHttpRequest(
     val path: String,
     val headers: Map<String, List<String>> = emptyMap(),
     val queryParameters: Map<String, List<String>> = emptyMap(),
-    val body: ByteArray? = null
+    val body: ByteArray? = null,
 ) {
-    fun header(name: String): String? =
-        headers.entries
-            .firstOrNull { it.key.equals(name, ignoreCase = true) }
-            ?.value
-            ?.firstOrNull()
+    fun header(name: String): String? = headers.entries
+        .firstOrNull { it.key.equals(name, ignoreCase = true) }
+        ?.value
+        ?.firstOrNull()
 
-    fun queryParam(name: String): String? =
-        queryParameters[name]?.firstOrNull()
+    fun queryParam(name: String): String? = queryParameters[name]?.firstOrNull()
 
-    fun queryParamList(name: String): List<String> =
-        queryParameters[name] ?: emptyList()
+    fun queryParamList(name: String): List<String> = queryParameters[name] ?: emptyList()
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -55,5 +52,9 @@ data class ScimHttpRequest(
 }
 
 enum class HttpMethod {
-    GET, POST, PUT, PATCH, DELETE
+    GET,
+    POST,
+    PUT,
+    PATCH,
+    DELETE,
 }

@@ -50,7 +50,7 @@ class ScimClientAutoConfiguration {
         transport: HttpTransport,
         serializer: ScimSerializer,
         properties: ScimProperties,
-        authentication: ObjectProvider<AuthenticationStrategy>
+        authentication: ObjectProvider<AuthenticationStrategy>,
     ): ScimClient = ScimClientBuilder()
         .baseUrl(properties.client.baseUrl!!)
         .transport(transport)

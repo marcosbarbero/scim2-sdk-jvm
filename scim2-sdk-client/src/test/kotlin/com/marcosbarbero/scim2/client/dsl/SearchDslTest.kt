@@ -45,20 +45,29 @@ class SearchDslTest {
 
     @Test
     fun `scimSearch with sortOrder descending`() {
-        val request = scimSearch { sortBy("displayName"); sortOrder(SortOrder.DESCENDING) }
+        val request = scimSearch {
+            sortBy("displayName")
+            sortOrder(SortOrder.DESCENDING)
+        }
         request.sortOrder shouldBe SortOrder.DESCENDING
     }
 
     @Test
     fun `scimSearch with attributes and excludedAttributes`() {
-        val request = scimSearch { attributes("userName", "displayName"); excludedAttributes("emails") }
+        val request = scimSearch {
+            attributes("userName", "displayName")
+            excludedAttributes("emails")
+        }
         request.attributes shouldBe listOf("userName", "displayName")
         request.excludedAttributes shouldBe listOf("emails")
     }
 
     @Test
     fun `scimSearch with startIndex`() {
-        val request = scimSearch { startIndex(10); count(50) }
+        val request = scimSearch {
+            startIndex(10)
+            count(50)
+        }
         request.startIndex shouldBe 10
         request.count shouldBe 50
     }
@@ -77,7 +86,10 @@ class SearchDslTest {
 
     @Test
     fun `scimSearch with complex filter DSL`() {
-        val request = scimSearch { filter { (userName sw "j") and (active eq true) }; count(10) }
+        val request = scimSearch {
+            filter { (userName sw "j") and (active eq true) }
+            count(10)
+        }
         request.filter shouldBe """userName sw "j" and active eq true"""
     }
 }

@@ -25,12 +25,12 @@ import org.springframework.security.oauth2.jwt.Jwt
  */
 class Auth0IdentityResolver(
     private val namespace: String = "https://your-app.auth0.com",
-    claims: ClaimMapping = ClaimMapping()
+    claims: ClaimMapping = ClaimMapping(),
 ) : JwtIdentityResolver(claims) {
 
     override fun extractRoles(jwt: Jwt): Set<String> {
         val roles = mutableSetOf<String>()
-        jwt.getClaimAsStringList("${namespace}/${claims.roles}")?.let { roles.addAll(it) }
+        jwt.getClaimAsStringList("$namespace/${claims.roles}")?.let { roles.addAll(it) }
         jwt.getClaimAsStringList(claims.permissions)?.let { roles.addAll(it) }
         return roles
     }

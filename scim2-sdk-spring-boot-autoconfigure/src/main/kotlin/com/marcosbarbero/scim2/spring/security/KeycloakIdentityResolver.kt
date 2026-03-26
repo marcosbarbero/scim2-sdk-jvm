@@ -25,7 +25,7 @@ import org.springframework.security.oauth2.jwt.Jwt
  */
 class KeycloakIdentityResolver(
     private val clientId: String? = null,
-    claims: ClaimMapping = ClaimMapping()
+    claims: ClaimMapping = ClaimMapping(),
 ) : JwtIdentityResolver(claims) {
 
     @Suppress("UNCHECKED_CAST")

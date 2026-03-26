@@ -47,5 +47,5 @@ class ScimResourceEntity(
     open var created: Instant = Instant.now(),
 
     @Column(name = "last_modified", nullable = false)
-    open var lastModified: Instant = Instant.now()
+    open var lastModified: Instant = Instant.now(),
 )

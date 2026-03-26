@@ -15,13 +15,12 @@
  */
 package com.marcosbarbero.scim2.core.domain.model.error
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 class ScimProblemDetailTest {
 
@@ -93,7 +92,7 @@ class ScimProblemDetailTest {
             val error = ScimError(
                 status = "409",
                 scimType = "uniqueness",
-                detail = detail
+                detail = detail,
             )
 
             val problemDetail = ScimProblemDetail.fromScimError(error)
@@ -109,7 +108,7 @@ class ScimProblemDetailTest {
         fun `fromScimError without scimType uses about blank`() {
             val error = ScimError(
                 status = "404",
-                detail = "Resource not found"
+                detail = "Resource not found",
             )
 
             val problemDetail = ScimProblemDetail.fromScimError(error)
@@ -123,7 +122,7 @@ class ScimProblemDetailTest {
         fun `fromScimError with invalid status defaults to 500`() {
             val error = ScimError(
                 status = "invalid",
-                detail = "Something went wrong"
+                detail = "Something went wrong",
             )
 
             val problemDetail = ScimProblemDetail.fromScimError(error)
@@ -159,7 +158,7 @@ class ScimProblemDetailTest {
             val problemDetail = ScimProblemDetail(
                 status = 404,
                 detail = "User not found",
-                title = "Not Found"
+                title = "Not Found",
             )
 
             val json = mapper.writeValueAsString(problemDetail)
@@ -182,7 +181,7 @@ class ScimProblemDetailTest {
                 status = 400,
                 detail = "Bad filter",
                 title = "Invalid filter",
-                scimType = "invalidFilter"
+                scimType = "invalidFilter",
             )
 
             val json = mapper.writeValueAsString(problemDetail)
@@ -200,7 +199,7 @@ class ScimProblemDetailTest {
                 status = 409,
                 detail = "User already exists",
                 instance = "/Users/123",
-                scimType = "uniqueness"
+                scimType = "uniqueness",
             )
 
             val json = mapper.writeValueAsString(original)

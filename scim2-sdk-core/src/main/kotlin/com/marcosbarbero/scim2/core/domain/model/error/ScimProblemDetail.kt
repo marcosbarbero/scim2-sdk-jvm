@@ -33,7 +33,7 @@ data class ScimProblemDetail(
     val detail: String? = null,
     val instance: String? = null,
     @JsonProperty("scimType")
-    val scimType: String? = null
+    val scimType: String? = null,
 ) {
     companion object {
         private const val SCIM_ERROR_TYPE_PREFIX = "urn:ietf:params:scim:api:messages:2.0:Error:"
@@ -44,7 +44,7 @@ data class ScimProblemDetail(
                 ?: httpStatusTitle(ex.status),
             status = ex.status,
             detail = ex.detail,
-            scimType = ex.scimType?.value
+            scimType = ex.scimType?.value,
         )
 
         fun fromScimError(error: ScimError): ScimProblemDetail = ScimProblemDetail(
@@ -52,7 +52,7 @@ data class ScimProblemDetail(
             title = error.scimType ?: httpStatusTitle(error.status.toIntOrNull() ?: 500),
             status = error.status.toIntOrNull() ?: 500,
             detail = error.detail,
-            scimType = error.scimType
+            scimType = error.scimType,
         )
 
         internal fun httpStatusTitle(status: Int): String = when (status) {

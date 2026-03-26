@@ -19,8 +19,8 @@ import org.flywaydb.core.Flyway
 import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
-import org.springframework.boot.flyway.autoconfigure.FlywayMigrationInitializer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.flyway.autoconfigure.FlywayMigrationInitializer
 import org.springframework.context.annotation.Bean
 import javax.sql.DataSource
 
@@ -33,7 +33,7 @@ class ScimFlywayAutoConfiguration {
     @Bean
     fun scimFlywayInitializer(
         dataSource: DataSource,
-        properties: ScimProperties
+        properties: ScimProperties,
     ): FlywayMigrationInitializer {
         val flyway = Flyway.configure()
             .dataSource(dataSource)

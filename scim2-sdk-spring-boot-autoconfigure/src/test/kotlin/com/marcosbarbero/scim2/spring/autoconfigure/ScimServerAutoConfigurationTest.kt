@@ -25,12 +25,10 @@ import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.adapter.discovery.DiscoveryService
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
-import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import com.marcosbarbero.scim2.spring.handler.DefaultResourceHandler
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -46,8 +44,8 @@ class ScimServerAutoConfigurationTest {
             AutoConfigurations.of(
                 JacksonAutoConfiguration::class.java,
                 ScimJacksonAutoConfiguration::class.java,
-                ScimServerAutoConfiguration::class.java
-            )
+                ScimServerAutoConfiguration::class.java,
+            ),
         )
 
     @Test
@@ -74,7 +72,7 @@ class ScimServerAutoConfigurationTest {
                 "scim.etag.enabled=false",
                 "scim.patch.enabled=false",
                 "scim.pagination.default-page-size=25",
-                "scim.pagination.max-page-size=200"
+                "scim.pagination.max-page-size=200",
             )
             .withBean(TestUserHandler::class.java)
             .run { context ->
@@ -142,9 +140,10 @@ class ScimServerAutoConfigurationTest {
                 users[id] = resource
                 return resource
             }
-            override fun delete(id: String, version: String?) { users.remove(id) }
-            override fun search(request: SearchRequest): ListResponse<User> =
-                ListResponse(totalResults = users.size, resources = users.values.toList())
+            override fun delete(id: String, version: String?) {
+                users.remove(id)
+            }
+            override fun search(request: SearchRequest): ListResponse<User> = ListResponse(totalResults = users.size, resources = users.values.toList())
         }
 
         val handler = DefaultResourceHandler(User::class.java, "/Users", repo)
@@ -170,8 +169,7 @@ class ScimServerAutoConfigurationTest {
             override fun create(resource: User): User = resource
             override fun replace(id: String, resource: User, version: String?): User = resource
             override fun delete(id: String, version: String?) {}
-            override fun search(request: SearchRequest): ListResponse<User> =
-                ListResponse(totalResults = 0, resources = emptyList())
+            override fun search(request: SearchRequest): ListResponse<User> = ListResponse(totalResults = 0, resources = emptyList())
         }
 
         contextRunner

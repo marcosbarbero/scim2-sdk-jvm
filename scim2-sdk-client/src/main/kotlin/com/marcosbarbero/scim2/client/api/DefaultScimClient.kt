@@ -38,7 +38,7 @@ internal class DefaultScimClient(
     private val transport: HttpTransport,
     private val serializer: ScimSerializer,
     private val authentication: AuthenticationStrategy?,
-    private val defaultHeaders: Map<String, String>
+    private val defaultHeaders: Map<String, String>,
 ) : ScimClient {
 
     companion object {
@@ -164,30 +164,26 @@ internal class DefaultScimClient(
             }
             throw ScimClientException(
                 statusCode = response.statusCode,
-                scimError = scimError
+                scimError = scimError,
             )
         }
     }
 
-    private fun requireResponseBody(response: HttpResponse): ByteArray {
-        return response.body
-            ?: throw ScimClientException(
-                statusCode = response.statusCode,
-                message = "Expected response body but got empty response (status=${response.statusCode}, headers=${response.headers.keys})"
-            )
-    }
-
-    private fun <T> toScimResponse(value: T, response: HttpResponse): ScimResponse<T> {
-        return ScimResponse(
-            value = value,
+    private fun requireResponseBody(response: HttpResponse): ByteArray = response.body
+        ?: throw ScimClientException(
             statusCode = response.statusCode,
-            headers = response.headers,
-            etag = response.headers.entries
-                .firstOrNull { it.key.equals(ETAG_HEADER, ignoreCase = true) }
-                ?.value?.firstOrNull(),
-            location = response.headers.entries
-                .firstOrNull { it.key.equals(LOCATION_HEADER, ignoreCase = true) }
-                ?.value?.firstOrNull()
+            message = "Expected response body but got empty response (status=${response.statusCode}, headers=${response.headers.keys})",
         )
-    }
+
+    private fun <T> toScimResponse(value: T, response: HttpResponse): ScimResponse<T> = ScimResponse(
+        value = value,
+        statusCode = response.statusCode,
+        headers = response.headers,
+        etag = response.headers.entries
+            .firstOrNull { it.key.equals(ETAG_HEADER, ignoreCase = true) }
+            ?.value?.firstOrNull(),
+        location = response.headers.entries
+            .firstOrNull { it.key.equals(LOCATION_HEADER, ignoreCase = true) }
+            ?.value?.firstOrNull(),
+    )
 }

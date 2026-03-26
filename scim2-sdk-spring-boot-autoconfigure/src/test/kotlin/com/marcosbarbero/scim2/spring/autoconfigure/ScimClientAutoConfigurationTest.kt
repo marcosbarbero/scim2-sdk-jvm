@@ -35,8 +35,8 @@ class ScimClientAutoConfigurationTest {
             AutoConfigurations.of(
                 JacksonAutoConfiguration::class.java,
                 ScimJacksonAutoConfiguration::class.java,
-                ScimClientAutoConfiguration::class.java
-            )
+                ScimClientAutoConfiguration::class.java,
+            ),
         )
 
     @Test
@@ -86,7 +86,7 @@ class ScimClientAutoConfigurationTest {
             .withPropertyValues(
                 "scim.client.base-url=http://localhost:8080/scim/v2",
                 "scim.client.connect-timeout=5s",
-                "scim.client.read-timeout=15s"
+                "scim.client.read-timeout=15s",
             )
             .run { context ->
                 val transport = context.getBean(HttpTransport::class.java)

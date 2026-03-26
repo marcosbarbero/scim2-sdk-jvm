@@ -27,9 +27,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.AutoConfigurations
-import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
-import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration
 import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration
+import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 
 class ScimPersistenceAutoConfigurationTest {
@@ -41,12 +41,12 @@ class ScimPersistenceAutoConfigurationTest {
                 HibernateJpaAutoConfiguration::class.java,
                 JacksonAutoConfiguration::class.java,
                 ScimJacksonAutoConfiguration::class.java,
-                ScimPersistenceAutoConfiguration::class.java
-            )
+                ScimPersistenceAutoConfiguration::class.java,
+            ),
         )
         .withPropertyValues(
             "spring.datasource.url=jdbc:h2:mem:scim-autoconfig-test;DB_CLOSE_DELAY=-1",
-            "spring.jpa.hibernate.ddl-auto=create-drop"
+            "spring.jpa.hibernate.ddl-auto=create-drop",
         )
 
     @Test
@@ -77,8 +77,7 @@ class ScimPersistenceAutoConfigurationTest {
             override fun create(resource: User): User = resource
             override fun replace(id: String, resource: User, version: String?): User = resource
             override fun delete(id: String, version: String?) {}
-            override fun search(request: SearchRequest): ListResponse<User> =
-                ListResponse(totalResults = 0, resources = emptyList())
+            override fun search(request: SearchRequest): ListResponse<User> = ListResponse(totalResults = 0, resources = emptyList())
         }
 
         contextRunner

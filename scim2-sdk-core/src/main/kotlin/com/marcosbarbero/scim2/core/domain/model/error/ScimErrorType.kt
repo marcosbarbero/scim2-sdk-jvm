@@ -25,5 +25,5 @@ enum class ScimErrorType(val value: String) {
     NO_TARGET("noTarget"),
     INVALID_VALUE("invalidValue"),
     INVALID_VERS("invalidVers"),
-    SENSITIVE("sensitive")
+    SENSITIVE("sensitive"),
 }

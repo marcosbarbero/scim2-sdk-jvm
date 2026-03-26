@@ -15,7 +15,6 @@
  */
 package com.marcosbarbero.scim2.core.validation
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
@@ -27,6 +26,7 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
 
 class ScimValidatorTest {
 
@@ -93,9 +93,11 @@ class ScimValidatorTest {
         @Test
         fun `should pass for valid patch`() {
             val displayName = faker.name.name()
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName)),
+                ),
+            )
             val errors = validator.validatePatch(request)
             errors.shouldBeEmpty()
         }
@@ -110,9 +112,11 @@ class ScimValidatorTest {
 
         @Test
         fun `should fail when remove operation has no path`() {
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REMOVE)
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REMOVE),
+                ),
+            )
             val errors = validator.validatePatch(request)
             errors.shouldNotBeEmpty()
             errors[0] shouldContain "path"

@@ -69,8 +69,7 @@ class ScimInterceptorTest {
     @Test
     fun `preHandle can modify request`() {
         val interceptor = object : ScimInterceptor {
-            override fun preHandle(request: ScimHttpRequest, context: ScimRequestContext): ScimHttpRequest =
-                request.copy(headers = request.headers + ("X-Custom" to listOf("value")))
+            override fun preHandle(request: ScimHttpRequest, context: ScimRequestContext): ScimHttpRequest = request.copy(headers = request.headers + ("X-Custom" to listOf("value")))
         }
         val request = ScimHttpRequest(method = HttpMethod.GET, path = "/Users")
 
@@ -85,9 +84,8 @@ class ScimInterceptorTest {
             override fun postHandle(
                 request: ScimHttpRequest,
                 response: ScimHttpResponse,
-                context: ScimRequestContext
-            ): ScimHttpResponse =
-                response.copy(headers = response.headers + ("X-Custom" to "value"))
+                context: ScimRequestContext,
+            ): ScimHttpResponse = response.copy(headers = response.headers + ("X-Custom" to "value"))
         }
         val request = ScimHttpRequest(method = HttpMethod.GET, path = "/Users")
         val response = ScimHttpResponse.ok(byteArrayOf())

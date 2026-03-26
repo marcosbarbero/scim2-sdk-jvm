@@ -27,27 +27,33 @@ class MicrometerScimMetrics(private val registry: MeterRegistry) : ScimMetrics {
     override fun recordOperation(endpoint: String, method: String, status: Int, duration: Duration) {
         registry.timer(
             "scim.request.duration",
-            "endpoint", endpoint,
-            "method", method,
-            "status", status.toString()
+            "endpoint",
+            endpoint,
+            "method",
+            method,
+            "status",
+            status.toString(),
         ).record(duration)
     }
 
     override fun recordFilterParse(duration: Duration, success: Boolean) {
         registry.timer(
             "scim.filter.parse.duration",
-            "success", success.toString()
+            "success",
+            success.toString(),
         ).record(duration)
     }
 
     override fun recordPatchOperations(endpoint: String, operationCount: Int, duration: Duration) {
         registry.timer(
             "scim.patch.duration",
-            "endpoint", endpoint
+            "endpoint",
+            endpoint,
         ).record(duration)
         registry.counter(
             "scim.patch.operations",
-            "endpoint", endpoint
+            "endpoint",
+            endpoint,
         ).increment(operationCount.toDouble())
     }
 
@@ -60,11 +66,13 @@ class MicrometerScimMetrics(private val registry: MeterRegistry) : ScimMetrics {
     override fun recordSearchResults(endpoint: String, totalResults: Int, duration: Duration) {
         registry.timer(
             "scim.search.duration",
-            "endpoint", endpoint
+            "endpoint",
+            endpoint,
         ).record(duration)
         registry.summary(
             "scim.search.results",
-            "endpoint", endpoint
+            "endpoint",
+            endpoint,
         ).record(totalResults.toDouble())
     }
 
@@ -76,10 +84,9 @@ class MicrometerScimMetrics(private val registry: MeterRegistry) : ScimMetrics {
         getOrCreateGauge(endpoint).decrementAndGet()
     }
 
-    private fun getOrCreateGauge(endpoint: String): AtomicLong =
-        activeGauges.computeIfAbsent(endpoint) { ep ->
-            val gauge = AtomicLong(0)
-            registry.gauge("scim.request.active", listOf(io.micrometer.core.instrument.Tag.of("endpoint", ep)), gauge) { it.toDouble() }
-            gauge
-        }
+    private fun getOrCreateGauge(endpoint: String): AtomicLong = activeGauges.computeIfAbsent(endpoint) { ep ->
+        val gauge = AtomicLong(0)
+        registry.gauge("scim.request.active", listOf(io.micrometer.core.instrument.Tag.of("endpoint", ep)), gauge) { it.toDouble() }
+        gauge
+    }
 }

@@ -104,7 +104,7 @@ if [ -z "$CHANGED_MODULES" ]; then
     echo -e "${GREEN}No Maven module changes detected, skipping build${NC}"
 elif echo "$CHANGED_MODULES" | grep -q "^ROOT$"; then
     echo -e "${YELLOW}Root pom.xml changed, running full reactor build${NC}"
-    if mvn compile test -T1C -q; then
+    if mvn compile test -DskipITs -T1C -q; then
         echo -e "${GREEN}Full build passed${NC}"
     else
         echo -e "${RED}Full build failed${NC}"

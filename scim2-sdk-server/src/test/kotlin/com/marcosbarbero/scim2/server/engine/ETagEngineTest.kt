@@ -37,7 +37,7 @@ class ETagEngineTest {
         val etag = ETag("W/\"abc123\"")
         val user = User(
             userName = faker.name.firstName(),
-            meta = Meta(version = etag)
+            meta = Meta(version = etag),
         )
 
         val result = engine.generateETag(user)
@@ -79,7 +79,7 @@ class ETagEngineTest {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
             path = "/Users/123",
-            headers = mapOf("If-Match" to listOf("W/\"abc\""))
+            headers = mapOf("If-Match" to listOf("W/\"abc\"")),
         )
 
         val result = engine.extractIfMatch(request)
@@ -92,7 +92,7 @@ class ETagEngineTest {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
             path = "/Users/123",
-            headers = mapOf("If-None-Match" to listOf("W/\"xyz\""))
+            headers = mapOf("If-None-Match" to listOf("W/\"xyz\"")),
         )
 
         val result = engine.extractIfNoneMatch(request)

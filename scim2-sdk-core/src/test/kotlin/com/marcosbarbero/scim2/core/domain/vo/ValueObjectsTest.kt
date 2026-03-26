@@ -95,14 +95,14 @@ class ValueObjectsTest {
 
         @Test
         fun `should create ETag with value`() {
-            val etagValue = "W/\"${java.util.UUID.randomUUID().toString()}\""
+            val etagValue = "W/\"${java.util.UUID.randomUUID()}\""
             val etag = ETag(etagValue)
             etag.value shouldBe etagValue
         }
 
         @Test
         fun `toString returns the value`() {
-            val etagValue = "W/\"${java.util.UUID.randomUUID().toString()}\""
+            val etagValue = "W/\"${java.util.UUID.randomUUID()}\""
             val etag = ETag(etagValue)
             etag.toString() shouldBe etagValue
         }

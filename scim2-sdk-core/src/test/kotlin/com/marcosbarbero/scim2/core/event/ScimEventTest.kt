@@ -114,7 +114,7 @@ class ScimEventTest {
             ResourceReplacedEvent(resourceType = "User", resourceId = "2"),
             ResourcePatchedEvent(resourceType = "User", resourceId = "3"),
             ResourceDeletedEvent(resourceType = "User", resourceId = "4"),
-            BulkOperationCompletedEvent()
+            BulkOperationCompletedEvent(),
         )
 
         val results = events.map { event ->
@@ -148,7 +148,7 @@ class ScimEventTest {
             eventId = customId,
             timestamp = customTimestamp,
             resourceType = "User",
-            resourceId = "1"
+            resourceId = "1",
         )
 
         event.eventId shouldBe customId

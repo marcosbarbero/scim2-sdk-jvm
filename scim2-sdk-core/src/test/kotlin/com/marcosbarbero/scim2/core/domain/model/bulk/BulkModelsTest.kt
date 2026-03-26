@@ -16,11 +16,11 @@
 package com.marcosbarbero.scim2.core.domain.model.bulk
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 class BulkModelsTest {
 
@@ -36,8 +36,8 @@ class BulkModelsTest {
             failOnErrors = 1,
             operations = listOf(
                 BulkOperation(method = "POST", path = "/Users", bulkId = bulkId, data = mapper.valueToTree(mapOf("userName" to userName))),
-                BulkOperation(method = "DELETE", path = "/Users/$userId")
-            )
+                BulkOperation(method = "DELETE", path = "/Users/$userId"),
+            ),
         )
 
         val json = mapper.writeValueAsString(request)
@@ -60,10 +60,10 @@ class BulkModelsTest {
                     method = "POST",
                     bulkId = bulkId,
                     status = "201",
-                    location = "https://example.com/v2/Users/$userId"
+                    location = "https://example.com/v2/Users/$userId",
                 ),
-                BulkOperationResponse(method = "DELETE", status = "204")
-            )
+                BulkOperationResponse(method = "DELETE", status = "204"),
+            ),
         )
 
         val json = mapper.writeValueAsString(response)

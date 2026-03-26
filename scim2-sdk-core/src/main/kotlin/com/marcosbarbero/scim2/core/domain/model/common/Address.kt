@@ -23,5 +23,5 @@ data class Address(
     val postalCode: String? = null,
     val country: String? = null,
     val type: String? = null,
-    val primary: Boolean? = null
+    val primary: Boolean? = null,
 )

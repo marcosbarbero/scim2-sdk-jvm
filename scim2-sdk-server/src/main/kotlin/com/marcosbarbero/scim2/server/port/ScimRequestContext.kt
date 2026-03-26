@@ -21,5 +21,5 @@ data class ScimRequestContext(
     val attributes: Map<String, String> = emptyMap(),
     val requestedAttributes: List<String> = emptyList(),
     val excludedAttributes: List<String> = emptyList(),
-    val correlationId: String = java.util.UUID.randomUUID().toString()
+    val correlationId: String = java.util.UUID.randomUUID().toString(),
 )

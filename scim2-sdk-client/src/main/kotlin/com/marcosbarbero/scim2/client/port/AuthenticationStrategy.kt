@@ -22,8 +22,7 @@ interface AuthenticationStrategy {
 }
 
 class BearerTokenAuthentication(private val token: String) : AuthenticationStrategy {
-    override fun authenticate(request: HttpRequest): HttpRequest =
-        request.copy(headers = request.headers + ("Authorization" to "Bearer $token"))
+    override fun authenticate(request: HttpRequest): HttpRequest = request.copy(headers = request.headers + ("Authorization" to "Bearer $token"))
 }
 
 class BasicAuthentication(private val username: String, private val password: String) : AuthenticationStrategy {

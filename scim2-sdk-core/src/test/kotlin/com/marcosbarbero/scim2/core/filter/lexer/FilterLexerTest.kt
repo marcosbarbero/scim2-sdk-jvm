@@ -31,8 +31,7 @@ class FilterLexerTest {
 
     private fun tokenize(input: String): List<Token> = FilterLexer(input).tokenize()
 
-    private fun tokenTypes(input: String): List<TokenType> =
-        tokenize(input).map { it.type }.dropLast(1) // drop EOF
+    private fun tokenTypes(input: String): List<TokenType> = tokenize(input).map { it.type }.dropLast(1) // drop EOF
 
     @Nested
     inner class AttributePathTokens {
@@ -155,7 +154,7 @@ class FilterLexerTest {
                 "GE" to TokenType.OP_GE,
                 "lt" to TokenType.OP_LT,
                 "LE" to TokenType.OP_LE,
-                "pr" to TokenType.OP_PR
+                "pr" to TokenType.OP_PR,
             )
             for ((op, expectedType) in operators) {
                 val tokens = tokenize("attr $op")
@@ -172,9 +171,13 @@ class FilterLexerTest {
             val val1 = faker.name.firstName()
             val val2 = faker.name.lastName()
             tokenTypes("a eq \"$val1\" and b eq \"$val2\"") shouldBe listOf(
-                TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
+                TokenType.ATTR_PATH,
+                TokenType.OP_EQ,
+                TokenType.STRING_VALUE,
                 TokenType.OP_AND,
-                TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE
+                TokenType.ATTR_PATH,
+                TokenType.OP_EQ,
+                TokenType.STRING_VALUE,
             )
         }
 
@@ -183,9 +186,13 @@ class FilterLexerTest {
             val val1 = faker.name.firstName()
             val val2 = faker.name.lastName()
             tokenTypes("a eq \"$val1\" or b eq \"$val2\"") shouldBe listOf(
-                TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
+                TokenType.ATTR_PATH,
+                TokenType.OP_EQ,
+                TokenType.STRING_VALUE,
                 TokenType.OP_OR,
-                TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE
+                TokenType.ATTR_PATH,
+                TokenType.OP_EQ,
+                TokenType.STRING_VALUE,
             )
         }
 
@@ -193,7 +200,10 @@ class FilterLexerTest {
         fun `should tokenize not`() {
             val value = faker.name.firstName()
             tokenTypes("not a eq \"$value\"") shouldBe listOf(
-                TokenType.OP_NOT, TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE
+                TokenType.OP_NOT,
+                TokenType.ATTR_PATH,
+                TokenType.OP_EQ,
+                TokenType.STRING_VALUE,
             )
         }
     }
@@ -205,7 +215,11 @@ class FilterLexerTest {
         fun `should tokenize parentheses`() {
             val value = faker.name.firstName()
             tokenTypes("(a eq \"$value\")") shouldBe listOf(
-                TokenType.LPAREN, TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE, TokenType.RPAREN
+                TokenType.LPAREN,
+                TokenType.ATTR_PATH,
+                TokenType.OP_EQ,
+                TokenType.STRING_VALUE,
+                TokenType.RPAREN,
             )
         }
 
@@ -213,9 +227,12 @@ class FilterLexerTest {
         fun `should tokenize brackets`() {
             val value = faker.name.name()
             tokenTypes("emails[type eq \"$value\"]") shouldBe listOf(
-                TokenType.ATTR_PATH, TokenType.LBRACKET,
-                TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
-                TokenType.RBRACKET
+                TokenType.ATTR_PATH,
+                TokenType.LBRACKET,
+                TokenType.ATTR_PATH,
+                TokenType.OP_EQ,
+                TokenType.STRING_VALUE,
+                TokenType.RBRACKET,
             )
         }
     }
@@ -231,7 +248,7 @@ class FilterLexerTest {
                 TokenType.OP_AND,
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.BOOLEAN_VALUE,
                 TokenType.OP_OR,
-                TokenType.ATTR_PATH, TokenType.OP_PR
+                TokenType.ATTR_PATH, TokenType.OP_PR,
             )
         }
 
@@ -243,7 +260,7 @@ class FilterLexerTest {
                 TokenType.ATTR_PATH, TokenType.OP_EQ, TokenType.STRING_VALUE,
                 TokenType.OP_AND,
                 TokenType.ATTR_PATH, TokenType.OP_CO, TokenType.STRING_VALUE,
-                TokenType.RBRACKET
+                TokenType.RBRACKET,
             )
         }
     }

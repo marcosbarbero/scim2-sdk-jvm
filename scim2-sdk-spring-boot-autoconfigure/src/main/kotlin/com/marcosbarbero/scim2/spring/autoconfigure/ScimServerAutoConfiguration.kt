@@ -15,7 +15,8 @@
  */
 package com.marcosbarbero.scim2.spring.autoconfigure
 
-import tools.jackson.databind.ObjectMapper
+import com.marcosbarbero.scim2.core.domain.model.resource.Group
+import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.event.ScimEventPublisher
 import com.marcosbarbero.scim2.core.observability.ScimMetrics
 import com.marcosbarbero.scim2.core.observability.ScimTracer
@@ -29,8 +30,6 @@ import com.marcosbarbero.scim2.server.port.AuthorizationEvaluator
 import com.marcosbarbero.scim2.server.port.BulkHandler
 import com.marcosbarbero.scim2.server.port.IdentityResolver
 import com.marcosbarbero.scim2.server.port.MeHandler
-import com.marcosbarbero.scim2.core.domain.model.resource.Group
-import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.spring.handler.DefaultResourceHandler
@@ -60,7 +59,7 @@ class ScimServerAutoConfiguration {
         changePasswordEnabled = properties.changePassword.enabled,
         patchEnabled = properties.patch.enabled,
         defaultPageSize = properties.pagination.defaultPageSize,
-        maxPageSize = properties.pagination.maxPageSize
+        maxPageSize = properties.pagination.maxPageSize,
     )
 
     @Bean
@@ -78,11 +77,11 @@ class ScimServerAutoConfiguration {
     fun discoveryService(
         handlers: ObjectProvider<ResourceHandler<*>>,
         schemaRegistry: SchemaRegistry,
-        config: ScimServerConfig
+        config: ScimServerConfig,
     ): DiscoveryService = DiscoveryService(
         handlers = handlers.orderedStream().toList(),
         schemaRegistry = schemaRegistry,
-        config = config
+        config = config,
     )
 
     @Bean
@@ -99,7 +98,7 @@ class ScimServerAutoConfiguration {
         authorizationEvaluator: ObjectProvider<AuthorizationEvaluator>,
         eventPublisher: ObjectProvider<ScimEventPublisher>,
         metrics: ObjectProvider<ScimMetrics>,
-        tracer: ObjectProvider<ScimTracer>
+        tracer: ObjectProvider<ScimTracer>,
     ): ScimEndpointDispatcher = ScimEndpointDispatcher(
         handlers = handlers.orderedStream().toList(),
         bulkHandler = bulkHandler.ifAvailable,
@@ -112,7 +111,7 @@ class ScimServerAutoConfiguration {
         authorizationEvaluator = authorizationEvaluator.ifAvailable,
         eventPublisher = eventPublisher.ifAvailable ?: com.marcosbarbero.scim2.core.event.NoOpEventPublisher,
         metrics = metrics.ifAvailable ?: com.marcosbarbero.scim2.core.observability.NoOpScimMetrics,
-        tracer = tracer.ifAvailable ?: com.marcosbarbero.scim2.core.observability.NoOpScimTracer
+        tracer = tracer.ifAvailable ?: com.marcosbarbero.scim2.core.observability.NoOpScimTracer,
     )
 
     @Bean

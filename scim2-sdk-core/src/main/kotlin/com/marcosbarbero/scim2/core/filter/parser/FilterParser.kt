@@ -143,7 +143,7 @@ object FilterParser {
                     AttributePath(
                         schemaUri = schemaUri,
                         attributeName = remainder.substring(0, dotIdx),
-                        subAttribute = remainder.substring(dotIdx + 1)
+                        subAttribute = remainder.substring(dotIdx + 1),
                     )
                 } else {
                     AttributePath(schemaUri = schemaUri, attributeName = remainder)
@@ -155,7 +155,7 @@ object FilterParser {
             return if (dotIdx >= 0) {
                 AttributePath(
                     attributeName = raw.substring(0, dotIdx),
-                    subAttribute = raw.substring(dotIdx + 1)
+                    subAttribute = raw.substring(dotIdx + 1),
                 )
             } else {
                 AttributePath(attributeName = raw)
@@ -175,7 +175,7 @@ object FilterParser {
                 TokenType.OP_LT -> ComparisonOperator.LT
                 TokenType.OP_LE -> ComparisonOperator.LE
                 else -> throw InvalidFilterException(
-                    "Expected comparison operator but found '${token.value}' at position ${token.position}"
+                    "Expected comparison operator but found '${token.value}' at position ${token.position}",
                 )
             }
             advance()
@@ -207,7 +207,7 @@ object FilterParser {
                     ScimValue.NullValue
                 }
                 else -> throw InvalidFilterException(
-                    "Expected value but found '${token.value}' at position ${token.position}"
+                    "Expected value but found '${token.value}' at position ${token.position}",
                 )
             }
         }

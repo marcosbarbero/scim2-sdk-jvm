@@ -97,8 +97,8 @@ class AzureAdIdentityResolverTest {
             mapOf(
                 "oid" to "user-1",
                 "roles" to listOf("User.Read", "User.Write"),
-                "wids" to listOf("global-admin-wid")
-            )
+                "wids" to listOf("global-admin-wid"),
+            ),
         )
         setAuthentication(jwt)
 

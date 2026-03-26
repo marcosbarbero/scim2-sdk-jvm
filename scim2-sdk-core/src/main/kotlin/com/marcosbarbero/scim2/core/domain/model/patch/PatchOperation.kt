@@ -20,5 +20,5 @@ import tools.jackson.databind.JsonNode
 data class PatchOperation(
     val op: PatchOp,
     val path: String? = null,
-    val value: JsonNode? = null
+    val value: JsonNode? = null,
 )

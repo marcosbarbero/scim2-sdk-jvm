@@ -29,7 +29,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
  * All claim names are configurable via [ClaimMapping].
  */
 open class JwtIdentityResolver(
-    protected val claims: ClaimMapping = ClaimMapping()
+    protected val claims: ClaimMapping = ClaimMapping(),
 ) : IdentityResolver {
 
     override fun resolve(request: ScimHttpRequest): ScimRequestContext {
@@ -40,13 +40,12 @@ open class JwtIdentityResolver(
             ScimRequestContext(
                 principalId = extractPrincipal(it),
                 roles = extractRoles(it),
-                attributes = extractAttributes(it)
+                attributes = extractAttributes(it),
             )
         } ?: ScimRequestContext()
     }
 
-    protected open fun extractPrincipal(jwt: Jwt): String =
-        jwt.getClaimAsString(claims.subject) ?: jwt.subject ?: "unknown"
+    protected open fun extractPrincipal(jwt: Jwt): String = jwt.getClaimAsString(claims.subject) ?: jwt.subject ?: "unknown"
 
     protected open fun extractRoles(jwt: Jwt): Set<String> {
         val roles = jwt.getClaimAsStringList(claims.roles)

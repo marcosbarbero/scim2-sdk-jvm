@@ -23,19 +23,19 @@ data class ServiceProviderConfig(
     val changePassword: SupportedConfig = SupportedConfig(),
     val sort: SupportedConfig = SupportedConfig(),
     val etag: SupportedConfig = SupportedConfig(),
-    val authenticationSchemes: List<AuthenticationScheme> = emptyList()
+    val authenticationSchemes: List<AuthenticationScheme> = emptyList(),
 ) {
     data class SupportedConfig(val supported: Boolean = false)
 
     data class BulkConfig(
         val supported: Boolean = false,
         val maxOperations: Int = 0,
-        val maxPayloadSize: Long = 0
+        val maxPayloadSize: Long = 0,
     )
 
     data class FilterConfig(
         val supported: Boolean = false,
-        val maxResults: Int = 0
+        val maxResults: Int = 0,
     )
 
     data class AuthenticationScheme(
@@ -43,6 +43,6 @@ data class ServiceProviderConfig(
         val name: String,
         val description: String,
         val specUri: String? = null,
-        val documentationUri: String? = null
+        val documentationUri: String? = null,
     )
 }

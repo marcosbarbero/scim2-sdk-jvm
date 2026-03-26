@@ -21,5 +21,5 @@ import com.marcosbarbero.scim2.core.domain.ScimUrns
 data class BulkResponse(
     val schemas: List<String> = listOf(ScimUrns.BULK_RESPONSE),
     @JsonProperty("Operations")
-    val operations: List<BulkOperationResponse> = emptyList()
+    val operations: List<BulkOperationResponse> = emptyList(),
 )

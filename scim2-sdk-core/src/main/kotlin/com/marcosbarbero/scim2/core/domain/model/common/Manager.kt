@@ -22,5 +22,5 @@ data class Manager(
     val value: String? = null,
     @JsonProperty("\$ref")
     val ref: URI? = null,
-    val displayName: String? = null
+    val displayName: String? = null,
 )

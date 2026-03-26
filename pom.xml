@@ -296,15 +296,37 @@
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>${argLine}</argLine>
+                        <!-- Unit tests only: exclude CT (contract), IT (integration), E2E -->
+                        <excludes>
+                            <exclude>**/*CT.java</exclude>
+                            <exclude>**/*CT.kt</exclude>
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IT.kt</exclude>
+                            <exclude>**/*E2E.java</exclude>
+                            <exclude>**/*E2E.kt</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${maven-failsafe-plugin.version}</version>
+                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>${argLine}</argLine>
+                        <!-- Integration tests: *IT files only -->
+                        <includes>
+                            <include>**/*IT.java</include>
+                            <include>**/*IT.kt</include>
+                        </includes>
                     </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -453,6 +475,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+            </plugin>
+            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
@@ -501,33 +527,37 @@
                         </includes>
                         <ktlint>
                             <version>1.5.0</version>
+                            <editorConfigOverride>
+                                <max_line_length>off</max_line_length>
+                                <ktlint_standard_no-blank-line-in-list>disabled</ktlint_standard_no-blank-line-in-list>
+                            </editorConfigOverride>
                         </ktlint>
                     </kotlin>
-                    <java>
-                        <includes>
-                            <include>src/**/*.java</include>
-                        </includes>
-                        <googleJavaFormat>
-                            <version>1.25.2</version>
-                        </googleJavaFormat>
-                    </java>
+                    <!-- Java formatting disabled: google-java-format and palantir-java-format
+                         are incompatible with Java 25 internal APIs. Re-enable when they support JDK 25. -->
                 </configuration>
             </plugin>
+            <!-- Git hooks: .githooks/ contains the hooks, configured via git config core.hooksPath -->
             <plugin>
-                <groupId>com.rudikershaw.gitbuildhook</groupId>
-                <artifactId>git-build-hook-maven-plugin</artifactId>
-                <version>3.6.0</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
                 <inherited>false</inherited>
-                <configuration>
-                    <installHooks>
-                        <pre-push>.githooks/pre-push</pre-push>
-                    </installHooks>
-                </configuration>
                 <executions>
                     <execution>
+                        <id>install-git-hooks</id>
+                        <phase>initialize</phase>
                         <goals>
-                            <goal>install</goal>
+                            <goal>exec</goal>
                         </goals>
+                        <configuration>
+                            <executable>git</executable>
+                            <arguments>
+                                <argument>config</argument>
+                                <argument>core.hooksPath</argument>
+                                <argument>.githooks</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
@@ -535,6 +565,60 @@
     </build>
 
     <profiles>
+        <!-- mvn test -Pcontract-tests -->
+        <profile>
+            <id>contract-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override" />
+                            <includes>
+                                <include>**/*CT.java</include>
+                                <include>**/*CT.kt</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!-- mvn test -Pe2e -->
+        <profile>
+            <id>e2e</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes combine.self="override" />
+                            <includes>
+                                <include>**/*E2E.java</include>
+                                <include>**/*E2E.kt</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
         <profile>
             <id>mutation</id>
             <build>

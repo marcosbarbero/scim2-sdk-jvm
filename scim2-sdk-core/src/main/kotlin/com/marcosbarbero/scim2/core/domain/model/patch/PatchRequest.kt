@@ -21,5 +21,5 @@ import com.marcosbarbero.scim2.core.domain.ScimUrns
 data class PatchRequest(
     val schemas: List<String> = listOf(ScimUrns.PATCH_OP),
     @JsonProperty("Operations")
-    val operations: List<PatchOperation> = emptyList()
+    val operations: List<PatchOperation> = emptyList(),
 )

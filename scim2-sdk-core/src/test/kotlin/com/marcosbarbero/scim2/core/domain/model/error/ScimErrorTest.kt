@@ -16,14 +16,14 @@
 package com.marcosbarbero.scim2.core.domain.model.error
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 class ScimErrorTest {
 
@@ -126,7 +126,7 @@ class ScimErrorTest {
                 NoTargetException(detail),
                 InvalidValueException(detail),
                 TooManyException(detail),
-                SensitiveException(detail)
+                SensitiveException(detail),
             )
             exceptions.forEach { it.shouldBeInstanceOf<ScimException>() }
         }
@@ -162,7 +162,7 @@ class ScimErrorTest {
                 schemas = listOf(ScimUrns.ERROR),
                 status = "400",
                 scimType = "invalidFilter",
-                detail = detail
+                detail = detail,
             )
 
             val json = mapper.writeValueAsString(error)

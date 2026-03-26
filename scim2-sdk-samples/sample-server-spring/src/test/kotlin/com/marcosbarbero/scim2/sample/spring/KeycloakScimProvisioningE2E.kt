@@ -15,9 +15,6 @@
  */
 package com.marcosbarbero.scim2.sample.spring
 
-import tools.jackson.databind.JsonNode
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.databind.node.StringNode
 import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport
 import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder
@@ -49,6 +46,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.StringNode
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -81,7 +81,7 @@ import java.net.http.HttpResponse
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
-class KeycloakScimProvisioningE2eTest {
+class KeycloakScimProvisioningE2E {
 
     companion object {
         private const val REALM = "scim-test"
@@ -212,7 +212,7 @@ class KeycloakScimProvisioningE2eTest {
             username = keycloakUsername,
             email = "jane.doe.$uniqueSuffix@example.com",
             firstName = "Jane",
-            lastName = "Doe"
+            lastName = "Doe",
         )
         keycloakUserId.shouldNotBeNull()
         keycloakUserId.shouldNotBeBlank()
@@ -236,7 +236,7 @@ class KeycloakScimProvisioningE2eTest {
         // --- Step 4: Verify user is searchable in SCIM server ---
         val searchResult = scimClient.search<User>(
             "/Users",
-            SearchRequest(filter = "userName eq \"$keycloakUsername\"")
+            SearchRequest(filter = "userName eq \"$keycloakUsername\""),
         )
         searchResult.statusCode shouldBe 200
 
@@ -250,19 +250,19 @@ class KeycloakScimProvisioningE2eTest {
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "name.givenName",
-                    value = StringNode("Janet")
+                    value = StringNode("Janet"),
                 ),
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "name.familyName",
-                    value = StringNode("Doe-Smith")
+                    value = StringNode("Doe-Smith"),
                 ),
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "displayName",
-                    value = StringNode("Janet Doe-Smith")
-                )
-            )
+                    value = StringNode("Janet Doe-Smith"),
+                ),
+            ),
         )
         val patched = scimClient.patch<User>("/Users", scimUserId, patchRequest)
         patched.statusCode shouldBe 200
@@ -295,7 +295,7 @@ class KeycloakScimProvisioningE2eTest {
             username = "email.user.$uniqueSuffix",
             email = email,
             firstName = "Email",
-            lastName = "User"
+            lastName = "User",
         )
         keycloakUserId.shouldNotBeNull()
 
@@ -323,7 +323,7 @@ class KeycloakScimProvisioningE2eTest {
                 username = username,
                 email = "$username@example.com",
                 firstName = "Batch",
-                lastName = "User"
+                lastName = "User",
             )
         }
 
@@ -347,7 +347,7 @@ class KeycloakScimProvisioningE2eTest {
         val formData = listOf(
             "grant_type" to "client_credentials",
             "client_id" to CLIENT_ID,
-            "client_secret" to CLIENT_SECRET
+            "client_secret" to CLIENT_SECRET,
         ).joinToString("&") { (key, value) ->
             "${URLEncoder.encode(key, Charsets.UTF_8)}=${URLEncoder.encode(value, Charsets.UTF_8)}"
         }
@@ -372,7 +372,7 @@ class KeycloakScimProvisioningE2eTest {
             "grant_type" to "password",
             "client_id" to "admin-cli",
             "username" to keycloak!!.adminUsername,
-            "password" to keycloak!!.adminPassword
+            "password" to keycloak!!.adminPassword,
         ).joinToString("&") { (key, value) ->
             "${URLEncoder.encode(key, Charsets.UTF_8)}=${URLEncoder.encode(value, Charsets.UTF_8)}"
         }
@@ -395,7 +395,7 @@ class KeycloakScimProvisioningE2eTest {
         username: String,
         email: String,
         firstName: String,
-        lastName: String
+        lastName: String,
     ): String {
         val adminToken = obtainAdminToken()
         val usersUrl = "${keycloak!!.authServerUrl}/admin/realms/$REALM/users"
@@ -407,8 +407,8 @@ class KeycloakScimProvisioningE2eTest {
                 "firstName" to firstName,
                 "lastName" to lastName,
                 "enabled" to true,
-                "emailVerified" to true
-            )
+                "emailVerified" to true,
+            ),
         )
 
         val request = HttpRequest.newBuilder()
@@ -453,8 +453,8 @@ class KeycloakScimProvisioningE2eTest {
         val updateJson = objectMapper.writeValueAsString(
             mapOf(
                 "firstName" to firstName,
-                "lastName" to lastName
-            )
+                "lastName" to lastName,
+            ),
         )
 
         val request = HttpRequest.newBuilder()
@@ -508,7 +508,7 @@ class KeycloakScimProvisioningE2eTest {
                 Name(
                     givenName = firstName,
                     familyName = lastName,
-                    formatted = listOfNotNull(firstName, lastName).joinToString(" ").ifBlank { null }
+                    formatted = listOfNotNull(firstName, lastName).joinToString(" ").ifBlank { null },
                 )
             } else {
                 null
@@ -520,12 +520,12 @@ class KeycloakScimProvisioningE2eTest {
                     MultiValuedAttribute(
                         value = email,
                         type = "work",
-                        primary = true
-                    )
+                        primary = true,
+                    ),
                 )
             } else {
                 emptyList()
-            }
+            },
         )
     }
 }

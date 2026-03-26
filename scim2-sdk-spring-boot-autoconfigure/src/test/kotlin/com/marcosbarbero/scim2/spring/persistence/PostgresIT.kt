@@ -16,8 +16,12 @@
 package com.marcosbarbero.scim2.spring.persistence
 
 import com.marcosbarbero.scim2.core.domain.model.resource.User
+import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.server.port.ResourceRepository
+import io.github.serpro69.kfaker.Faker
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -28,16 +32,16 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 
 /**
- * Tests that scim.persistence.schema-name properly configures Hibernate's default schema.
+ * Integration test proving JPA persistence works against a real PostgreSQL database.
+ * Tests the full lifecycle: create, read, update, delete.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Testcontainers(disabledWithoutDocker = true)
-class PostgresCustomSchemaTest {
+class PostgresIT {
 
     companion object {
         @Container
         val postgres = PostgreSQLContainer("postgres:17-alpine")
-            .withInitScript("create-custom-schema.sql")
 
         @JvmStatic
         @DynamicPropertySource
@@ -47,7 +51,6 @@ class PostgresCustomSchemaTest {
             registry.add("spring.datasource.password") { postgres.password }
             registry.add("spring.jpa.hibernate.ddl-auto") { "create-drop" }
             registry.add("scim.persistence.enabled") { "true" }
-            registry.add("scim.persistence.schema-name") { "custom_scim" }
             registry.add("spring.flyway.enabled") { "false" }
         }
     }
@@ -55,13 +58,47 @@ class PostgresCustomSchemaTest {
     @Autowired
     private lateinit var userRepository: ResourceRepository<User>
 
+    private val faker = Faker()
+
     @Test
-    fun `CRUD works with custom schema name`() {
-        val user = User(userName = "schema-test-user")
+    fun `create and retrieve user on PostgreSQL`() {
+        val user = User(userName = faker.name.firstName().lowercase())
         val created = userRepository.create(user)
         created.id.shouldNotBeNull()
 
         val found = userRepository.findById(created.id!!)
         found.shouldNotBeNull()
+        found.userName shouldBe user.userName
+    }
+
+    @Test
+    fun `replace user on PostgreSQL`() {
+        val user = User(userName = faker.name.firstName().lowercase())
+        val created = userRepository.create(user)
+
+        val updated = User(userName = created.userName, displayName = faker.name.name())
+        val replaced = userRepository.replace(created.id!!, updated, null)
+        replaced.displayName shouldBe updated.displayName
+    }
+
+    @Test
+    fun `delete user on PostgreSQL`() {
+        val user = User(userName = faker.name.firstName().lowercase())
+        val created = userRepository.create(user)
+
+        userRepository.delete(created.id!!, null)
+
+        val found = userRepository.findById(created.id!!)
+        found.shouldBeNull()
+    }
+
+    @Test
+    fun `search users on PostgreSQL`() {
+        repeat(3) {
+            userRepository.create(User(userName = faker.name.firstName().lowercase() + it))
+        }
+
+        val results = userRepository.search(SearchRequest(startIndex = 1, count = 10))
+        results.totalResults shouldBe results.resources.size
     }
 }

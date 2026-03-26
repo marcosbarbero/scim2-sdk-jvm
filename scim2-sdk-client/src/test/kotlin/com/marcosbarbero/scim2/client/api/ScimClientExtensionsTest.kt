@@ -31,7 +31,6 @@ import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import kotlin.reflect.KClass
 
 class ScimClientExtensionsTest {
 
@@ -45,11 +44,11 @@ class ScimClientExtensionsTest {
 
     private val userResponse = ScimResponse(
         value = User(id = userId, userName = userName),
-        statusCode = 200
+        statusCode = 200,
     )
     private val groupResponse = ScimResponse(
         value = Group(id = groupId, displayName = groupName),
-        statusCode = 200
+        statusCode = 200,
     )
 
     @BeforeEach
@@ -113,7 +112,7 @@ class ScimClientExtensionsTest {
     fun `searchUsers with default request calls search with Users endpoint`() {
         val listResponse = ScimResponse(
             value = ListResponse<User>(totalResults = 0),
-            statusCode = 200
+            statusCode = 200,
         )
         every { client.search("/Users", any<SearchRequest>(), User::class) } returns listResponse
 
@@ -127,7 +126,7 @@ class ScimClientExtensionsTest {
         val searchName = faker.name.firstName().lowercase()
         val listResponse = ScimResponse(
             value = ListResponse<User>(totalResults = 1, resources = listOf(User(userName = searchName))),
-            statusCode = 200
+            statusCode = 200,
         )
         val requestSlot = slot<SearchRequest>()
         every { client.search("/Users", capture(requestSlot), User::class) } returns listResponse
@@ -193,7 +192,7 @@ class ScimClientExtensionsTest {
     fun `searchGroups calls search with Groups endpoint`() {
         val listResponse = ScimResponse(
             value = ListResponse<Group>(totalResults = 0),
-            statusCode = 200
+            statusCode = 200,
         )
         every { client.search("/Groups", any<SearchRequest>(), Group::class) } returns listResponse
 
@@ -253,7 +252,7 @@ class ScimClientExtensionsTest {
     fun `searchResources reads ScimResource annotation`() {
         val listResponse = ScimResponse(
             value = ListResponse<User>(totalResults = 0),
-            statusCode = 200
+            statusCode = 200,
         )
         every { client.search("/Users", any<SearchRequest>(), User::class) } returns listResponse
 

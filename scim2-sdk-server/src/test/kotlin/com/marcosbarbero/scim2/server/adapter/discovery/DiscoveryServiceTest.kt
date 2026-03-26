@@ -41,7 +41,7 @@ class DiscoveryServiceTest {
         filterMaxResults = 100,
         sortEnabled = false,
         etagEnabled = true,
-        changePasswordEnabled = false
+        changePasswordEnabled = false,
     )
 
     private val schemaRegistry = SchemaRegistry()

@@ -44,7 +44,7 @@ class BasicAuthenticationTest {
         val request = HttpRequest(
             method = "GET",
             url = "https://example.com/Users",
-            headers = mapOf("Accept" to "application/json")
+            headers = mapOf("Accept" to "application/json"),
         )
 
         val result = auth.authenticate(request)
