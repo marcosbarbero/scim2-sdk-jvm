@@ -511,22 +511,27 @@
                          are incompatible with Java 25 internal APIs. Re-enable when they support JDK 25. -->
                 </configuration>
             </plugin>
+            <!-- Git hooks: .githooks/ contains the hooks, configured via git config core.hooksPath -->
             <plugin>
-                <groupId>com.rudikershaw.gitbuildhook</groupId>
-                <artifactId>git-build-hook-maven-plugin</artifactId>
-                <version>3.6.0</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
                 <inherited>false</inherited>
-                <configuration>
-                    <installHooks>
-                        <pre-push>.githooks/pre-push</pre-push>
-                    </installHooks>
-                </configuration>
                 <executions>
                     <execution>
+                        <id>install-git-hooks</id>
                         <phase>initialize</phase>
                         <goals>
-                            <goal>install</goal>
+                            <goal>exec</goal>
                         </goals>
+                        <configuration>
+                            <executable>git</executable>
+                            <arguments>
+                                <argument>config</argument>
+                                <argument>core.hooksPath</argument>
+                                <argument>.githooks</argument>
+                            </arguments>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
