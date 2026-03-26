@@ -188,4 +188,129 @@ class BulkEngineTest {
 
         response.operations[0].status shouldBe "404"
     }
+
+    @Test
+    fun `execute should process PUT operation`() {
+        val id = java.util.UUID.randomUUID().toString()
+        val userName = faker.name.firstName()
+        users[id] = User(id = id, userName = faker.name.firstName())
+        val userData = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName),
+        )
+
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "PUT", path = "/Users/$id", data = userData),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "200"
+        response.operations[0].location shouldBe "${config.basePath}/Users/$id"
+    }
+
+    @Test
+    fun `execute should process PATCH operation`() {
+        val id = java.util.UUID.randomUUID().toString()
+        users[id] = User(id = id, userName = faker.name.firstName())
+        val patchData = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
+            mapOf("Operations" to emptyList<Any>()),
+        )
+
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "PATCH", path = "/Users/$id", data = patchData),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "200"
+        response.operations[0].location shouldBe "${config.basePath}/Users/$id"
+    }
+
+    @Test
+    fun `execute should return 405 for unsupported method`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "OPTIONS", path = "/Users/123"),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "405"
+    }
+
+    @Test
+    fun `execute should return 400 for POST without data`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "POST", path = "/Users", bulkId = "no-data", data = null),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "400"
+    }
+
+    @Test
+    fun `execute should return 400 for PUT without data`() {
+        val id = java.util.UUID.randomUUID().toString()
+        users[id] = User(id = id, userName = faker.name.firstName())
+
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "PUT", path = "/Users/$id", data = null),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "400"
+    }
+
+    @Test
+    fun `execute should handle basePath-prefixed paths`() {
+        val id = java.util.UUID.randomUUID().toString()
+        users[id] = User(id = id, userName = faker.name.firstName())
+
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "DELETE", path = "${config.basePath}/Users/$id"),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "204"
+    }
+
+    @Test
+    fun `execute POST without bulkId does not store in bulkIdMap`() {
+        val userName = faker.name.firstName()
+        val userData = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName),
+        )
+
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "POST", path = "/Users", bulkId = null, data = userData),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        response.operations.size shouldBe 1
+        response.operations[0].status shouldBe "201"
+        response.operations[0].bulkId shouldBe null
+    }
 }
