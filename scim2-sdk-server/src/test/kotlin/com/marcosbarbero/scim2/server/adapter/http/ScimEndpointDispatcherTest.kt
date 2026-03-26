@@ -1315,6 +1315,221 @@ class ScimEndpointDispatcherTest {
         error.detail shouldContain "not supported"
     }
 
+    // --- Identity resolver tests ---
+
+    @Test
+    fun `dispatch with identity resolver populates context from resolver`() {
+        val resolver = object : com.marcosbarbero.scim2.server.port.IdentityResolver {
+            override fun resolve(request: ScimHttpRequest): ScimRequestContext = ScimRequestContext(
+                principalId = "resolved-user",
+                roles = setOf("admin"),
+            )
+        }
+
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = discoveryService,
+            config = config,
+            serializer = serializer,
+            identityResolver = resolver,
+        )
+
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
+    // --- Schema and ResourceType by ID tests ---
+
+    @Test
+    fun `GET Schemas by id should return specific schema`() {
+        val schemas = discoveryService.getSchemas()
+        val schemaId = schemas.resources.first().id
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Schemas/$schemaId",
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
+    @Test
+    fun `GET ResourceTypes by name should return specific resource type`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/ResourceTypes/User",
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
+    // --- Request context attribute extraction ---
+
+    @Test
+    fun `dispatch with attributes query param populates context`() {
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+            queryParameters = mapOf("attributes" to listOf("userName,displayName")),
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
+    @Test
+    fun `dispatch with excludedAttributes query param populates context`() {
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+            queryParameters = mapOf("excludedAttributes" to listOf("password,emails")),
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
+    // --- POST on resource instance returns 405 ---
+
+    @Test
+    fun `POST on resource instance returns 405`() {
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test"),
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users/some-id",
+            body = body,
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 405
+    }
+
+    // --- Interceptor onError path ---
+
+    @Test
+    fun `interceptor onError is invoked on ScimException`() {
+        var onErrorCalled = false
+        val interceptor = object : ScimInterceptor {
+            override fun onError(
+                request: ScimHttpRequest,
+                exception: com.marcosbarbero.scim2.core.domain.model.error.ScimException,
+                context: ScimRequestContext,
+            ): com.marcosbarbero.scim2.core.domain.model.error.ScimException {
+                onErrorCalled = true
+                return exception
+            }
+        }
+
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = discoveryService,
+            config = config,
+            serializer = serializer,
+            interceptors = listOf(interceptor),
+        )
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/nonexistent",
+        )
+
+        d.dispatch(request)
+
+        onErrorCalled shouldBe true
+    }
+
+    // --- Search with sortOrder and startIndex ---
+
+    @Test
+    fun `GET search with sortOrder and startIndex params`() {
+        createTestUser()
+        val d = dispatcherWithConfig(config.copy(sortEnabled = true))
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users",
+            queryParameters = mapOf(
+                "sortBy" to listOf("userName"),
+                "sortOrder" to listOf("descending"),
+                "startIndex" to listOf("1"),
+                "count" to listOf("10"),
+            ),
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+    }
+
+    // --- PUT and DELETE authorization denied ---
+
+    @Test
+    fun `replace with authorization denied returns 403`() {
+        val user = createTestUser()
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test"),
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.PUT,
+            path = "${config.basePath}/Users/${user.id}",
+            body = body,
+        )
+
+        val response = dispatcherWithAuth(denyAllEvaluator()).dispatch(request)
+
+        response.status shouldBe 403
+    }
+
+    // --- Bulk authorization denied ---
+
+    @Test
+    fun `bulk with authorization denied returns 403`() {
+        val bulkHandler = object : BulkHandler {
+            override fun processBulk(request: com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest, context: ScimRequestContext): com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse = com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse(operations = emptyList())
+        }
+
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = bulkHandler,
+            meHandler = null,
+            discoveryService = discoveryService,
+            config = config,
+            serializer = serializer,
+            authorizationEvaluator = denyAllEvaluator(),
+        )
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Bulk",
+            body = objectMapper.writeValueAsBytes(com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest(operations = emptyList())),
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 403
+    }
+
     // --- Unexpected exception test ---
 
     @Test
