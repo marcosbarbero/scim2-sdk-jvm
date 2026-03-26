@@ -23,7 +23,6 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.AutoConfigurations
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration
 import org.springframework.boot.test.context.runner.WebApplicationContextRunner
 
@@ -33,7 +32,6 @@ class ScimWebAutoConfigurationTest {
         .withConfiguration(
             AutoConfigurations.of(
                 JacksonAutoConfiguration::class.java,
-                WebMvcAutoConfiguration::class.java,
                 ScimJacksonAutoConfiguration::class.java,
                 ScimServerAutoConfiguration::class.java,
                 ScimWebAutoConfiguration::class.java
@@ -63,7 +61,7 @@ class ScimWebAutoConfigurationTest {
         contextRunner
             .withBean("scimController", ScimController::class.java, { customController })
             .run { context ->
-                context.getBean(ScimController::class.java) shouldNotBeNull {}
+                context.getBean(ScimController::class.java).shouldNotBeNull()
             }
     }
 
@@ -74,7 +72,7 @@ class ScimWebAutoConfigurationTest {
         contextRunner
             .withBean("scimExceptionHandler", ScimExceptionHandler::class.java, { customHandler })
             .run { context ->
-                context.getBean(ScimExceptionHandler::class.java) shouldNotBeNull {}
+                context.getBean(ScimExceptionHandler::class.java).shouldNotBeNull()
             }
     }
 }

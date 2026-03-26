@@ -1196,6 +1196,21 @@ class ScimEndpointDispatcherTest {
         override fun deleteMe(context: ScimRequestContext, version: String?) {}
     }
 
+    private fun meSerializer(): ScimSerializer = object : ScimSerializer {
+        override fun <T : Any> serialize(value: T): ByteArray = objectMapper.writeValueAsBytes(value)
+        override fun <T : Any> deserialize(bytes: ByteArray, type: KClass<T>): T {
+            @Suppress("UNCHECKED_CAST")
+            val effectiveType = if (type.java == com.marcosbarbero.scim2.core.domain.model.resource.ScimResource::class.java) {
+                User::class.java as Class<T>
+            } else {
+                type.java
+            }
+            return objectMapper.readValue(bytes, effectiveType)
+        }
+        override fun serializeToString(value: Any): String = objectMapper.writeValueAsString(value)
+        override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
+    }
+
     private fun dispatcherWithMe(
         meHandler: com.marcosbarbero.scim2.server.port.MeHandler<*>? = testMeHandler
     ) = ScimEndpointDispatcher(
@@ -1204,7 +1219,7 @@ class ScimEndpointDispatcherTest {
         meHandler = meHandler,
         discoveryService = discoveryService,
         config = config,
-        serializer = serializer
+        serializer = meSerializer()
     )
 
     @Test
