@@ -43,7 +43,7 @@ class InMemoryResourceHandlerTest {
         var result = user
         for (op in request.operations) {
             if (op.path == "displayName" && op.op == PatchOp.REPLACE) {
-                result = result.copy(displayName = op.value?.asText())
+                result = result.copy(displayName = op.value?.stringValue())
             }
         }
         result

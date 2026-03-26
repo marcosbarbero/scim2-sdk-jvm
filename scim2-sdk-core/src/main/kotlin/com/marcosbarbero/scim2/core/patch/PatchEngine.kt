@@ -120,7 +120,7 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         val array = node.get(attrName) as? ArrayNode ?: return
         for (i in 0 until array.size()) {
             val element = array.get(i) as? ObjectNode ?: continue
-            val fieldValue = element.get(filterAttr)?.asText()
+            val fieldValue = element.get(filterAttr)?.stringValue()
             if (fieldValue.equals(filterValue, ignoreCase = true)) {
                 (value as? ObjectNode)?.propertyNames()?.forEach { field ->
                     element.set(field, value.get(field))
@@ -139,7 +139,7 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         val newArray = objectMapper.createArrayNode()
         for (i in 0 until array.size()) {
             val element = array.get(i) as? ObjectNode
-            val fieldValue = element?.get(filterAttr)?.asText()
+            val fieldValue = element?.get(filterAttr)?.stringValue()
             if (!fieldValue.equals(filterValue, ignoreCase = true)) {
                 newArray.add(array.get(i))
             }

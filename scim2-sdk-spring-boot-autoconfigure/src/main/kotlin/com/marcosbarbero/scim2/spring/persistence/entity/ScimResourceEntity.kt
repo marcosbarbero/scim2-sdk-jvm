@@ -26,26 +26,26 @@ import java.time.Instant
 class ScimResourceEntity(
     @Id
     @Column(name = "id", length = 255)
-    open var id: String = "",
+    var id: String = "",
 
     @Column(name = "resource_type", nullable = false, length = 100)
-    open var resourceType: String = "",
+    var resourceType: String = "",
 
     @Column(name = "external_id", length = 255)
-    open var externalId: String? = null,
+    var externalId: String? = null,
 
     @Column(name = "display_name", length = 500)
-    open var displayName: String? = null,
+    var displayName: String? = null,
 
     @Column(name = "resource_json", nullable = false, columnDefinition = "TEXT")
-    open var resourceJson: String = "",
+    var resourceJson: String = "",
 
     @Column(name = "version", nullable = false)
-    open var version: Long = 1,
+    var version: Long = 1,
 
     @Column(name = "created", nullable = false)
-    open var created: Instant = Instant.now(),
+    var created: Instant = Instant.now(),
 
     @Column(name = "last_modified", nullable = false)
-    open var lastModified: Instant = Instant.now(),
+    var lastModified: Instant = Instant.now(),
 )

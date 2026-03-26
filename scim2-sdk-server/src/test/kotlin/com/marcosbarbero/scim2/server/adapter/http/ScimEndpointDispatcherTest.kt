@@ -144,8 +144,8 @@ class ScimEndpointDispatcherTest {
         response.status shouldBe 201
         response.headers["Location"] shouldNotBe null
         val responseBody = objectMapper.readTree(response.body)
-        responseBody.get("userName").asText() shouldBe userName
-        responseBody.get("id").asText() shouldNotBe null
+        responseBody.get("userName").stringValue() shouldBe userName
+        responseBody.get("id").stringValue() shouldNotBe null
     }
 
     @Test
@@ -161,7 +161,7 @@ class ScimEndpointDispatcherTest {
 
         response.status shouldBe 200
         val responseBody = objectMapper.readTree(response.body)
-        responseBody.get("userName").asText() shouldBe user.userName
+        responseBody.get("userName").stringValue() shouldBe user.userName
     }
 
     @Test
@@ -182,7 +182,7 @@ class ScimEndpointDispatcherTest {
 
         response.status shouldBe 200
         val responseBody = objectMapper.readTree(response.body)
-        responseBody.get("userName").asText() shouldBe newUserName
+        responseBody.get("userName").stringValue() shouldBe newUserName
     }
 
     @Test
@@ -793,7 +793,7 @@ class ScimEndpointDispatcherTest {
 
         response.status shouldBe 200
         val responseBody = objectMapper.readTree(response.body)
-        responseBody.get("userName").asText() shouldBe user.userName
+        responseBody.get("userName").stringValue() shouldBe user.userName
     }
 
     @Test
@@ -809,7 +809,7 @@ class ScimEndpointDispatcherTest {
 
         response.status shouldBe 200
         val responseBody = objectMapper.readTree(response.body)
-        responseBody.get("userName").asText() shouldBe user.userName
+        responseBody.get("userName").stringValue() shouldBe user.userName
     }
 
     @Test
@@ -1233,7 +1233,7 @@ class ScimEndpointDispatcherTest {
 
         response.status shouldBe 200
         val responseBody = objectMapper.readTree(response.body)
-        responseBody.get("userName").asText() shouldBe "me-user"
+        responseBody.get("userName").stringValue() shouldBe "me-user"
     }
 
     @Test

@@ -141,7 +141,7 @@ class JwtIdentityResolverTest {
             mapOf(
                 "sub" to "user-1",
                 "name" to "John Doe",
-                "iss" to URL("https://issuer.example.com"),
+                "iss" to java.net.URI.create("https://issuer.example.com").toURL(),
             ),
         )
         setAuthentication(jwt)
