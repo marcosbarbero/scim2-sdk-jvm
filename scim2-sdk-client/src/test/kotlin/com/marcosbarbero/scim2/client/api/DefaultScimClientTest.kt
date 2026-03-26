@@ -20,6 +20,8 @@ import com.marcosbarbero.scim2.client.port.BearerTokenAuthentication
 import com.marcosbarbero.scim2.client.port.HttpRequest
 import com.marcosbarbero.scim2.client.port.HttpResponse
 import com.marcosbarbero.scim2.client.port.HttpTransport
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
 import com.marcosbarbero.scim2.core.domain.model.error.ScimError
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.User
