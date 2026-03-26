@@ -13,8 +13,8 @@
 
     <artifactId>scim2-sdk-client-httpclient</artifactId>
 
-    <name>SCIM 2.0 SDK :: Client :: Java HttpClient</name>
-    <description>Java HttpClient transport adapter for SCIM 2.0 SDK client.</description>
+    <name>SCIM 2.0 SDK :: Client :: HttpClient</name>
+    <description>JDK HttpClient transport adapter for SCIM 2.0 SDK client.</description>
 
     <dependencies>
         <dependency>
