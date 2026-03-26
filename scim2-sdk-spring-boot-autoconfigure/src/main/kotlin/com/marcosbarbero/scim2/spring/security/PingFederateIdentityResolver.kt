@@ -21,15 +21,17 @@ import org.springframework.security.oauth2.jwt.Jwt
 /**
  * [JwtIdentityResolver] for PingFederate.
  * Extracts roles from `memberOf` or `groups` claims.
- * All claim names are configurable via [ClaimMapping].
+ * Common claim names are configurable via [ClaimMapping]; the PingFederate-specific `memberOf`
+ * claim defaults to PingFederate conventions and can be overridden via the constructor parameter.
  */
 class PingFederateIdentityResolver(
     claims: ClaimMapping = ClaimMapping(),
+    private val memberOfClaim: String = "memberOf",
 ) : JwtIdentityResolver(claims) {
 
     override fun extractRoles(jwt: Jwt): Set<String> {
         val roles = mutableSetOf<String>()
-        jwt.getClaimAsStringList(claims.memberOf)?.let { roles.addAll(it) }
+        jwt.getClaimAsStringList(memberOfClaim)?.let { roles.addAll(it) }
         jwt.getClaimAsStringList(claims.groups)?.let { roles.addAll(it) }
         return roles
     }

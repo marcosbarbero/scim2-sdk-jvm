@@ -30,6 +30,8 @@ import com.marcosbarbero.scim2.spring.persistence.entity.ScimResourceEntity
 import com.marcosbarbero.scim2.spring.persistence.repository.ScimResourceJpaRepository
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.node.ObjectNode
 import java.time.Instant
 import java.util.UUID
 
@@ -134,10 +136,14 @@ class JpaResourceRepository<T : ScimResource>(
         else -> null
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun copyWithIdAndMeta(resource: T, id: String, meta: Meta): T = when (resource) {
-        is User -> resource.copy(id = id, meta = meta) as T
-        is Group -> resource.copy(id = id, meta = meta) as T
-        else -> resource // fallback; extensions would need their own copy logic
+    private fun copyWithIdAndMeta(resource: T, id: String, meta: Meta): T {
+        val mapper = JsonMapper.builder().build()
+        val json = serializer.serializeToString(resource)
+        val metaJson = serializer.serializeToString(meta)
+        val node = mapper.readTree(json) as ObjectNode
+        node.put("id", id)
+        node.set("meta", mapper.readTree(metaJson))
+        val updatedJson = mapper.writeValueAsString(node)
+        return serializer.deserializeFromString(updatedJson, resourceType.kotlin)
     }
 }

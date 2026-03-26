@@ -15,7 +15,7 @@
  */
 package com.marcosbarbero.scim2.server.config
 
-data class ScimServerConfig(
+data class ScimServerConfig @JvmOverloads constructor(
     val basePath: String = "/scim/v2",
     val bulkEnabled: Boolean = true,
     val bulkMaxOperations: Int = 1000,

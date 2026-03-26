@@ -45,30 +45,69 @@ class ScimIdentityAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "keycloak")
-    fun keycloakIdentityResolver(properties: ScimProperties): IdentityResolver = KeycloakIdentityResolver(clientId = properties.idp.clientId, claims = properties.idp.claims)
+    fun keycloakIdentityResolver(properties: ScimProperties): IdentityResolver {
+        val custom = properties.idp.claims.custom
+        return KeycloakIdentityResolver(
+            clientId = properties.idp.clientId,
+            claims = properties.idp.claims,
+            realmAccessClaim = custom.getOrDefault("realm-access", "realm_access"),
+            resourceAccessClaim = custom.getOrDefault("resource-access", "resource_access"),
+            preferredUsernameClaim = custom.getOrDefault("preferred-username", "preferred_username"),
+            givenNameClaim = custom.getOrDefault("given-name", "given_name"),
+            familyNameClaim = custom.getOrDefault("family-name", "family_name"),
+        )
+    }
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "okta")
-    fun oktaIdentityResolver(properties: ScimProperties): IdentityResolver = OktaIdentityResolver(claims = properties.idp.claims)
+    fun oktaIdentityResolver(properties: ScimProperties): IdentityResolver {
+        val custom = properties.idp.claims.custom
+        return OktaIdentityResolver(
+            claims = properties.idp.claims,
+            scopesClaim = custom.getOrDefault("scopes", "scp"),
+        )
+    }
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "azure-ad")
-    fun azureAdIdentityResolver(properties: ScimProperties): IdentityResolver = AzureAdIdentityResolver(claims = properties.idp.claims)
+    fun azureAdIdentityResolver(properties: ScimProperties): IdentityResolver {
+        val custom = properties.idp.claims.custom
+        return AzureAdIdentityResolver(
+            claims = properties.idp.claims,
+            objectIdClaim = custom.getOrDefault("object-id", "oid"),
+            directoryRolesClaim = custom.getOrDefault("directory-roles", "wids"),
+            preferredUsernameClaim = custom.getOrDefault("preferred-username", "preferred_username"),
+            tenantIdClaim = custom.getOrDefault("tenant-id", "tid"),
+            appIdClaim = custom.getOrDefault("app-id", "appid"),
+        )
+    }
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "ping-federate")
-    fun pingFederateIdentityResolver(properties: ScimProperties): IdentityResolver = PingFederateIdentityResolver(claims = properties.idp.claims)
+    fun pingFederateIdentityResolver(properties: ScimProperties): IdentityResolver {
+        val custom = properties.idp.claims.custom
+        return PingFederateIdentityResolver(
+            claims = properties.idp.claims,
+            memberOfClaim = custom.getOrDefault("member-of", "memberOf"),
+        )
+    }
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)
     @ConditionalOnProperty(prefix = "scim.idp", name = ["provider"], havingValue = "auth0")
-    fun auth0IdentityResolver(properties: ScimProperties): IdentityResolver = Auth0IdentityResolver(
-        namespace = properties.idp.namespace ?: "https://your-app.auth0.com",
-        claims = properties.idp.claims,
-    )
+    fun auth0IdentityResolver(properties: ScimProperties): IdentityResolver {
+        val custom = properties.idp.claims.custom
+        return Auth0IdentityResolver(
+            namespace = properties.idp.namespace ?: "https://your-app.auth0.com",
+            claims = properties.idp.claims,
+            permissionsClaim = custom.getOrDefault("permissions", "permissions"),
+            nicknameClaim = custom.getOrDefault("nickname", "nickname"),
+            pictureClaim = custom.getOrDefault("picture", "picture"),
+        )
+    }
 
     @Bean
     @ConditionalOnMissingBean(IdentityResolver::class)

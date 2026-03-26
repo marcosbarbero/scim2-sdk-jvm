@@ -21,16 +21,18 @@ import org.springframework.security.oauth2.jwt.Jwt
 /**
  * [JwtIdentityResolver] for Okta.
  * Extracts roles from the `groups` or `scp` (scopes) claims.
- * All claim names are configurable via [ClaimMapping].
+ * Common claim names are configurable via [ClaimMapping]; the Okta-specific `scp` claim
+ * defaults to Okta conventions and can be overridden via the constructor parameter.
  */
 class OktaIdentityResolver(
     claims: ClaimMapping = ClaimMapping(),
+    private val scopesClaim: String = "scp",
 ) : JwtIdentityResolver(claims) {
 
     override fun extractRoles(jwt: Jwt): Set<String> {
         val roles = mutableSetOf<String>()
         jwt.getClaimAsStringList(claims.groups)?.let { roles.addAll(it) }
-        jwt.getClaimAsStringList(claims.scopes)?.let { roles.addAll(it) }
+        jwt.getClaimAsStringList(scopesClaim)?.let { roles.addAll(it) }
         return roles
     }
 }

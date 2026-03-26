@@ -20,14 +20,17 @@ import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import com.marcosbarbero.scim2.core.patch.PatchEngine
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
+import tools.jackson.databind.ObjectMapper
 
 class DefaultResourceHandler<T : ScimResource>(
     override val resourceType: Class<T>,
     override val endpoint: String,
     private val repository: ResourceRepository<T>,
+    private val objectMapper: ObjectMapper? = null,
 ) : ResourceHandler<T> {
 
     override fun get(id: String, context: ScimRequestContext): T = repository.findById(id)
@@ -40,10 +43,10 @@ class DefaultResourceHandler<T : ScimResource>(
     override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): T {
         val existing = repository.findById(id)
             ?: throw ResourceNotFoundException("${resourceType.simpleName} not found: $id")
-        // Apply patch operations and replace
-        // For now, delegate to replace with the existing resource
-        // Real patch logic would apply each operation to the existing resource
-        return repository.replace(id, existing, version)
+        val mapper = objectMapper
+            ?: throw UnsupportedOperationException("PATCH not supported: no ObjectMapper configured")
+        val patched = PatchEngine(mapper).apply(existing, request)
+        return repository.replace(id, patched, version)
     }
 
     override fun delete(id: String, version: String?, context: ScimRequestContext) {
