@@ -21,22 +21,28 @@ import org.springframework.security.oauth2.jwt.Jwt
 /**
  * [JwtIdentityResolver] for Keycloak.
  * Extracts roles from `realm_access.roles` and `resource_access.{client}.roles` claims.
- * All claim names are configurable via [ClaimMapping].
+ * Common claim names are configurable via [ClaimMapping]; Keycloak-specific claim names
+ * default to Keycloak conventions and can be overridden via constructor parameters.
  */
 class KeycloakIdentityResolver(
     private val clientId: String? = null,
     claims: ClaimMapping = ClaimMapping(),
+    private val realmAccessClaim: String = "realm_access",
+    private val resourceAccessClaim: String = "resource_access",
+    private val preferredUsernameClaim: String = "preferred_username",
+    private val givenNameClaim: String = "given_name",
+    private val familyNameClaim: String = "family_name",
 ) : JwtIdentityResolver(claims) {
 
     @Suppress("UNCHECKED_CAST")
     override fun extractRoles(jwt: Jwt): Set<String> {
         val roles = mutableSetOf<String>()
         // Realm roles
-        val realmAccess = jwt.getClaim<Map<String, Any>>(claims.realmAccess)
+        val realmAccess = jwt.getClaim<Map<String, Any>>(realmAccessClaim)
         (realmAccess?.get("roles") as? List<String>)?.let { roles.addAll(it) }
         // Client roles
         clientId?.let { cid ->
-            val resourceAccess = jwt.getClaim<Map<String, Any>>(claims.resourceAccess)
+            val resourceAccess = jwt.getClaim<Map<String, Any>>(resourceAccessClaim)
             val clientAccess = resourceAccess?.get(cid) as? Map<String, Any>
             (clientAccess?.get("roles") as? List<String>)?.let { roles.addAll(it) }
         }
@@ -45,9 +51,9 @@ class KeycloakIdentityResolver(
 
     override fun extractAttributes(jwt: Jwt): Map<String, String> {
         val attrs = super.extractAttributes(jwt).toMutableMap()
-        jwt.getClaimAsString(claims.preferredUsername)?.let { attrs["preferred_username"] = it }
-        jwt.getClaimAsString(claims.givenName)?.let { attrs["given_name"] = it }
-        jwt.getClaimAsString(claims.familyName)?.let { attrs["family_name"] = it }
+        jwt.getClaimAsString(preferredUsernameClaim)?.let { attrs["preferred_username"] = it }
+        jwt.getClaimAsString(givenNameClaim)?.let { attrs["given_name"] = it }
+        jwt.getClaimAsString(familyNameClaim)?.let { attrs["family_name"] = it }
         return attrs
     }
 }

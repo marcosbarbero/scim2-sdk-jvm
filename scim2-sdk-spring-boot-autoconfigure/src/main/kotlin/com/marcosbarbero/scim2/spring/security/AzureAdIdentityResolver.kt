@@ -22,26 +22,32 @@ import org.springframework.security.oauth2.jwt.Jwt
  * [JwtIdentityResolver] for Azure AD (Microsoft Entra ID).
  * Extracts roles from `roles` claim and app roles from `wids` claim.
  * Uses `oid` (Object ID) as the principal identifier.
- * All claim names are configurable via [ClaimMapping].
+ * Common claim names are configurable via [ClaimMapping]; Azure AD-specific claim names
+ * default to Azure AD conventions and can be overridden via constructor parameters.
  */
 class AzureAdIdentityResolver(
     claims: ClaimMapping = ClaimMapping(),
+    private val objectIdClaim: String = "oid",
+    private val directoryRolesClaim: String = "wids",
+    private val preferredUsernameClaim: String = "preferred_username",
+    private val tenantIdClaim: String = "tid",
+    private val appIdClaim: String = "appid",
 ) : JwtIdentityResolver(claims) {
 
-    override fun extractPrincipal(jwt: Jwt): String = jwt.getClaimAsString(claims.objectId) ?: jwt.getClaimAsString(claims.subject) ?: "unknown"
+    override fun extractPrincipal(jwt: Jwt): String = jwt.getClaimAsString(objectIdClaim) ?: jwt.getClaimAsString(claims.subject) ?: "unknown"
 
     override fun extractRoles(jwt: Jwt): Set<String> {
         val roles = mutableSetOf<String>()
         jwt.getClaimAsStringList(claims.roles)?.let { roles.addAll(it) }
-        jwt.getClaimAsStringList(claims.directoryRoles)?.let { roles.addAll(it) }
+        jwt.getClaimAsStringList(directoryRolesClaim)?.let { roles.addAll(it) }
         return roles
     }
 
     override fun extractAttributes(jwt: Jwt): Map<String, String> {
         val attrs = super.extractAttributes(jwt).toMutableMap()
-        jwt.getClaimAsString(claims.preferredUsername)?.let { attrs["preferred_username"] = it }
-        jwt.getClaimAsString(claims.tenantId)?.let { attrs["tenant_id"] = it }
-        jwt.getClaimAsString(claims.appId)?.let { attrs["app_id"] = it }
+        jwt.getClaimAsString(preferredUsernameClaim)?.let { attrs["preferred_username"] = it }
+        jwt.getClaimAsString(tenantIdClaim)?.let { attrs["tenant_id"] = it }
+        jwt.getClaimAsString(appIdClaim)?.let { attrs["app_id"] = it }
         return attrs
     }
 }

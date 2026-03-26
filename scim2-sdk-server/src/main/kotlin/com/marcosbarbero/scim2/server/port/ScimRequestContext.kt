@@ -15,7 +15,7 @@
  */
 package com.marcosbarbero.scim2.server.port
 
-data class ScimRequestContext(
+data class ScimRequestContext @JvmOverloads constructor(
     val principalId: String? = null,
     val roles: Set<String> = emptySet(),
     val attributes: Map<String, String> = emptyMap(),

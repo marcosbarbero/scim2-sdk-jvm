@@ -153,88 +153,9 @@
       "defaultValue": "groups"
     },
     {
-      "name": "scim.idp.claims.realm-access",
-      "type": "java.lang.String",
-      "description": "JWT claim name for Keycloak realm-level role access.",
-      "defaultValue": "realm_access"
-    },
-    {
-      "name": "scim.idp.claims.resource-access",
-      "type": "java.lang.String",
-      "description": "JWT claim name for Keycloak client-level resource access.",
-      "defaultValue": "resource_access"
-    },
-    {
-      "name": "scim.idp.claims.preferred-username",
-      "type": "java.lang.String",
-      "description": "JWT claim name for the preferred username (Keycloak, Azure AD).",
-      "defaultValue": "preferred_username"
-    },
-    {
-      "name": "scim.idp.claims.given-name",
-      "type": "java.lang.String",
-      "description": "JWT claim name for the user's given (first) name.",
-      "defaultValue": "given_name"
-    },
-    {
-      "name": "scim.idp.claims.family-name",
-      "type": "java.lang.String",
-      "description": "JWT claim name for the user's family (last) name.",
-      "defaultValue": "family_name"
-    },
-    {
-      "name": "scim.idp.claims.object-id",
-      "type": "java.lang.String",
-      "description": "JWT claim name for the Azure AD object identifier.",
-      "defaultValue": "oid"
-    },
-    {
-      "name": "scim.idp.claims.directory-roles",
-      "type": "java.lang.String",
-      "description": "JWT claim name for Azure AD directory role identifiers (wids).",
-      "defaultValue": "wids"
-    },
-    {
-      "name": "scim.idp.claims.tenant-id",
-      "type": "java.lang.String",
-      "description": "JWT claim name for the Azure AD tenant identifier.",
-      "defaultValue": "tid"
-    },
-    {
-      "name": "scim.idp.claims.app-id",
-      "type": "java.lang.String",
-      "description": "JWT claim name for the Azure AD application identifier.",
-      "defaultValue": "appid"
-    },
-    {
-      "name": "scim.idp.claims.scopes",
-      "type": "java.lang.String",
-      "description": "JWT claim name for Okta scopes.",
-      "defaultValue": "scp"
-    },
-    {
-      "name": "scim.idp.claims.member-of",
-      "type": "java.lang.String",
-      "description": "JWT claim name for PingFederate group membership.",
-      "defaultValue": "memberOf"
-    },
-    {
-      "name": "scim.idp.claims.permissions",
-      "type": "java.lang.String",
-      "description": "JWT claim name for Auth0 permissions.",
-      "defaultValue": "permissions"
-    },
-    {
-      "name": "scim.idp.claims.nickname",
-      "type": "java.lang.String",
-      "description": "JWT claim name for Auth0 nickname.",
-      "defaultValue": "nickname"
-    },
-    {
-      "name": "scim.idp.claims.picture",
-      "type": "java.lang.String",
-      "description": "JWT claim name for Auth0 profile picture URL.",
-      "defaultValue": "picture"
+      "name": "scim.idp.claims.custom",
+      "type": "java.util.Map<java.lang.String,java.lang.String>",
+      "description": "Additional custom claim name overrides for IdP-specific claims (e.g., realm-access, object-id, permissions). Keys use kebab-case; values are the JWT claim names."
     }
   ]
 }

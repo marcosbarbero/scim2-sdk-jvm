@@ -15,7 +15,7 @@
  */
 package com.marcosbarbero.scim2.core.domain.model.schema
 
-data class ServiceProviderConfig(
+data class ServiceProviderConfig @JvmOverloads constructor(
     val documentationUri: String? = null,
     val patch: SupportedConfig = SupportedConfig(),
     val bulk: BulkConfig = BulkConfig(),

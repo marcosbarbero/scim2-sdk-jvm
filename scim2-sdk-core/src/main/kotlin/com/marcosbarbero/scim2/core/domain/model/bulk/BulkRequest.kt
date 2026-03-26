@@ -18,7 +18,7 @@ package com.marcosbarbero.scim2.core.domain.model.bulk
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 
-data class BulkRequest(
+data class BulkRequest @JvmOverloads constructor(
     val schemas: List<String> = listOf(ScimUrns.BULK_REQUEST),
     val failOnErrors: Int? = null,
     @JsonProperty("Operations")

@@ -39,6 +39,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
+import tools.jackson.databind.ObjectMapper
 
 @AutoConfiguration(after = [ScimJacksonAutoConfiguration::class])
 @ConditionalOnClass(ScimEndpointDispatcher::class)
@@ -116,15 +117,15 @@ class ScimServerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(name = ["scimUserHandler"])
-    fun scimUserHandler(repository: ObjectProvider<ResourceRepository<User>>): ResourceHandler<User>? {
+    fun scimUserHandler(repository: ObjectProvider<ResourceRepository<User>>, objectMapper: ObjectProvider<ObjectMapper>): ResourceHandler<User>? {
         val repo = repository.ifAvailable ?: return null
-        return DefaultResourceHandler(User::class.java, "/Users", repo)
+        return DefaultResourceHandler(User::class.java, "/Users", repo, objectMapper.ifAvailable)
     }
 
     @Bean
     @ConditionalOnMissingBean(name = ["scimGroupHandler"])
-    fun scimGroupHandler(repository: ObjectProvider<ResourceRepository<Group>>): ResourceHandler<Group>? {
+    fun scimGroupHandler(repository: ObjectProvider<ResourceRepository<Group>>, objectMapper: ObjectProvider<ObjectMapper>): ResourceHandler<Group>? {
         val repo = repository.ifAvailable ?: return null
-        return DefaultResourceHandler(Group::class.java, "/Groups", repo)
+        return DefaultResourceHandler(Group::class.java, "/Groups", repo, objectMapper.ifAvailable)
     }
 }

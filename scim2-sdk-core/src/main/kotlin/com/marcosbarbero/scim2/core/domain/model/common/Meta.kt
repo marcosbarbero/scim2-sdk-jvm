@@ -19,7 +19,7 @@ import com.marcosbarbero.scim2.core.domain.vo.ETag
 import java.net.URI
 import java.time.Instant
 
-data class Meta(
+data class Meta @JvmOverloads constructor(
     val resourceType: String? = null,
     val created: Instant? = null,
     val lastModified: Instant? = null,

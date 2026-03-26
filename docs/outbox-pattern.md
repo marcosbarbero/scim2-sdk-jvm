@@ -93,8 +93,7 @@ graph LR
     SM --> A[AMQP]
     SM --> O[Other]
 
-    EP --> OP[ScimOutboxPort]
-    OP --> NO[namastack-outbox<br/>Transactional Store]
+    EP --> NO[namastack-outbox<br/>Transactional Store]
     NO --> SM
 
     style SCIM fill:#4CAF50,color:#fff
@@ -126,15 +125,7 @@ sequenceDiagram
     end
 ```
 
-## Using the ScimOutboxPort
-
-The `ScimOutboxPort` interface in the server module defines the outbox contract:
-
-```kotlin
-interface ScimOutboxPort {
-    fun store(event: ScimEvent)
-}
-```
+## Using the Outbox Pattern
 
 ### Option 1: namastack-outbox (Recommended)
 
@@ -158,18 +149,18 @@ scim:
     enabled: true
 ```
 
-The SDK auto-configures a `NamastackOutboxAdapter` implementing `ScimOutboxPort` that delegates to namastack-outbox's event publishing. Events are stored transactionally alongside your resource changes and published asynchronously.
+The SDK auto-configures a `NamastackOutboxAdapter` that delegates to namastack-outbox's event publishing. Events are stored transactionally alongside your resource changes and published asynchronously.
 
 ### Option 2: Custom Implementation
 
-Implement `ScimOutboxPort` and register as a Spring bean.
+Implement a custom outbox adapter using `ScimEventPublisher` and register as a Spring bean.
 
 **Kotlin:**
 
 ```kotlin
 @Component
-class MyOutboxPort(private val jdbcTemplate: JdbcTemplate) : ScimOutboxPort {
-    override fun store(event: ScimEvent) {
+class MyOutboxAdapter(private val jdbcTemplate: JdbcTemplate) : ScimEventPublisher {
+    override fun publish(event: ScimEvent) {
         jdbcTemplate.update(
             "INSERT INTO my_outbox (event_id, event_type, payload, created_at) VALUES (?, ?, ?, ?)",
             event.eventId, event::class.simpleName, objectMapper.writeValueAsString(event), event.timestamp
@@ -182,7 +173,7 @@ class MyOutboxPort(private val jdbcTemplate: JdbcTemplate) : ScimOutboxPort {
 
 ```java
 @Component
-public class MyOutboxPort implements ScimOutboxPort {
+public class MyOutboxAdapter implements ScimEventPublisher {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 

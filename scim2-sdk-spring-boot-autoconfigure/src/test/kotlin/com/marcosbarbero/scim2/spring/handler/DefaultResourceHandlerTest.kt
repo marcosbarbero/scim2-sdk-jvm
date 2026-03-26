@@ -16,6 +16,8 @@
 package com.marcosbarbero.scim2.spring.handler
 
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
@@ -30,13 +32,19 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 
 class DefaultResourceHandlerTest {
 
     private val faker = Faker()
     private lateinit var repository: ResourceRepository<User>
     private lateinit var handler: DefaultResourceHandler<User>
+    private lateinit var handlerWithMapper: DefaultResourceHandler<User>
     private val context = ScimRequestContext()
+    private val objectMapper = JsonMapper.builder()
+        .addModule(KotlinModule.Builder().build())
+        .build()
 
     @BeforeEach
     fun setUp() {
@@ -45,6 +53,12 @@ class DefaultResourceHandlerTest {
             resourceType = User::class.java,
             endpoint = "/Users",
             repository = repository,
+        )
+        handlerWithMapper = DefaultResourceHandler(
+            resourceType = User::class.java,
+            endpoint = "/Users",
+            repository = repository,
+            objectMapper = objectMapper,
         )
     }
 
@@ -100,20 +114,37 @@ class DefaultResourceHandlerTest {
     }
 
     @Test
-    fun `patch finds existing resource and replaces with it`() {
+    fun `patch applies operations via PatchEngine and replaces`() {
         val userId = faker.random.randomString(10)
         val userName = faker.name.firstName()
+        val newDisplayName = faker.name.name()
         val existingUser = User(id = userId, userName = userName)
         val version = faker.random.randomString(5)
+        val patchRequest = PatchRequest(
+            operations = listOf(
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(newDisplayName)),
+            ),
+        )
+        every { repository.findById(userId) } returns existingUser
+        every { repository.replace(eq(userId), any(), eq(version)) } answers { secondArg() }
+
+        val result = handlerWithMapper.patch(userId, patchRequest, version, context)
+
+        result.displayName shouldBe newDisplayName
+        verify { repository.findById(userId) }
+        verify { repository.replace(userId, any(), version) }
+    }
+
+    @Test
+    fun `patch throws UnsupportedOperationException when no ObjectMapper configured`() {
+        val userId = faker.random.randomString(10)
+        val existingUser = User(id = userId, userName = faker.name.firstName())
         val patchRequest = PatchRequest(operations = emptyList())
         every { repository.findById(userId) } returns existingUser
-        every { repository.replace(userId, existingUser, version) } returns existingUser
 
-        val result = handler.patch(userId, patchRequest, version, context)
-
-        result shouldBe existingUser
-        verify { repository.findById(userId) }
-        verify { repository.replace(userId, existingUser, version) }
+        shouldThrow<UnsupportedOperationException> {
+            handler.patch(userId, patchRequest, null, context)
+        }
     }
 
     @Test
@@ -123,7 +154,7 @@ class DefaultResourceHandlerTest {
         every { repository.findById(userId) } returns null
 
         shouldThrow<ResourceNotFoundException> {
-            handler.patch(userId, patchRequest, null, context)
+            handlerWithMapper.patch(userId, patchRequest, null, context)
         }
     }
 

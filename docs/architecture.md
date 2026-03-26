@@ -113,7 +113,7 @@ sequenceDiagram
     participant D as ScimEndpointDispatcher
     participant H as ResourceHandler
     participant DB as Database
-    participant OP as ScimOutboxPort
+    participant OP as Outbox Adapter
     participant P as Outbox Poller<br/>(async)
     participant K as Message Broker<br/>(Kafka/SQS)
     participant DS as Downstream<br/>Consumers
@@ -206,7 +206,6 @@ graph TD
         IR[IdentityResolver]
         AE[AuthorizationEvaluator]
         EP[ScimEventPublisher]
-        OP[ScimOutboxPort]
     end
 
     subgraph "Outbound Adapters"

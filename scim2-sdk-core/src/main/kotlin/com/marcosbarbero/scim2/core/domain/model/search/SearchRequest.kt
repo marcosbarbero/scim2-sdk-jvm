@@ -17,7 +17,7 @@ package com.marcosbarbero.scim2.core.domain.model.search
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 
-data class SearchRequest(
+data class SearchRequest @JvmOverloads constructor(
     val schemas: List<String> = listOf(ScimUrns.SEARCH_REQUEST),
     val filter: String? = null,
     val sortBy: String? = null,

@@ -18,7 +18,7 @@ package com.marcosbarbero.scim2.core.domain.model.search
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 
-data class ListResponse<T>(
+data class ListResponse<T> @JvmOverloads constructor(
     val schemas: List<String> = listOf(ScimUrns.LIST_RESPONSE),
     val totalResults: Int,
     val itemsPerPage: Int? = null,
