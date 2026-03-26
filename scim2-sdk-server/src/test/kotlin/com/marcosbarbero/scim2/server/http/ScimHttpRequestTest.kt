@@ -26,7 +26,7 @@ class ScimHttpRequestTest {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
             path = "/Users",
-            headers = mapOf("Content-Type" to listOf("application/scim+json"))
+            headers = mapOf("Content-Type" to listOf("application/scim+json")),
         )
 
         request.header("content-type") shouldBe "application/scim+json"
@@ -45,7 +45,7 @@ class ScimHttpRequestTest {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
             path = "/Users",
-            queryParameters = mapOf("filter" to listOf("userName eq \"bjensen\""))
+            queryParameters = mapOf("filter" to listOf("userName eq \"bjensen\"")),
         )
 
         request.queryParam("filter") shouldBe "userName eq \"bjensen\""
@@ -63,7 +63,7 @@ class ScimHttpRequestTest {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
             path = "/Users",
-            queryParameters = mapOf("schemas" to listOf("a", "b"))
+            queryParameters = mapOf("schemas" to listOf("a", "b")),
         )
 
         request.queryParamList("schemas") shouldBe listOf("a", "b")

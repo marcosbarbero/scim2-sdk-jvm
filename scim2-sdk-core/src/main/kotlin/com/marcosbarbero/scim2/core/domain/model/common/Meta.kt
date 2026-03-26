@@ -24,5 +24,5 @@ data class Meta(
     val created: Instant? = null,
     val lastModified: Instant? = null,
     val location: URI? = null,
-    val version: ETag? = null
+    val version: ETag? = null,
 )

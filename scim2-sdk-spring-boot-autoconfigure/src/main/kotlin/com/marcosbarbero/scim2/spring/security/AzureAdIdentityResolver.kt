@@ -25,11 +25,10 @@ import org.springframework.security.oauth2.jwt.Jwt
  * All claim names are configurable via [ClaimMapping].
  */
 class AzureAdIdentityResolver(
-    claims: ClaimMapping = ClaimMapping()
+    claims: ClaimMapping = ClaimMapping(),
 ) : JwtIdentityResolver(claims) {
 
-    override fun extractPrincipal(jwt: Jwt): String =
-        jwt.getClaimAsString(claims.objectId) ?: jwt.getClaimAsString(claims.subject) ?: "unknown"
+    override fun extractPrincipal(jwt: Jwt): String = jwt.getClaimAsString(claims.objectId) ?: jwt.getClaimAsString(claims.subject) ?: "unknown"
 
     override fun extractRoles(jwt: Jwt): Set<String> {
         val roles = mutableSetOf<String>()

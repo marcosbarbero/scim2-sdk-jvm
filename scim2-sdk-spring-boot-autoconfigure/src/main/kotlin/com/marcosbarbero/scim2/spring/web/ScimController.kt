@@ -56,7 +56,7 @@ class ScimController(private val dispatcher: ScimEndpointDispatcher) {
             path = path,
             headers = headers,
             queryParameters = queryParameters,
-            body = body
+            body = body,
         )
     }
 

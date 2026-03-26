@@ -26,7 +26,7 @@ import org.springframework.security.web.SecurityFilterChain
 @EnableWebSecurity
 @ConditionalOnProperty(
     prefix = "spring.security.oauth2.resourceserver.jwt",
-    name = ["issuer-uri"]
+    name = ["issuer-uri"],
 )
 class SecurityConfig {
 

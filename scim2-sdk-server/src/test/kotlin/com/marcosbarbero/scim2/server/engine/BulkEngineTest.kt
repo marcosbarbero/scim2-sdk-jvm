@@ -15,16 +15,11 @@
  */
 package com.marcosbarbero.scim2.server.engine
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkOperation
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
-import com.marcosbarbero.scim2.core.domain.model.common.Meta
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
-import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
-import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
-import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
@@ -36,6 +31,7 @@ import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import kotlin.reflect.KClass
 
 class BulkEngineTest {
@@ -57,8 +53,7 @@ class BulkEngineTest {
         override val resourceType: Class<User> = User::class.java
         override val endpoint: String = "/Users"
 
-        override fun get(id: String, context: ScimRequestContext): User =
-            users[id] ?: throw ResourceNotFoundException("User not found: $id")
+        override fun get(id: String, context: ScimRequestContext): User = users[id] ?: throw ResourceNotFoundException("User not found: $id")
 
         override fun create(resource: User, context: ScimRequestContext): User {
             val id = java.util.UUID.randomUUID().toString()
@@ -82,8 +77,7 @@ class BulkEngineTest {
             users.remove(id) ?: throw ResourceNotFoundException("User not found: $id")
         }
 
-        override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> =
-            ListResponse(totalResults = users.size, resources = users.values.toList())
+        override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = ListResponse(totalResults = users.size, resources = users.values.toList())
     }
 
     private val engine = BulkEngine(listOf(userHandler), serializer, config)
@@ -92,12 +86,12 @@ class BulkEngineTest {
     fun `execute should process POST operation`() {
         val userName = faker.name.firstName()
         val userData = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
-            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName),
         )
         val request = BulkRequest(
             operations = listOf(
-                BulkOperation(method = "POST", path = "/Users", bulkId = "user1", data = userData)
-            )
+                BulkOperation(method = "POST", path = "/Users", bulkId = "user1", data = userData),
+            ),
         )
 
         val response = engine.execute(request, context)
@@ -114,8 +108,8 @@ class BulkEngineTest {
 
         val request = BulkRequest(
             operations = listOf(
-                BulkOperation(method = "DELETE", path = "/Users/$id")
-            )
+                BulkOperation(method = "DELETE", path = "/Users/$id"),
+            ),
         )
 
         val response = engine.execute(request, context)
@@ -129,17 +123,17 @@ class BulkEngineTest {
         val userName1 = faker.name.firstName()
         val userName2 = faker.name.firstName()
         val user1Data = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
-            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName1)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName1),
         )
         val user2Data = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
-            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName2)
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to userName2),
         )
 
         val request = BulkRequest(
             operations = listOf(
                 BulkOperation(method = "POST", path = "/Users", bulkId = "user1", data = user1Data),
-                BulkOperation(method = "POST", path = "/Users", bulkId = "user2", data = user2Data)
-            )
+                BulkOperation(method = "POST", path = "/Users", bulkId = "user2", data = user2Data),
+            ),
         )
 
         val response = engine.execute(request, context)
@@ -156,8 +150,8 @@ class BulkEngineTest {
             operations = listOf(
                 BulkOperation(method = "DELETE", path = "/Users/nonexistent1"),
                 BulkOperation(method = "DELETE", path = "/Users/nonexistent2"),
-                BulkOperation(method = "DELETE", path = "/Users/nonexistent3")
-            )
+                BulkOperation(method = "DELETE", path = "/Users/nonexistent3"),
+            ),
         )
 
         val response = engine.execute(request, context)
@@ -174,7 +168,7 @@ class BulkEngineTest {
         val request = BulkRequest(
             operations = (1..5).map {
                 BulkOperation(method = "DELETE", path = "/Users/${java.util.UUID.randomUUID()}")
-            }
+            },
         )
 
         assertThrows<IllegalArgumentException> {
@@ -186,8 +180,8 @@ class BulkEngineTest {
     fun `execute should return 404 for unknown endpoint`() {
         val request = BulkRequest(
             operations = listOf(
-                BulkOperation(method = "DELETE", path = "/Unknown/123")
-            )
+                BulkOperation(method = "DELETE", path = "/Unknown/123"),
+            ),
         )
 
         val response = engine.execute(request, context)

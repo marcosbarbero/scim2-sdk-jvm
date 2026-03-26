@@ -24,7 +24,7 @@ import com.marcosbarbero.scim2.core.schema.annotation.ScimAttribute
     schema = ScimUrns.GROUP,
     name = "Group",
     description = "Group",
-    endpoint = "/Groups"
+    endpoint = "/Groups",
 )
 data class Group(
     override val id: String? = null,
@@ -34,10 +34,10 @@ data class Group(
     @ScimAttribute(required = true)
     val displayName: String,
 
-    val members: List<GroupMembership> = emptyList()
+    val members: List<GroupMembership> = emptyList(),
 ) : ScimResource(
     schemas = listOf(ScimUrns.GROUP),
     id = id,
     externalId = externalId,
-    meta = meta
+    meta = meta,
 )

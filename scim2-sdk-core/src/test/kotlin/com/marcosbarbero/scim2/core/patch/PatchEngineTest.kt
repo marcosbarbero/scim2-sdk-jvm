@@ -16,9 +16,6 @@
 package com.marcosbarbero.scim2.core.patch
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.json.JsonMapper
-import tools.jackson.module.kotlin.KotlinModule
 import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidPathException
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
@@ -30,10 +27,12 @@ import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 
 class PatchEngineTest {
 
@@ -60,8 +59,8 @@ class PatchEngineTest {
             displayName = displayName,
             emails = listOf(
                 MultiValuedAttribute(value = workEmail, type = "work", primary = true),
-                MultiValuedAttribute(value = homeEmail, type = "home")
-            )
+                MultiValuedAttribute(value = homeEmail, type = "home"),
+            ),
         )
     }
 
@@ -73,9 +72,11 @@ class PatchEngineTest {
             val userName = faker.name.firstName().lowercase()
             val displayName = faker.name.name()
             val user = User(userName = userName)
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName)),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.displayName shouldBe displayName
@@ -85,9 +86,11 @@ class PatchEngineTest {
         fun `should add to multi-valued attribute`() {
             val user = baseUser()
             val newEmail = mapOf("value" to faker.internet.email(), "type" to "other")
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "emails", value = objectMapper.valueToTree(listOf(newEmail)))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, path = "emails", value = objectMapper.valueToTree(listOf(newEmail))),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.emails shouldHaveSize 3
@@ -99,9 +102,11 @@ class PatchEngineTest {
             val displayName = faker.name.name()
             val title = faker.name.name()
             val user = User(userName = userName)
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, value = objectMapper.valueToTree(mapOf("displayName" to displayName, "title" to title)))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, value = objectMapper.valueToTree(mapOf("displayName" to displayName, "title" to title))),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.displayName shouldBe displayName
@@ -111,9 +116,11 @@ class PatchEngineTest {
         @Test
         fun `should throw when add with no path has non-object value`() {
             val user = User(userName = faker.name.firstName().lowercase())
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, value = objectMapper.valueToTree("plain string"))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, value = objectMapper.valueToTree("plain string")),
+                ),
+            )
 
             shouldThrow<InvalidValueException> {
                 engine.apply(user, request)
@@ -127,9 +134,11 @@ class PatchEngineTest {
         @Test
         fun `should remove simple attribute`() {
             val user = baseUser()
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REMOVE, path = "displayName")
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REMOVE, path = "displayName"),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.displayName.shouldBeNull()
@@ -138,9 +147,11 @@ class PatchEngineTest {
         @Test
         fun `should remove from multi-valued with filter`() {
             val user = baseUser()
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REMOVE, path = "emails[type eq \"work\"]")
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REMOVE, path = "emails[type eq \"work\"]"),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.emails shouldHaveSize 1
@@ -150,9 +161,11 @@ class PatchEngineTest {
         @Test
         fun `should throw when remove has no path`() {
             val user = baseUser()
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REMOVE)
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REMOVE),
+                ),
+            )
 
             shouldThrow<InvalidPathException> {
                 engine.apply(user, request)
@@ -167,9 +180,11 @@ class PatchEngineTest {
         fun `should replace simple attribute`() {
             val user = baseUser()
             val newDisplayName = faker.name.name()
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(newDisplayName))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(newDisplayName)),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.displayName shouldBe newDisplayName
@@ -180,9 +195,11 @@ class PatchEngineTest {
             val user = baseUser()
             val newEmail = faker.internet.email()
             val newEmails = listOf(mapOf("value" to newEmail, "type" to "work"))
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REPLACE, path = "emails", value = objectMapper.valueToTree(newEmails))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, path = "emails", value = objectMapper.valueToTree(newEmails)),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.emails shouldHaveSize 1
@@ -192,9 +209,11 @@ class PatchEngineTest {
         @Test
         fun `should throw when replace with no path has non-object value`() {
             val user = User(userName = faker.name.firstName().lowercase())
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.REPLACE, value = objectMapper.valueToTree("plain string"))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, value = objectMapper.valueToTree("plain string")),
+                ),
+            )
 
             shouldThrow<InvalidValueException> {
                 engine.apply(user, request)
@@ -212,11 +231,13 @@ class PatchEngineTest {
             val title = faker.name.name()
             val displayName2 = faker.name.name()
             val user = User(userName = userName)
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName1)),
-                PatchOperation(op = PatchOp.ADD, path = "title", value = objectMapper.valueToTree(title)),
-                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(displayName2))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, path = "displayName", value = objectMapper.valueToTree(displayName1)),
+                    PatchOperation(op = PatchOp.ADD, path = "title", value = objectMapper.valueToTree(title)),
+                    PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(displayName2)),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.displayName shouldBe displayName2
@@ -231,9 +252,11 @@ class PatchEngineTest {
         fun `should preserve schemas, id, and userName`() {
             val user = baseUser()
             val title = faker.name.name()
-            val request = PatchRequest(operations = listOf(
-                PatchOperation(op = PatchOp.ADD, path = "title", value = objectMapper.valueToTree(title))
-            ))
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, path = "title", value = objectMapper.valueToTree(title)),
+                ),
+            )
 
             val result = engine.apply(user, request)
             result.id shouldBe user.id

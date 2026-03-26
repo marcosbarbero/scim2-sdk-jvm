@@ -19,7 +19,7 @@ data class HttpRequest(
     val method: String,
     val url: String,
     val headers: Map<String, String> = emptyMap(),
-    val body: ByteArray? = null
+    val body: ByteArray? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -42,7 +42,7 @@ data class HttpRequest(
 data class HttpResponse(
     val statusCode: Int,
     val headers: Map<String, List<String>> = emptyMap(),
-    val body: ByteArray? = null
+    val body: ByteArray? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

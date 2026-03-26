@@ -27,25 +27,24 @@ import com.marcosbarbero.scim2.server.port.ResourceHandler
 class DiscoveryService(
     private val handlers: List<ResourceHandler<*>>,
     private val schemaRegistry: SchemaRegistry,
-    private val config: ScimServerConfig
+    private val config: ScimServerConfig,
 ) {
 
-    fun getServiceProviderConfig(): ServiceProviderConfig =
-        ServiceProviderConfig(
-            patch = ServiceProviderConfig.SupportedConfig(supported = config.patchEnabled),
-            bulk = ServiceProviderConfig.BulkConfig(
-                supported = config.bulkEnabled,
-                maxOperations = config.bulkMaxOperations,
-                maxPayloadSize = config.bulkMaxPayloadSize
-            ),
-            filter = ServiceProviderConfig.FilterConfig(
-                supported = config.filterEnabled,
-                maxResults = config.filterMaxResults
-            ),
-            changePassword = ServiceProviderConfig.SupportedConfig(supported = config.changePasswordEnabled),
-            sort = ServiceProviderConfig.SupportedConfig(supported = config.sortEnabled),
-            etag = ServiceProviderConfig.SupportedConfig(supported = config.etagEnabled)
-        )
+    fun getServiceProviderConfig(): ServiceProviderConfig = ServiceProviderConfig(
+        patch = ServiceProviderConfig.SupportedConfig(supported = config.patchEnabled),
+        bulk = ServiceProviderConfig.BulkConfig(
+            supported = config.bulkEnabled,
+            maxOperations = config.bulkMaxOperations,
+            maxPayloadSize = config.bulkMaxPayloadSize,
+        ),
+        filter = ServiceProviderConfig.FilterConfig(
+            supported = config.filterEnabled,
+            maxResults = config.filterMaxResults,
+        ),
+        changePassword = ServiceProviderConfig.SupportedConfig(supported = config.changePasswordEnabled),
+        sort = ServiceProviderConfig.SupportedConfig(supported = config.sortEnabled),
+        etag = ServiceProviderConfig.SupportedConfig(supported = config.etagEnabled),
+    )
 
     fun getSchemas(): ListResponse<Schema> {
         val schemas = schemaRegistry.getAllSchemas()
@@ -53,13 +52,12 @@ class DiscoveryService(
             totalResults = schemas.size,
             itemsPerPage = schemas.size,
             startIndex = 1,
-            resources = schemas
+            resources = schemas,
         )
     }
 
-    fun getSchema(id: String): Schema =
-        schemaRegistry.getSchema(id)
-            ?: throw ResourceNotFoundException("Schema not found: $id")
+    fun getSchema(id: String): Schema = schemaRegistry.getSchema(id)
+        ?: throw ResourceNotFoundException("Schema not found: $id")
 
     fun getResourceTypes(): ListResponse<ResourceType> {
         val types = schemaRegistry.getAllResourceTypes()
@@ -67,11 +65,10 @@ class DiscoveryService(
             totalResults = types.size,
             itemsPerPage = types.size,
             startIndex = 1,
-            resources = types
+            resources = types,
         )
     }
 
-    fun getResourceType(name: String): ResourceType =
-        schemaRegistry.getResourceType(name)
-            ?: throw ResourceNotFoundException("ResourceType not found: $name")
+    fun getResourceType(name: String): ResourceType = schemaRegistry.getResourceType(name)
+        ?: throw ResourceNotFoundException("ResourceType not found: $name")
 }

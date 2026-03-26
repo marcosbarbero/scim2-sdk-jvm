@@ -25,9 +25,9 @@ import org.springframework.boot.autoconfigure.AutoConfiguration
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer
 import org.springframework.boot.persistence.autoconfigure.EntityScan
-import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
@@ -40,11 +40,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 class ScimPersistenceAutoConfiguration {
 
     @Bean
-    fun scimHibernateProperties(properties: ScimProperties): HibernatePropertiesCustomizer {
-        return HibernatePropertiesCustomizer { hibernateProperties ->
-            properties.persistence.schemaName?.let {
-                hibernateProperties["hibernate.default_schema"] = it
-            }
+    fun scimHibernateProperties(properties: ScimProperties): HibernatePropertiesCustomizer = HibernatePropertiesCustomizer { hibernateProperties ->
+        properties.persistence.schemaName?.let {
+            hibernateProperties["hibernate.default_schema"] = it
         }
     }
 
@@ -52,13 +50,13 @@ class ScimPersistenceAutoConfiguration {
     @ConditionalOnMissingBean(name = ["scimUserRepository"])
     fun scimUserRepository(
         jpaRepository: ScimResourceJpaRepository,
-        serializer: ScimSerializer
+        serializer: ScimSerializer,
     ): ResourceRepository<User> = JpaResourceRepository(jpaRepository, serializer, User::class.java, "User")
 
     @Bean
     @ConditionalOnMissingBean(name = ["scimGroupRepository"])
     fun scimGroupRepository(
         jpaRepository: ScimResourceJpaRepository,
-        serializer: ScimSerializer
+        serializer: ScimSerializer,
     ): ResourceRepository<Group> = JpaResourceRepository(jpaRepository, serializer, Group::class.java, "Group")
 }

@@ -15,18 +15,18 @@
  */
 package com.marcosbarbero.scim2.client.pact
 
+import au.com.dius.pact.consumer.MockServer
 import au.com.dius.pact.consumer.dsl.PactDslJsonBody
 import au.com.dius.pact.consumer.dsl.PactDslWithProvider
 import au.com.dius.pact.consumer.junit5.PactConsumerTest
 import au.com.dius.pact.consumer.junit5.PactTestFor
-import au.com.dius.pact.consumer.MockServer
 import au.com.dius.pact.core.model.V4Pact
 import au.com.dius.pact.core.model.annotations.Pact
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder
 import com.marcosbarbero.scim2.client.api.createUser
+import com.marcosbarbero.scim2.client.api.deleteUser
 import com.marcosbarbero.scim2.client.api.getUser
 import com.marcosbarbero.scim2.client.api.searchUsers
-import com.marcosbarbero.scim2.client.api.deleteUser
 import com.marcosbarbero.scim2.client.error.ScimClientException
 import com.marcosbarbero.scim2.client.port.HttpRequest
 import com.marcosbarbero.scim2.client.port.HttpResponse
@@ -84,7 +84,7 @@ class ScimClientPactTest {
             return HttpResponse(
                 statusCode = javaResponse.statusCode(),
                 headers = responseHeaders,
-                body = responseBody
+                body = responseBody,
             )
         }
 

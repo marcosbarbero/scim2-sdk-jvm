@@ -16,7 +16,6 @@
 package com.marcosbarbero.scim2.core.filter.visitor
 
 import com.marcosbarbero.scim2.core.filter.ast.AttributeExpression
-import com.marcosbarbero.scim2.core.filter.ast.ComparisonOperator
 import com.marcosbarbero.scim2.core.filter.ast.LogicalExpression
 import com.marcosbarbero.scim2.core.filter.ast.LogicalOperator
 import com.marcosbarbero.scim2.core.filter.ast.NotExpression
@@ -33,9 +32,7 @@ class FilterToStringVisitor : FilterVisitor<String> {
         return "$path $op $value"
     }
 
-    override fun visit(node: PresentExpression): String {
-        return "${node.path.toFullPath()} pr"
-    }
+    override fun visit(node: PresentExpression): String = "${node.path.toFullPath()} pr"
 
     override fun visit(node: LogicalExpression): String {
         val left = visitWithPrecedence(node.left, node.operator)

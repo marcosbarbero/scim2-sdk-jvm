@@ -23,7 +23,7 @@ abstract class ScimResource(
     open val schemas: List<String>,
     open val id: String? = null,
     open val externalId: String? = null,
-    open val meta: Meta? = null
+    open val meta: Meta? = null,
 ) {
     private val _extensions: MutableMap<String, Any> = mutableMapOf()
 

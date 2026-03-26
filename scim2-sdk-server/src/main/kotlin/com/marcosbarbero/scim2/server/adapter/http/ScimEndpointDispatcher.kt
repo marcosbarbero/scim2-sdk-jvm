@@ -18,9 +18,9 @@ package com.marcosbarbero.scim2.server.adapter.http
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidFilterException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.error.ScimException
-import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
+import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.event.BulkOperationCompletedEvent
 import com.marcosbarbero.scim2.core.event.NoOpEventPublisher
@@ -65,7 +65,7 @@ class ScimEndpointDispatcher(
     private val authorizationEvaluator: AuthorizationEvaluator? = null,
     private val eventPublisher: ScimEventPublisher = NoOpEventPublisher,
     private val metrics: ScimMetrics = NoOpScimMetrics,
-    private val tracer: ScimTracer = NoOpScimTracer
+    private val tracer: ScimTracer = NoOpScimTracer,
 ) {
 
     private val logger = LoggerFactory.getLogger(ScimEndpointDispatcher::class.java)
@@ -94,7 +94,7 @@ class ScimEndpointDispatcher(
             val response = try {
                 tracer.trace(
                     "scim.${method.lowercase()}.$endpoint",
-                    mapOf("endpoint" to endpoint, "method" to method)
+                    mapOf("endpoint" to endpoint, "method" to method),
                 ) {
                     route(processedRequest, context)
                 }
@@ -192,8 +192,8 @@ class ScimEndpointDispatcher(
                     BulkOperationCompletedEvent(
                         correlationId = tracer.currentCorrelationId(),
                         operationCount = result.operations.size,
-                        failureCount = failureCount
-                    )
+                        failureCount = failureCount,
+                    ),
                 )
                 ok(result)
             }
@@ -210,7 +210,7 @@ class ScimEndpointDispatcher(
     private fun handleResource(
         relativePath: String,
         request: ScimHttpRequest,
-        context: ScimRequestContext
+        context: ScimRequestContext,
     ): ScimHttpResponse {
         val handler = findHandler(relativePath) as? ResourceHandler<ScimResource>
             ?: throw ResourceNotFoundException("No handler found for path: $relativePath")
@@ -246,8 +246,8 @@ class ScimEndpointDispatcher(
                     ResourceCreatedEvent(
                         resourceType = resourceTypeName,
                         resourceId = created.id ?: "",
-                        correlationId = tracer.currentCorrelationId()
-                    )
+                        correlationId = tracer.currentCorrelationId(),
+                    ),
                 )
                 ScimHttpResponse.created(serializer.serialize(created), location)
             }
@@ -271,7 +271,7 @@ class ScimEndpointDispatcher(
                     } else {
                         ScimHttpResponse.ok(
                             serializer.serialize(result),
-                            headers = if (config.etagEnabled) mapOf("ETag" to etag.value) else emptyMap()
+                            headers = if (config.etagEnabled) mapOf("ETag" to etag.value) else emptyMap(),
                         )
                     }
                 }
@@ -287,8 +287,8 @@ class ScimEndpointDispatcher(
                     ResourceReplacedEvent(
                         resourceType = resourceTypeName,
                         resourceId = resourceId,
-                        correlationId = tracer.currentCorrelationId()
-                    )
+                        correlationId = tracer.currentCorrelationId(),
+                    ),
                 )
                 ok(result)
             }
@@ -305,8 +305,8 @@ class ScimEndpointDispatcher(
                         resourceType = resourceTypeName,
                         resourceId = resourceId,
                         correlationId = tracer.currentCorrelationId(),
-                        operationCount = patchRequest.operations.size
-                    )
+                        operationCount = patchRequest.operations.size,
+                    ),
                 )
                 ok(result)
             }
@@ -320,8 +320,8 @@ class ScimEndpointDispatcher(
                     ResourceDeletedEvent(
                         resourceType = resourceTypeName,
                         resourceId = resourceId,
-                        correlationId = tracer.currentCorrelationId()
-                    )
+                        correlationId = tracer.currentCorrelationId(),
+                    ),
                 )
                 ScimHttpResponse.noContent()
             }
@@ -377,19 +377,16 @@ class ScimEndpointDispatcher(
         return searchRequest.copy(count = effectiveCount)
     }
 
-    private fun <T> capSearchResults(result: ListResponse<T>): ListResponse<T> {
-        return if (result.resources.size > config.filterMaxResults) {
-            result.copy(
-                resources = result.resources.take(config.filterMaxResults),
-                itemsPerPage = config.filterMaxResults
-            )
-        } else {
-            result
-        }
+    private fun <T> capSearchResults(result: ListResponse<T>): ListResponse<T> = if (result.resources.size > config.filterMaxResults) {
+        result.copy(
+            resources = result.resources.take(config.filterMaxResults),
+            itemsPerPage = config.filterMaxResults,
+        )
+    } else {
+        result
     }
 
-    private fun findHandler(relativePath: String): ResourceHandler<*>? =
-        handlers.firstOrNull { relativePath.lowercase().startsWith(it.endpoint.lowercase()) }
+    private fun findHandler(relativePath: String): ResourceHandler<*>? = handlers.firstOrNull { relativePath.lowercase().startsWith(it.endpoint.lowercase()) }
 
     private fun ScimHttpRequest.toScimRequestContext(): ScimRequestContext {
         val requestedAttrs = queryParam("attributes")
@@ -403,35 +400,33 @@ class ScimEndpointDispatcher(
 
         return identityResolver?.resolve(this)?.copy(
             requestedAttributes = requestedAttrs,
-            excludedAttributes = excludedAttrs
+            excludedAttributes = excludedAttrs,
         ) ?: ScimRequestContext(
             requestedAttributes = requestedAttrs,
-            excludedAttributes = excludedAttrs
+            excludedAttributes = excludedAttrs,
         )
     }
 
-    private fun ScimHttpRequest.toSearchRequest(): SearchRequest =
-        SearchRequest(
-            filter = queryParam("filter"),
-            sortBy = queryParam("sortBy"),
-            sortOrder = queryParam("sortOrder")?.let {
-                com.marcosbarbero.scim2.core.domain.model.search.SortOrder.entries
-                    .firstOrNull { order -> order.value.equals(it, ignoreCase = true) }
-            },
-            startIndex = queryParam("startIndex")?.toIntOrNull(),
-            count = queryParam("count")?.toIntOrNull(),
-            attributes = queryParam("attributes")
-                ?.split(",")
-                ?.map { it.trim() }
-                ?.takeIf { it.isNotEmpty() },
-            excludedAttributes = queryParam("excludedAttributes")
-                ?.split(",")
-                ?.map { it.trim() }
-                ?.takeIf { it.isNotEmpty() }
-        )
+    private fun ScimHttpRequest.toSearchRequest(): SearchRequest = SearchRequest(
+        filter = queryParam("filter"),
+        sortBy = queryParam("sortBy"),
+        sortOrder = queryParam("sortOrder")?.let {
+            com.marcosbarbero.scim2.core.domain.model.search.SortOrder.entries
+                .firstOrNull { order -> order.value.equals(it, ignoreCase = true) }
+        },
+        startIndex = queryParam("startIndex")?.toIntOrNull(),
+        count = queryParam("count")?.toIntOrNull(),
+        attributes = queryParam("attributes")
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.takeIf { it.isNotEmpty() },
+        excludedAttributes = queryParam("excludedAttributes")
+            ?.split(",")
+            ?.map { it.trim() }
+            ?.takeIf { it.isNotEmpty() },
+    )
 
-    private fun <T : Any> ok(body: T): ScimHttpResponse =
-        ScimHttpResponse.ok(serializer.serialize(body))
+    private fun <T : Any> ok(body: T): ScimHttpResponse = ScimHttpResponse.ok(serializer.serialize(body))
 
     private inline fun <reified T : Any> deserializeBody(request: ScimHttpRequest): T {
         val body = request.body

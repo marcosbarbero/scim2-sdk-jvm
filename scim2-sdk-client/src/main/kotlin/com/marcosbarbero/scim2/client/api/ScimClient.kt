@@ -49,17 +49,12 @@ interface ScimClient : AutoCloseable {
     fun getResourceTypes(): ScimResponse<ListResponse<ResourceType>>
 }
 
-inline fun <reified T : ScimResource> ScimClient.create(endpoint: String, resource: T): ScimResponse<T> =
-    create(endpoint, resource, T::class)
+inline fun <reified T : ScimResource> ScimClient.create(endpoint: String, resource: T): ScimResponse<T> = create(endpoint, resource, T::class)
 
-inline fun <reified T : ScimResource> ScimClient.get(endpoint: String, id: String): ScimResponse<T> =
-    get(endpoint, id, T::class)
+inline fun <reified T : ScimResource> ScimClient.get(endpoint: String, id: String): ScimResponse<T> = get(endpoint, id, T::class)
 
-inline fun <reified T : ScimResource> ScimClient.replace(endpoint: String, id: String, resource: T): ScimResponse<T> =
-    replace(endpoint, id, resource, T::class)
+inline fun <reified T : ScimResource> ScimClient.replace(endpoint: String, id: String, resource: T): ScimResponse<T> = replace(endpoint, id, resource, T::class)
 
-inline fun <reified T : ScimResource> ScimClient.patch(endpoint: String, id: String, patchRequest: PatchRequest): ScimResponse<T> =
-    patch(endpoint, id, patchRequest, T::class)
+inline fun <reified T : ScimResource> ScimClient.patch(endpoint: String, id: String, patchRequest: PatchRequest): ScimResponse<T> = patch(endpoint, id, patchRequest, T::class)
 
-inline fun <reified T : ScimResource> ScimClient.search(endpoint: String, searchRequest: SearchRequest): ScimResponse<ListResponse<T>> =
-    search(endpoint, searchRequest, T::class)
+inline fun <reified T : ScimResource> ScimClient.search(endpoint: String, searchRequest: SearchRequest): ScimResponse<ListResponse<T>> = search(endpoint, searchRequest, T::class)

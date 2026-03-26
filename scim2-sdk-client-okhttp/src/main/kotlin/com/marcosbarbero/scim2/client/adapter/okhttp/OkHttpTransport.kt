@@ -24,7 +24,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
 class OkHttpTransport(
-    private val client: OkHttpClient = OkHttpClient()
+    private val client: OkHttpClient = OkHttpClient(),
 ) : HttpTransport {
 
     override fun execute(request: HttpRequest): HttpResponse {
@@ -57,7 +57,7 @@ class OkHttpTransport(
         return HttpResponse(
             statusCode = okResponse.code,
             headers = responseHeaders,
-            body = responseBody
+            body = responseBody,
         )
     }
 

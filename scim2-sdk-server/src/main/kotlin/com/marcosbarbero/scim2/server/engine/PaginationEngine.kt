@@ -23,7 +23,7 @@ class PaginationEngine {
         items: List<T>,
         startIndex: Int,
         count: Int?,
-        totalResults: Int = items.size
+        totalResults: Int = items.size,
     ): ListResponse<T> {
         val effectiveStartIndex = maxOf(startIndex, 1)
         val zeroBasedStart = effectiveStartIndex - 1
@@ -33,7 +33,7 @@ class PaginationEngine {
                 totalResults = totalResults,
                 itemsPerPage = 0,
                 startIndex = effectiveStartIndex,
-                resources = emptyList()
+                resources = emptyList(),
             )
         }
 
@@ -45,7 +45,7 @@ class PaginationEngine {
             totalResults = totalResults,
             itemsPerPage = page.size,
             startIndex = effectiveStartIndex,
-            resources = page
+            resources = page,
         )
     }
 }

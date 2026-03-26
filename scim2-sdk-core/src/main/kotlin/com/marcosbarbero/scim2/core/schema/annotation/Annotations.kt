@@ -21,7 +21,7 @@ annotation class ScimResource(
     val schema: String,
     val name: String,
     val description: String = "",
-    val endpoint: String = ""
+    val endpoint: String = "",
 )
 
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
@@ -35,12 +35,12 @@ annotation class ScimAttribute(
     val required: Boolean = false,
     val caseExact: Boolean = false,
     val multiValued: Boolean = false,
-    val description: String = ""
+    val description: String = "",
 )
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
 @Repeatable
 annotation class ScimExtension(
-    val schema: String
+    val schema: String,
 )

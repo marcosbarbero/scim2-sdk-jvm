@@ -15,17 +15,17 @@
  */
 package com.marcosbarbero.scim2.core.attribute
 
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.databind.node.ObjectNode
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ObjectNode
 
 class AttributeProjector(private val objectMapper: ObjectMapper) {
 
     fun <T : ScimResource> project(
         resource: T,
         attributes: List<String>? = null,
-        excludedAttributes: List<String>? = null
+        excludedAttributes: List<String>? = null,
     ): T {
         if (!attributes.isNullOrEmpty() && !excludedAttributes.isNullOrEmpty()) {
             throw InvalidValueException("Cannot specify both 'attributes' and 'excludedAttributes'")

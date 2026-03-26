@@ -16,9 +16,6 @@
 package com.marcosbarbero.scim2.core.attribute
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import tools.jackson.databind.DeserializationFeature
-import tools.jackson.databind.json.JsonMapper
-import tools.jackson.module.kotlin.KotlinModule
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
 import com.marcosbarbero.scim2.core.domain.model.resource.User
@@ -29,23 +26,29 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tools.jackson.databind.DeserializationFeature
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import java.time.Instant
 
 class AttributeProjectorTest {
-
     private val faker = Faker()
 
-    private val objectMapper = JsonMapper.builder()
-        .addModule(KotlinModule.Builder().build())
-        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-        .changeDefaultPropertyInclusion { incl ->
-            incl.withValueInclusion(JsonInclude.Include.NON_NULL)
-        }
-        .build()
+    private val objectMapper =
+        JsonMapper
+            .builder()
+            .addModule(KotlinModule.Builder().build())
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .changeDefaultPropertyInclusion { incl ->
+                incl.withValueInclusion(JsonInclude.Include.NON_NULL)
+            }.build()
 
     private val projector = AttributeProjector(objectMapper)
 
-    private val userId = java.util.UUID.randomUUID().toString()
+    private val userId =
+        java.util.UUID
+            .randomUUID()
+            .toString()
     private val userName = faker.name.firstName().lowercase()
     private val displayName = faker.name.name()
     private val title = faker.name.name()
@@ -57,12 +60,11 @@ class AttributeProjectorTest {
         displayName = displayName,
         title = title,
         nickName = nickName,
-        active = true
+        active = true,
     )
 
     @Nested
     inner class IncludeAttributes {
-
         @Test
         fun `should include only specified attributes`() {
             val result = projector.project(fullUser(), attributes = listOf("userName", "displayName"))
@@ -94,7 +96,6 @@ class AttributeProjectorTest {
 
     @Nested
     inner class ExcludeAttributes {
-
         @Test
         fun `should exclude specified attributes`() {
             val result = projector.project(fullUser(), excludedAttributes = listOf("title", "nickName"))
@@ -123,14 +124,13 @@ class AttributeProjectorTest {
 
     @Nested
     inner class ErrorCases {
-
         @Test
         fun `should throw when both attributes and excludedAttributes provided`() {
             shouldThrow<InvalidValueException> {
                 projector.project(
                     fullUser(),
                     attributes = listOf("userName"),
-                    excludedAttributes = listOf("title")
+                    excludedAttributes = listOf("title"),
                 )
             }
         }
@@ -138,7 +138,6 @@ class AttributeProjectorTest {
 
     @Nested
     inner class NoProjection {
-
         @Test
         fun `should return full resource when no attributes specified`() {
             val result = projector.project(fullUser())

@@ -24,5 +24,5 @@ data class ListResponse<T>(
     val itemsPerPage: Int? = null,
     val startIndex: Int? = null,
     @JsonProperty("Resources")
-    val resources: List<T> = emptyList()
+    val resources: List<T> = emptyList(),
 )

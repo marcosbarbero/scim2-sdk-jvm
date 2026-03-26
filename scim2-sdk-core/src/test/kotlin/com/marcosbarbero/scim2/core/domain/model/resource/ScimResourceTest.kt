@@ -79,7 +79,7 @@ class ScimResourceTest {
                     created = now,
                     lastModified = now,
                     location = URI.create("https://example.com/v2/Users/$id"),
-                    version = ETag("W/\"${java.util.UUID.randomUUID().toString()}\"")
+                    version = ETag("W/\"${java.util.UUID.randomUUID()}\""),
                 ),
                 userName = email,
                 name = Name(
@@ -88,7 +88,7 @@ class ScimResourceTest {
                     givenName = givenName,
                     middleName = middleName,
                     honorificPrefix = "Ms.",
-                    honorificSuffix = "III"
+                    honorificSuffix = "III",
                 ),
                 displayName = displayName,
                 nickName = nickName,
@@ -101,19 +101,19 @@ class ScimResourceTest {
                 active = true,
                 password = null,
                 emails = listOf(
-                    MultiValuedAttribute(value = email, type = "work", primary = true)
+                    MultiValuedAttribute(value = email, type = "work", primary = true),
                 ),
                 phoneNumbers = listOf(
-                    MultiValuedAttribute(value = phone, type = "work")
+                    MultiValuedAttribute(value = phone, type = "work"),
                 ),
                 ims = listOf(
-                    MultiValuedAttribute(value = faker.name.firstName().lowercase(), type = "aim")
+                    MultiValuedAttribute(value = faker.name.firstName().lowercase(), type = "aim"),
                 ),
                 photos = listOf(
                     MultiValuedAttribute(
-                        value = "https://photos.example.com/profilephoto/${java.util.UUID.randomUUID().toString()}/F",
-                        type = "photo"
-                    )
+                        value = "https://photos.example.com/profilephoto/${java.util.UUID.randomUUID()}/F",
+                        type = "photo",
+                    ),
                 ),
                 addresses = listOf(
                     Address(
@@ -123,19 +123,19 @@ class ScimResourceTest {
                         postalCode = postalCode,
                         country = country,
                         type = "work",
-                        primary = true
-                    )
+                        primary = true,
+                    ),
                 ),
                 groups = listOf(
-                    GroupMembership(value = groupId, display = groupDisplay)
+                    GroupMembership(value = groupId, display = groupDisplay),
                 ),
                 entitlements = listOf(
-                    MultiValuedAttribute(value = entitlement)
+                    MultiValuedAttribute(value = entitlement),
                 ),
                 roles = listOf(
-                    MultiValuedAttribute(value = role)
+                    MultiValuedAttribute(value = role),
                 ),
-                x509Certificates = emptyList()
+                x509Certificates = emptyList(),
             )
 
             user.userName shouldBe email
@@ -175,13 +175,13 @@ class ScimResourceTest {
                 costCenter = costCenter,
                 organization = organization,
                 division = division,
-                department = department
+                department = department,
             )
             user.setExtension(ScimUrns.ENTERPRISE_USER, ext)
 
             user.extensions shouldContainKey ScimUrns.ENTERPRISE_USER
             val retrieved = user.getExtension<EnterpriseUserExtension>(
-                ScimUrns.ENTERPRISE_USER
+                ScimUrns.ENTERPRISE_USER,
             )
             retrieved.shouldNotBeNull()
             retrieved.employeeNumber shouldBe employeeNumber
@@ -210,9 +210,9 @@ class ScimResourceTest {
                         value = memberId,
                         display = memberDisplay,
                         ref = URI.create("https://example.com/v2/Users/$memberId"),
-                        type = "User"
-                    )
-                )
+                        type = "User",
+                    ),
+                ),
             )
 
             group.members shouldHaveSize 1
@@ -241,8 +241,8 @@ class ScimResourceTest {
                 manager = com.marcosbarbero.scim2.core.domain.model.common.Manager(
                     value = managerId,
                     ref = URI.create("https://example.com/v2/Users/$managerId"),
-                    displayName = managerName
-                )
+                    displayName = managerName,
+                ),
             )
 
             ext.employeeNumber shouldBe employeeNumber

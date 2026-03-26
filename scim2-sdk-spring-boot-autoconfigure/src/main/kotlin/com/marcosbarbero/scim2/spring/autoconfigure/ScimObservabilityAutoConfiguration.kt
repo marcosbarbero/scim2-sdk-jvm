@@ -31,6 +31,5 @@ class ScimObservabilityAutoConfiguration {
     @Bean
     @ConditionalOnBean(MeterRegistry::class)
     @ConditionalOnMissingBean(ScimMetrics::class)
-    fun micrometerScimMetrics(registry: MeterRegistry): ScimMetrics =
-        MicrometerScimMetrics(registry)
+    fun micrometerScimMetrics(registry: MeterRegistry): ScimMetrics = MicrometerScimMetrics(registry)
 }

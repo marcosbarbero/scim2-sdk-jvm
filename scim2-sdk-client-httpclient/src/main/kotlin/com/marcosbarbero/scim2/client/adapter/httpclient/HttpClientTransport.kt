@@ -24,7 +24,7 @@ import java.time.Duration
 
 class HttpClientTransport(
     private val httpClient: HttpClient = HttpClient.newHttpClient(),
-    private val requestTimeout: Duration? = null
+    private val requestTimeout: Duration? = null,
 ) : HttpTransport {
 
     override fun execute(request: HttpRequest): HttpResponse {
@@ -53,7 +53,7 @@ class HttpClientTransport(
         return HttpResponse(
             statusCode = javaResponse.statusCode(),
             headers = responseHeaders,
-            body = responseBody
+            body = responseBody,
         )
     }
 

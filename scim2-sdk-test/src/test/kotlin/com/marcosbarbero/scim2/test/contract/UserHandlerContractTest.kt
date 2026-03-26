@@ -34,12 +34,11 @@ class UserHandlerContractTest : ResourceHandlerContractTest<User>() {
         return InMemoryResourceHandler(
             resourceType = User::class.java,
             endpoint = "/Users",
-            repository = repository
+            repository = repository,
         )
     }
 
     override fun sampleResource(): User = User(userName = faker.name.firstName())
 
-    override fun modifiedResource(original: User): User =
-        original.copy(displayName = faker.name.name())
+    override fun modifiedResource(original: User): User = original.copy(displayName = faker.name.name())
 }

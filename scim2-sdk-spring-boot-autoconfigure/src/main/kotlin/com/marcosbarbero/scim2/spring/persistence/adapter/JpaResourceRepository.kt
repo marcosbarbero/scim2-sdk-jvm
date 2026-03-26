@@ -37,7 +37,7 @@ class JpaResourceRepository<T : ScimResource>(
     private val jpaRepository: ScimResourceJpaRepository,
     private val serializer: ScimSerializer,
     private val resourceType: Class<T>,
-    private val resourceTypeName: String
+    private val resourceTypeName: String,
 ) : ResourceRepository<T> {
 
     override fun create(resource: T): T {
@@ -47,7 +47,7 @@ class JpaResourceRepository<T : ScimResource>(
             resourceType = resourceTypeName,
             created = now,
             lastModified = now,
-            version = ETag("W/\"1\"")
+            version = ETag("W/\"1\""),
         )
         val withMeta = copyWithIdAndMeta(resource, id, meta)
         val entity = ScimResourceEntity(
@@ -58,7 +58,7 @@ class JpaResourceRepository<T : ScimResource>(
             resourceJson = serializer.serializeToString(withMeta),
             version = 1,
             created = now,
-            lastModified = now
+            lastModified = now,
         )
         jpaRepository.save(entity)
         return withMeta
@@ -82,7 +82,7 @@ class JpaResourceRepository<T : ScimResource>(
             resourceType = resourceTypeName,
             created = entity.created,
             lastModified = now,
-            version = ETag("W/\"$newVersion\"")
+            version = ETag("W/\"$newVersion\""),
         )
         val withMeta = copyWithIdAndMeta(resource, id, meta)
         entity.resourceJson = serializer.serializeToString(withMeta)
@@ -114,7 +114,7 @@ class JpaResourceRepository<T : ScimResource>(
             ((startIndex - 1) / count).coerceAtLeast(0),
             count,
             sortDirection,
-            sortProperty
+            sortProperty,
         )
         val page = jpaRepository.findByResourceType(resourceTypeName, pageable)
         val resources = page.content.map {
@@ -124,7 +124,7 @@ class JpaResourceRepository<T : ScimResource>(
             totalResults = page.totalElements.toInt(),
             itemsPerPage = resources.size,
             startIndex = startIndex,
-            resources = resources
+            resources = resources,
         )
     }
 

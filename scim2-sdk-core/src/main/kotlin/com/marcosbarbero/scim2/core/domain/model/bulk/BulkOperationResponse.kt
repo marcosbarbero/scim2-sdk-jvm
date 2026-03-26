@@ -22,5 +22,5 @@ data class BulkOperationResponse(
     val bulkId: String? = null,
     val status: String,
     val location: String? = null,
-    val response: JsonNode? = null
+    val response: JsonNode? = null,
 )

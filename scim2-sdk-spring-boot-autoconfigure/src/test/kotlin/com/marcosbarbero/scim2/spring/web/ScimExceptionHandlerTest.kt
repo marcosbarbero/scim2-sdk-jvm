@@ -15,7 +15,6 @@
  */
 package com.marcosbarbero.scim2.spring.web
 
-import tools.jackson.module.kotlin.jacksonObjectMapper
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidFilterException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.error.ScimError
@@ -27,6 +26,7 @@ import io.mockk.every
 import io.mockk.mockk
 import jakarta.servlet.http.HttpServletRequest
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
 import kotlin.reflect.KClass
 
 class ScimExceptionHandlerTest {

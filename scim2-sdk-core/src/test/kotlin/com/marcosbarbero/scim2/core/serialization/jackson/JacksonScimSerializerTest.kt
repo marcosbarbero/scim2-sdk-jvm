@@ -21,10 +21,8 @@ import com.marcosbarbero.scim2.core.domain.model.common.GroupMembership
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
 import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.common.Name
-import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtension
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
-import com.marcosbarbero.scim2.core.domain.vo.ETag
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -35,34 +33,38 @@ import java.net.URI
 import java.time.Instant
 
 class JacksonScimSerializerTest {
-
     private val faker = Faker()
     private val serializer = JacksonScimSerializer()
 
     @Nested
     inner class UserSerializationTest {
-
         @Test
         fun `should serialize and deserialize User round-trip`() {
-            val id = java.util.UUID.randomUUID().toString()
+            val id =
+                java.util.UUID
+                    .randomUUID()
+                    .toString()
             val email = faker.internet.email()
             val familyName = faker.name.lastName()
             val givenName = faker.name.firstName()
             val displayName = faker.name.name()
-            val user = User(
-                id = id,
-                userName = email,
-                name = Name(
-                    formatted = "$givenName $familyName",
-                    familyName = familyName,
-                    givenName = givenName
-                ),
-                displayName = displayName,
-                active = true,
-                emails = listOf(
-                    MultiValuedAttribute(value = email, type = "work", primary = true)
+            val user =
+                User(
+                    id = id,
+                    userName = email,
+                    name =
+                    Name(
+                        formatted = "$givenName $familyName",
+                        familyName = familyName,
+                        givenName = givenName,
+                    ),
+                    displayName = displayName,
+                    active = true,
+                    emails =
+                    listOf(
+                        MultiValuedAttribute(value = email, type = "work", primary = true),
+                    ),
                 )
-            )
 
             val json = serializer.serializeToString(user)
             val deserialized = serializer.deserializeFromString(json, User::class)
@@ -91,13 +93,15 @@ class JacksonScimSerializerTest {
         @Test
         fun `should serialize Instant as ISO-8601`() {
             val instant = Instant.parse("2025-04-01T12:00:00Z")
-            val user = User(
-                userName = faker.name.firstName().lowercase(),
-                meta = Meta(
-                    created = instant,
-                    lastModified = instant
+            val user =
+                User(
+                    userName = faker.name.firstName().lowercase(),
+                    meta =
+                    Meta(
+                        created = instant,
+                        lastModified = instant,
+                    ),
                 )
-            )
 
             val json = serializer.serializeToString(user)
             json shouldContain "2025-04-01T12:00:00Z"
@@ -112,35 +116,46 @@ class JacksonScimSerializerTest {
             val streetAddress = faker.address.streetAddress()
             val locality = faker.address.city()
             val region = faker.address.state()
-            val groupId = java.util.UUID.randomUUID().toString()
+            val groupId =
+                java.util.UUID
+                    .randomUUID()
+                    .toString()
             val groupDisplay = faker.name.name()
             val phone = faker.phoneNumber.phoneNumber()
-            val user = User(
-                id = java.util.UUID.randomUUID().toString(),
-                externalId = java.util.UUID.randomUUID().toString(),
-                userName = email,
-                name = Name(
-                    formatted = "Ms. $givenName $familyName III",
-                    familyName = familyName,
-                    givenName = givenName,
-                    middleName = faker.name.firstName(),
-                    honorificPrefix = "Ms.",
-                    honorificSuffix = "III"
-                ),
-                displayName = faker.name.name(),
-                nickName = faker.name.firstName(),
-                profileUrl = URI.create("https://login.example.com/${faker.name.firstName().lowercase()}"),
-                title = faker.name.name(),
-                userType = "Employee",
-                preferredLanguage = "en-US",
-                locale = "en-US",
-                timezone = "America/Los_Angeles",
-                active = true,
-                emails = listOf(MultiValuedAttribute(value = email, type = "work", primary = true)),
-                phoneNumbers = listOf(MultiValuedAttribute(value = phone, type = "work")),
-                addresses = listOf(Address(streetAddress = streetAddress, locality = locality, region = region)),
-                groups = listOf(GroupMembership(value = groupId, display = groupDisplay))
-            )
+            val user =
+                User(
+                    id =
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                    externalId =
+                    java.util.UUID
+                        .randomUUID()
+                        .toString(),
+                    userName = email,
+                    name =
+                    Name(
+                        formatted = "Ms. $givenName $familyName III",
+                        familyName = familyName,
+                        givenName = givenName,
+                        middleName = faker.name.firstName(),
+                        honorificPrefix = "Ms.",
+                        honorificSuffix = "III",
+                    ),
+                    displayName = faker.name.name(),
+                    nickName = faker.name.firstName(),
+                    profileUrl = URI.create("https://login.example.com/${faker.name.firstName().lowercase()}"),
+                    title = faker.name.name(),
+                    userType = "Employee",
+                    preferredLanguage = "en-US",
+                    locale = "en-US",
+                    timezone = "America/Los_Angeles",
+                    active = true,
+                    emails = listOf(MultiValuedAttribute(value = email, type = "work", primary = true)),
+                    phoneNumbers = listOf(MultiValuedAttribute(value = phone, type = "work")),
+                    addresses = listOf(Address(streetAddress = streetAddress, locality = locality, region = region)),
+                    groups = listOf(GroupMembership(value = groupId, display = groupDisplay)),
+                )
 
             val json = serializer.serializeToString(user)
             val deserialized = serializer.deserializeFromString(json, User::class)
@@ -154,25 +169,32 @@ class JacksonScimSerializerTest {
 
     @Nested
     inner class GroupSerializationTest {
-
         @Test
         fun `should serialize and deserialize Group round-trip`() {
-            val groupId = java.util.UUID.randomUUID().toString()
+            val groupId =
+                java.util.UUID
+                    .randomUUID()
+                    .toString()
             val groupName = faker.name.name()
-            val memberId = java.util.UUID.randomUUID().toString()
+            val memberId =
+                java.util.UUID
+                    .randomUUID()
+                    .toString()
             val memberDisplay = faker.name.name()
-            val group = Group(
-                id = groupId,
-                displayName = groupName,
-                members = listOf(
-                    GroupMembership(
-                        value = memberId,
-                        display = memberDisplay,
-                        ref = URI.create("https://example.com/v2/Users/$memberId"),
-                        type = "User"
-                    )
+            val group =
+                Group(
+                    id = groupId,
+                    displayName = groupName,
+                    members =
+                    listOf(
+                        GroupMembership(
+                            value = memberId,
+                            display = memberDisplay,
+                            ref = URI.create("https://example.com/v2/Users/$memberId"),
+                            type = "User",
+                        ),
+                    ),
                 )
-            )
 
             val json = serializer.serializeToString(group)
             val deserialized = serializer.deserializeFromString(json, Group::class)
@@ -185,7 +207,6 @@ class JacksonScimSerializerTest {
 
     @Nested
     inner class ExtensionSerializationTest {
-
         @Test
         fun `should serialize and deserialize User with extension data`() {
             val employeeNumber = faker.random.nextInt(100000, 999999).toString()
@@ -197,8 +218,8 @@ class JacksonScimSerializerTest {
                 mapOf(
                     "employeeNumber" to employeeNumber,
                     "costCenter" to costCenter,
-                    "organization" to organization
-                )
+                    "organization" to organization,
+                ),
             )
 
             val json = serializer.serializeToString(user)
@@ -206,20 +227,21 @@ class JacksonScimSerializerTest {
             json shouldContain employeeNumber
 
             val deserialized = serializer.deserializeFromString(json, User::class)
-            val ext = deserialized.getExtension<Map<*, *>>(
-                ScimUrns.ENTERPRISE_USER
-            )
-            ext shouldBe mapOf(
-                "employeeNumber" to employeeNumber,
-                "costCenter" to costCenter,
-                "organization" to organization
-            )
+            val ext =
+                deserialized.getExtension<Map<*, *>>(
+                    ScimUrns.ENTERPRISE_USER,
+                )
+            ext shouldBe
+                mapOf(
+                    "employeeNumber" to employeeNumber,
+                    "costCenter" to costCenter,
+                    "organization" to organization,
+                )
         }
     }
 
     @Nested
     inner class ByteArraySerializationTest {
-
         @Test
         fun `should serialize to and deserialize from byte array`() {
             val userName = faker.name.firstName().lowercase()

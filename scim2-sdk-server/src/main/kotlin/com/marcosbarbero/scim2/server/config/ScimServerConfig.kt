@@ -27,5 +27,5 @@ data class ScimServerConfig(
     val changePasswordEnabled: Boolean = false,
     val patchEnabled: Boolean = true,
     val defaultPageSize: Int = 100,
-    val maxPageSize: Int = 1000
+    val maxPageSize: Int = 1000,
 )

@@ -76,8 +76,8 @@ class KeycloakIdentityResolverTest {
         val jwt = mockJwt(
             mapOf(
                 "sub" to "kc-user",
-                "realm_access" to mapOf("roles" to listOf("realm-admin", "user"))
-            )
+                "realm_access" to mapOf("roles" to listOf("realm-admin", "user")),
+            ),
         )
         setAuthentication(jwt)
 
@@ -93,9 +93,9 @@ class KeycloakIdentityResolverTest {
                 "sub" to "kc-user",
                 "realm_access" to mapOf("roles" to listOf("user")),
                 "resource_access" to mapOf(
-                    "my-client" to mapOf("roles" to listOf("client-admin"))
-                )
-            )
+                    "my-client" to mapOf("roles" to listOf("client-admin")),
+                ),
+            ),
         )
         setAuthentication(jwt)
 
@@ -109,8 +109,8 @@ class KeycloakIdentityResolverTest {
         val jwt = mockJwt(
             mapOf(
                 "sub" to "kc-user",
-                "preferred_username" to "johndoe"
-            )
+                "preferred_username" to "johndoe",
+            ),
         )
         setAuthentication(jwt)
 
@@ -125,8 +125,8 @@ class KeycloakIdentityResolverTest {
             mapOf(
                 "sub" to "kc-user",
                 "given_name" to "John",
-                "family_name" to "Doe"
-            )
+                "family_name" to "Doe",
+            ),
         )
         setAuthentication(jwt)
 

@@ -22,5 +22,5 @@ data class BulkRequest(
     val schemas: List<String> = listOf(ScimUrns.BULK_REQUEST),
     val failOnErrors: Int? = null,
     @JsonProperty("Operations")
-    val operations: List<BulkOperation> = emptyList()
+    val operations: List<BulkOperation> = emptyList(),
 )

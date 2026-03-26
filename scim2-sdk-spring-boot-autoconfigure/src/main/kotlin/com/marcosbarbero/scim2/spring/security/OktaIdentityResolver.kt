@@ -24,7 +24,7 @@ import org.springframework.security.oauth2.jwt.Jwt
  * All claim names are configurable via [ClaimMapping].
  */
 class OktaIdentityResolver(
-    claims: ClaimMapping = ClaimMapping()
+    claims: ClaimMapping = ClaimMapping(),
 ) : JwtIdentityResolver(claims) {
 
     override fun extractRoles(jwt: Jwt): Set<String> {

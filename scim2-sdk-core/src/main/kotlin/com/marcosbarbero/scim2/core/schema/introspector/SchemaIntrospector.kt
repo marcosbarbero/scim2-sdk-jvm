@@ -44,7 +44,7 @@ class SchemaIntrospector {
         val id = resourceAnnotation?.schema
             ?: extensionAnnotation?.schema
             ?: throw IllegalArgumentException(
-                "Class ${type.simpleName} must be annotated with @ScimResource or @ScimExtension"
+                "Class ${type.simpleName} must be annotated with @ScimResource or @ScimExtension",
             )
 
         val name = resourceAnnotation?.name
@@ -56,14 +56,14 @@ class SchemaIntrospector {
             id = id,
             name = name,
             description = description,
-            attributes = attributes
+            attributes = attributes,
         )
     }
 
     fun introspectResourceType(type: KClass<*>): ResourceType {
         val annotation = type.findAnnotation<ScimResource>()
             ?: throw IllegalArgumentException(
-                "Class ${type.simpleName} must be annotated with @ScimResource"
+                "Class ${type.simpleName} must be annotated with @ScimResource",
             )
 
         return ResourceType(
@@ -71,15 +71,13 @@ class SchemaIntrospector {
             name = annotation.name,
             description = annotation.description.takeIf { it.isNotEmpty() },
             endpoint = annotation.endpoint,
-            schema = annotation.schema
+            schema = annotation.schema,
         )
     }
 
-    private fun introspectAttributes(type: KClass<*>): List<SchemaAttribute> {
-        return type.declaredMemberProperties
-            .filter { it.name !in baseResourceProperties }
-            .map { property -> introspectProperty(property) }
-    }
+    private fun introspectAttributes(type: KClass<*>): List<SchemaAttribute> = type.declaredMemberProperties
+        .filter { it.name !in baseResourceProperties }
+        .map { property -> introspectProperty(property) }
 
     private fun introspectProperty(property: KProperty1<*, *>): SchemaAttribute {
         val annotation = property.findAnnotation<ScimAttribute>()
@@ -100,13 +98,13 @@ class SchemaIntrospector {
             mutability = annotation?.mutability ?: Mutability.READ_WRITE,
             returned = annotation?.returned ?: Returned.DEFAULT,
             uniqueness = annotation?.uniqueness ?: Uniqueness.NONE,
-            subAttributes = subAttributes
+            subAttributes = subAttributes,
         )
     }
 
     private fun resolveType(
         property: KProperty1<*, *>,
-        isList: Boolean
+        isList: Boolean,
     ): Pair<AttributeType, List<SchemaAttribute>> {
         val rawType = if (isList) {
             property.returnType.arguments.firstOrNull()?.type?.jvmErasure ?: Any::class
@@ -130,7 +128,5 @@ class SchemaIntrospector {
         }
     }
 
-    private fun isComplexType(type: KClass<*>): Boolean {
-        return type.isData && type != String::class
-    }
+    private fun isComplexType(type: KClass<*>): Boolean = type.isData && type != String::class
 }

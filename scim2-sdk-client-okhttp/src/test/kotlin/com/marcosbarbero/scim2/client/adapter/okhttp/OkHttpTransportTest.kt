@@ -82,7 +82,7 @@ class OkHttpTransportTest {
             method = "POST",
             url = "http://localhost:$port/users",
             headers = mapOf("Content-Type" to "application/scim+json"),
-            body = requestText.toByteArray()
+            body = requestText.toByteArray(),
         )
         val response = transport.execute(request)
 
@@ -157,7 +157,7 @@ class OkHttpTransportTest {
             method = "PUT",
             url = "http://localhost:$port/users/456",
             headers = mapOf("Content-Type" to "application/scim+json"),
-            body = """{"userName":"updated"}""".toByteArray()
+            body = """{"userName":"updated"}""".toByteArray(),
         )
         val response = transport.execute(request)
 

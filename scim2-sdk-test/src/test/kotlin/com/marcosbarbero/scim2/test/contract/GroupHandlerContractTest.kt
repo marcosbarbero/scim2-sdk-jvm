@@ -34,12 +34,11 @@ class GroupHandlerContractTest : ResourceHandlerContractTest<Group>() {
         return InMemoryResourceHandler(
             resourceType = Group::class.java,
             endpoint = "/Groups",
-            repository = repository
+            repository = repository,
         )
     }
 
     override fun sampleResource(): Group = Group(displayName = "Group-${java.util.UUID.randomUUID()}")
 
-    override fun modifiedResource(original: Group): Group =
-        original.copy(displayName = "Group-${java.util.UUID.randomUUID()}")
+    override fun modifiedResource(original: Group): Group = original.copy(displayName = "Group-${java.util.UUID.randomUUID()}")
 }

@@ -69,7 +69,7 @@ class ScimProviderPactVerificationTest {
             val pactDir = java.io.File("../../scim2-sdk-client/target/pacts")
             // Also try from the module directory
             val altPactDir = java.io.File(
-                System.getProperty("user.dir") + "/../../scim2-sdk-client/target/pacts"
+                System.getProperty("user.dir") + "/../../scim2-sdk-client/target/pacts",
             )
             return (pactDir.isDirectory && pactDir.listFiles()?.isNotEmpty() == true) ||
                 (altPactDir.isDirectory && altPactDir.listFiles()?.isNotEmpty() == true)
@@ -90,12 +90,12 @@ class ScimProviderPactVerificationTest {
             val userHandler = InMemoryResourceHandler(
                 resourceType = User::class.java,
                 endpoint = "/Users",
-                repository = userRepository
+                repository = userRepository,
             )
             val groupHandler = InMemoryResourceHandler(
                 resourceType = Group::class.java,
                 endpoint = "/Groups",
-                repository = groupRepository
+                repository = groupRepository,
             )
 
             val schemaRegistry = SchemaRegistry().apply {
@@ -106,7 +106,7 @@ class ScimProviderPactVerificationTest {
             val discoveryService = DiscoveryService(
                 handlers = listOf(userHandler, groupHandler),
                 schemaRegistry = schemaRegistry,
-                config = config
+                config = config,
             )
 
             dispatcher = ScimEndpointDispatcher(
@@ -115,7 +115,7 @@ class ScimProviderPactVerificationTest {
                 meHandler = null,
                 discoveryService = discoveryService,
                 config = config,
-                serializer = serializer
+                serializer = serializer,
             )
 
             httpServer = HttpServer.create(InetSocketAddress(0), 0)
@@ -144,7 +144,7 @@ class ScimProviderPactVerificationTest {
                     path = uri.path,
                     headers = headers,
                     queryParameters = queryParams,
-                    body = body
+                    body = body,
                 )
 
                 val scimResponse = dispatcher.dispatch(scimRequest)

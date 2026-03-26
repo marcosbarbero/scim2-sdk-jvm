@@ -15,11 +15,11 @@
  */
 package com.marcosbarbero.scim2.client.dsl
 
-import tools.jackson.databind.JsonNode
-import tools.jackson.databind.node.StringNode
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.node.StringNode
 
 fun scimPatch(block: PatchBuilder.() -> Unit): PatchRequest {
     val builder = PatchBuilder()

@@ -22,7 +22,6 @@ import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.spring.persistence.adapter.JpaResourceRepository
-import com.marcosbarbero.scim2.spring.persistence.entity.ScimResourceEntity
 import com.marcosbarbero.scim2.spring.persistence.repository.ScimResourceJpaRepository
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.nulls.shouldBeNull
@@ -32,8 +31,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
+import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.test.context.TestPropertySource
 
@@ -43,8 +42,8 @@ import org.springframework.test.context.TestPropertySource
 @TestPropertySource(
     properties = [
         "spring.datasource.url=jdbc:h2:mem:scim-test;DB_CLOSE_DELAY=-1",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
-    ]
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+    ],
 )
 class JpaResourceRepositoryTest {
 
@@ -113,7 +112,7 @@ class JpaResourceRepositoryTest {
         val updated = userRepository.replace(
             created.id!!,
             User(userName = created.userName, displayName = "Updated"),
-            null
+            null,
         )
 
         updated.meta.shouldNotBeNull()
@@ -131,7 +130,7 @@ class JpaResourceRepositoryTest {
             userRepository.replace(
                 "non-existent",
                 User(userName = "test"),
-                null
+                null,
             )
         }
     }

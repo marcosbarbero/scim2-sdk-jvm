@@ -25,21 +25,17 @@ import com.marcosbarbero.scim2.core.schema.annotation.Returned
 import com.marcosbarbero.scim2.core.schema.annotation.Uniqueness
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 
 class SchemaIntrospectorTest {
-
     private val faker = Faker()
     private val introspector = SchemaIntrospector()
 
     @Nested
     inner class IntrospectUserTest {
-
         @Test
         fun `should introspect User schema with correct id and name`() {
             val schema = introspector.introspect(User::class)
@@ -132,7 +128,6 @@ class SchemaIntrospectorTest {
 
     @Nested
     inner class IntrospectGroupTest {
-
         @Test
         fun `should introspect Group schema with correct id`() {
             val schema = introspector.introspect(Group::class)
@@ -159,7 +154,6 @@ class SchemaIntrospectorTest {
 
     @Nested
     inner class IntrospectResourceTypeTest {
-
         @Test
         fun `should introspect User resource type`() {
             val resourceType = introspector.introspectResourceType(User::class)
@@ -181,7 +175,6 @@ class SchemaIntrospectorTest {
 
     @Nested
     inner class IntrospectExtensionTest {
-
         @Test
         fun `should introspect extension schema`() {
             val schema = introspector.introspect(EnterpriseUserExtension::class)

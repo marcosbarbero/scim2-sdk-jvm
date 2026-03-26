@@ -66,7 +66,7 @@ class FilterParserTest {
                 "gt" to ComparisonOperator.GT,
                 "ge" to ComparisonOperator.GE,
                 "lt" to ComparisonOperator.LT,
-                "le" to ComparisonOperator.LE
+                "le" to ComparisonOperator.LE,
             )
             for ((op, expected) in ops) {
                 val node = parse("attr $op \"$value\"")

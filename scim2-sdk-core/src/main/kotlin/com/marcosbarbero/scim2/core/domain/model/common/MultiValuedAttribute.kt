@@ -23,5 +23,5 @@ data class MultiValuedAttribute(
     val type: String? = null,
     val primary: Boolean? = null,
     @JsonProperty("\$ref")
-    val ref: String? = null
+    val ref: String? = null,
 )

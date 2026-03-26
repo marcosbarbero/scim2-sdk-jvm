@@ -25,5 +25,5 @@ data class SearchRequest(
     val startIndex: Int? = null,
     val count: Int? = null,
     val attributes: List<String>? = null,
-    val excludedAttributes: List<String>? = null
+    val excludedAttributes: List<String>? = null,
 )

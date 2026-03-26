@@ -47,11 +47,10 @@ class ETagEngine {
     fun checkPreconditionOrThrow(current: ETag?, required: ETag?) {
         if (!checkPrecondition(current, required)) {
             throw PreconditionFailedException(
-                "ETag mismatch: expected ${required?.value}, got ${current?.value}"
+                "ETag mismatch: expected ${required?.value}, got ${current?.value}",
             )
         }
     }
 }
 
-class PreconditionFailedException(detail: String) :
-    ScimException(status = 412, detail = detail)
+class PreconditionFailedException(detail: String) : ScimException(status = 412, detail = detail)

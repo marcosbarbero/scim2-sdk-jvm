@@ -97,8 +97,8 @@ class OktaIdentityResolverTest {
             mapOf(
                 "sub" to "okta-user",
                 "groups" to listOf("Admins"),
-                "scp" to listOf("openid")
-            )
+                "scp" to listOf("openid"),
+            ),
         )
         setAuthentication(jwt)
 

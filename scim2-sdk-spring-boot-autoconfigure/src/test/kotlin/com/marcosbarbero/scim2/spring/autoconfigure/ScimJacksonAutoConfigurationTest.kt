@@ -31,8 +31,8 @@ class ScimJacksonAutoConfigurationTest {
         .withConfiguration(
             AutoConfigurations.of(
                 JacksonAutoConfiguration::class.java,
-                ScimJacksonAutoConfiguration::class.java
-            )
+                ScimJacksonAutoConfiguration::class.java,
+            ),
         )
 
     @Test

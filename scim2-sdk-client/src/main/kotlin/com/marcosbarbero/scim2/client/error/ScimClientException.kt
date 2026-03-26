@@ -21,5 +21,5 @@ class ScimClientException(
     val statusCode: Int,
     val scimError: ScimError? = null,
     message: String? = null,
-    cause: Throwable? = null
+    cause: Throwable? = null,
 ) : RuntimeException(message ?: scimError?.detail ?: "SCIM client error ($statusCode)", cause)

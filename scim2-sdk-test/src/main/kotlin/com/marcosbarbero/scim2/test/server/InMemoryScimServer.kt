@@ -17,9 +17,9 @@ package com.marcosbarbero.scim2.test.server
 
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
+import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
-import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
 import com.marcosbarbero.scim2.server.adapter.discovery.DiscoveryService
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
@@ -31,7 +31,7 @@ import com.marcosbarbero.scim2.test.repository.InMemoryResourceRepository
 
 class InMemoryScimServer(
     val config: ScimServerConfig = ScimServerConfig(),
-    val serializer: ScimSerializer = JacksonScimSerializer()
+    val serializer: ScimSerializer = JacksonScimSerializer(),
 ) {
     val userRepository = InMemoryResourceRepository<User> { user, id, meta ->
         user.copy(id = id, meta = meta)
@@ -44,13 +44,13 @@ class InMemoryScimServer(
     val userHandler = InMemoryResourceHandler(
         resourceType = User::class.java,
         endpoint = "/Users",
-        repository = userRepository
+        repository = userRepository,
     )
 
     val groupHandler = InMemoryResourceHandler(
         resourceType = Group::class.java,
         endpoint = "/Groups",
-        repository = groupRepository
+        repository = groupRepository,
     )
 
     private val schemaRegistry = SchemaRegistry().apply {
@@ -61,7 +61,7 @@ class InMemoryScimServer(
     private val discoveryService = DiscoveryService(
         handlers = listOf(userHandler, groupHandler),
         schemaRegistry = schemaRegistry,
-        config = config
+        config = config,
     )
 
     private val dispatcher = ScimEndpointDispatcher(
@@ -70,7 +70,7 @@ class InMemoryScimServer(
         meHandler = null,
         discoveryService = discoveryService,
         config = config,
-        serializer = serializer
+        serializer = serializer,
     )
 
     fun dispatch(request: ScimHttpRequest): ScimHttpResponse = dispatcher.dispatch(request)
@@ -80,7 +80,7 @@ class InMemoryScimServer(
         val request = ScimHttpRequest(
             method = HttpMethod.POST,
             path = "${config.basePath}/Users",
-            body = body
+            body = body,
         )
         return dispatch(request)
     }
@@ -88,7 +88,7 @@ class InMemoryScimServer(
     fun getUser(id: String): ScimHttpResponse {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
-            path = "${config.basePath}/Users/$id"
+            path = "${config.basePath}/Users/$id",
         )
         return dispatch(request)
     }
@@ -98,7 +98,7 @@ class InMemoryScimServer(
         val request = ScimHttpRequest(
             method = HttpMethod.PUT,
             path = "${config.basePath}/Users/$id",
-            body = body
+            body = body,
         )
         return dispatch(request)
     }
@@ -106,7 +106,7 @@ class InMemoryScimServer(
     fun deleteUser(id: String): ScimHttpResponse {
         val request = ScimHttpRequest(
             method = HttpMethod.DELETE,
-            path = "${config.basePath}/Users/$id"
+            path = "${config.basePath}/Users/$id",
         )
         return dispatch(request)
     }
@@ -119,7 +119,7 @@ class InMemoryScimServer(
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
             path = "${config.basePath}/Users",
-            queryParameters = queryParams
+            queryParameters = queryParams,
         )
         return dispatch(request)
     }
@@ -129,7 +129,7 @@ class InMemoryScimServer(
         val request = ScimHttpRequest(
             method = HttpMethod.POST,
             path = "${config.basePath}/Groups",
-            body = body
+            body = body,
         )
         return dispatch(request)
     }
@@ -137,7 +137,7 @@ class InMemoryScimServer(
     fun getGroup(id: String): ScimHttpResponse {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
-            path = "${config.basePath}/Groups/$id"
+            path = "${config.basePath}/Groups/$id",
         )
         return dispatch(request)
     }
@@ -145,7 +145,7 @@ class InMemoryScimServer(
     fun deleteGroup(id: String): ScimHttpResponse {
         val request = ScimHttpRequest(
             method = HttpMethod.DELETE,
-            path = "${config.basePath}/Groups/$id"
+            path = "${config.basePath}/Groups/$id",
         )
         return dispatch(request)
     }

@@ -50,12 +50,12 @@ fun main() {
     val userHandler = InMemoryResourceHandler(
         resourceType = User::class.java,
         endpoint = "/Users",
-        repository = userRepository
+        repository = userRepository,
     )
     val groupHandler = InMemoryResourceHandler(
         resourceType = Group::class.java,
         endpoint = "/Groups",
-        repository = groupRepository
+        repository = groupRepository,
     )
 
     // 2. Create schema registry
@@ -68,7 +68,7 @@ fun main() {
     val discoveryService = DiscoveryService(
         handlers = listOf(userHandler, groupHandler),
         schemaRegistry = schemaRegistry,
-        config = config
+        config = config,
     )
     val dispatcher = ScimEndpointDispatcher(
         handlers = listOf(userHandler, groupHandler),
@@ -76,7 +76,7 @@ fun main() {
         meHandler = null,
         discoveryService = discoveryService,
         config = config,
-        serializer = serializer
+        serializer = serializer,
     )
 
     // 4. Start JDK HTTP server
@@ -124,7 +124,7 @@ private fun HttpExchange.toScimHttpRequest(): ScimHttpRequest {
         path = path,
         headers = headers,
         queryParameters = queryParameters,
-        body = body
+        body = body,
     )
 }
 

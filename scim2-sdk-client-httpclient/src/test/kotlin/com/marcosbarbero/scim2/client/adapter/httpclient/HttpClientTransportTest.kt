@@ -57,7 +57,7 @@ class HttpClientTransportTest {
 
         val request = HttpRequest(
             method = "GET",
-            url = "http://localhost:$port/test"
+            url = "http://localhost:$port/test",
         )
 
         val response = transport.execute(request)
@@ -86,7 +86,7 @@ class HttpClientTransportTest {
             method = "POST",
             url = "http://localhost:$port/users",
             headers = mapOf("Content-Type" to "application/scim+json"),
-            body = requestText.toByteArray()
+            body = requestText.toByteArray(),
         )
 
         val response = transport.execute(request)
@@ -108,7 +108,7 @@ class HttpClientTransportTest {
 
         val request = HttpRequest(
             method = "GET",
-            url = "http://localhost:$port/headers"
+            url = "http://localhost:$port/headers",
         )
 
         val response = transport.execute(request)
@@ -136,7 +136,7 @@ class HttpClientTransportTest {
         val request = HttpRequest(
             method = "GET",
             url = "http://localhost:$port/auth",
-            headers = mapOf("Authorization" to "Bearer my-token")
+            headers = mapOf("Authorization" to "Bearer my-token"),
         )
 
         transport.execute(request)
@@ -157,7 +157,7 @@ class HttpClientTransportTest {
 
         val request = HttpRequest(
             method = "DELETE",
-            url = "http://localhost:$port/users/123"
+            url = "http://localhost:$port/users/123",
         )
 
         val response = transport.execute(request)

@@ -501,16 +501,14 @@
                         </includes>
                         <ktlint>
                             <version>1.5.0</version>
+                            <editorConfigOverride>
+                                <max_line_length>off</max_line_length>
+                                <ktlint_standard_no-blank-line-in-list>disabled</ktlint_standard_no-blank-line-in-list>
+                            </editorConfigOverride>
                         </ktlint>
                     </kotlin>
-                    <java>
-                        <includes>
-                            <include>src/**/*.java</include>
-                        </includes>
-                        <googleJavaFormat>
-                            <version>1.25.2</version>
-                        </googleJavaFormat>
-                    </java>
+                    <!-- Java formatting disabled: google-java-format and palantir-java-format
+                         are incompatible with Java 25 internal APIs. Re-enable when they support JDK 25. -->
                 </configuration>
             </plugin>
             <plugin>

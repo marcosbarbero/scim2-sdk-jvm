@@ -16,11 +16,11 @@
 package com.marcosbarbero.scim2.core.domain.model.patch
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 class PatchModelsTest {
 
@@ -35,8 +35,8 @@ class PatchModelsTest {
             operations = listOf(
                 PatchOperation(op = PatchOp.ADD, path = "displayName", value = mapper.valueToTree(displayName)),
                 PatchOperation(op = PatchOp.REMOVE, path = "title"),
-                PatchOperation(op = PatchOp.REPLACE, path = "userName", value = mapper.valueToTree(userName))
-            )
+                PatchOperation(op = PatchOp.REPLACE, path = "userName", value = mapper.valueToTree(userName)),
+            ),
         )
 
         val json = mapper.writeValueAsString(request)

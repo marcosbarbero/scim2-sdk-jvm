@@ -42,12 +42,12 @@ class InMemoryScimApiContractTest : ScimApiContractTest() {
         val userHandler = InMemoryResourceHandler(
             resourceType = User::class.java,
             endpoint = "/Users",
-            repository = userRepository
+            repository = userRepository,
         )
         val groupHandler = InMemoryResourceHandler(
             resourceType = Group::class.java,
             endpoint = "/Groups",
-            repository = groupRepository
+            repository = groupRepository,
         )
 
         val schemaRegistry = SchemaRegistry().apply {
@@ -60,7 +60,7 @@ class InMemoryScimApiContractTest : ScimApiContractTest() {
         val discoveryService = DiscoveryService(
             handlers = listOf(userHandler, groupHandler),
             schemaRegistry = schemaRegistry,
-            config = config
+            config = config,
         )
 
         return ScimEndpointDispatcher(
@@ -69,15 +69,14 @@ class InMemoryScimApiContractTest : ScimApiContractTest() {
             meHandler = null,
             discoveryService = discoveryService,
             config = config,
-            serializer = serializer
+            serializer = serializer,
         )
     }
 
-    override fun sampleUserJson(): ByteArray =
-        objectMapper.writeValueAsBytes(
-            mapOf(
-                "schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"),
-                "userName" to faker.internet.email()
-            )
-        )
+    override fun sampleUserJson(): ByteArray = objectMapper.writeValueAsBytes(
+        mapOf(
+            "schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"),
+            "userName" to faker.internet.email(),
+        ),
+    )
 }

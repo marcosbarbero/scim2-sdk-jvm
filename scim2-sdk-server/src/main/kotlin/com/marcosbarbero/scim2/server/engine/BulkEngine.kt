@@ -21,7 +21,6 @@ import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
 import com.marcosbarbero.scim2.core.domain.model.error.ScimException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
-
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.server.port.ResourceHandler
@@ -31,7 +30,7 @@ import org.slf4j.LoggerFactory
 class BulkEngine(
     private val handlers: List<ResourceHandler<*>>,
     private val serializer: ScimSerializer,
-    private val config: ScimServerConfig
+    private val config: ScimServerConfig,
 ) {
 
     private val logger = LoggerFactory.getLogger(BulkEngine::class.java)
@@ -65,7 +64,7 @@ class BulkEngine(
     private fun executeOperation(
         operation: BulkOperation,
         bulkIdMap: MutableMap<String, String>,
-        context: ScimRequestContext
+        context: ScimRequestContext,
     ): BulkOperationResponse {
         val method = operation.method.uppercase()
         val path = resolveBulkIdReferences(operation.path ?: "", bulkIdMap)
@@ -74,7 +73,7 @@ class BulkEngine(
                 method = method,
                 bulkId = operation.bulkId,
                 status = "404",
-                location = null
+                location = null,
             )
 
         return try {
@@ -84,7 +83,7 @@ class BulkEngine(
                         ?: return errorResponse(method, operation.bulkId, 400, "Missing data for POST")
                     val resource = serializer.deserialize(
                         serializer.serialize(data),
-                        handler.resourceType.kotlin
+                        handler.resourceType.kotlin,
                     )
                     val created = handler.create(resource, context)
                     val location = "${config.basePath}${handler.endpoint}/${created.id}"
@@ -96,7 +95,7 @@ class BulkEngine(
                         method = method,
                         bulkId = operation.bulkId,
                         status = "201",
-                        location = location
+                        location = location,
                     )
                 }
 
@@ -106,7 +105,7 @@ class BulkEngine(
                         ?: return errorResponse(method, operation.bulkId, 400, "Missing data for PUT")
                     val resource = serializer.deserialize(
                         serializer.serialize(data),
-                        handler.resourceType.kotlin
+                        handler.resourceType.kotlin,
                     )
                     handler.replace(resourceId, resource, null, context)
                     val location = "${config.basePath}${handler.endpoint}/$resourceId"
@@ -114,7 +113,7 @@ class BulkEngine(
                         method = method,
                         bulkId = operation.bulkId,
                         status = "200",
-                        location = location
+                        location = location,
                     )
                 }
 
@@ -122,7 +121,7 @@ class BulkEngine(
                     val resourceId = extractResourceId(path, handler.endpoint)
                     val patchRequest = serializer.deserialize(
                         serializer.serialize(operation.data!!),
-                        com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest::class
+                        com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest::class,
                     )
                     handler.patch(resourceId, patchRequest, null, context)
                     val location = "${config.basePath}${handler.endpoint}/$resourceId"
@@ -130,7 +129,7 @@ class BulkEngine(
                         method = method,
                         bulkId = operation.bulkId,
                         status = "200",
-                        location = location
+                        location = location,
                     )
                 }
 
@@ -140,7 +139,7 @@ class BulkEngine(
                     BulkOperationResponse(
                         method = method,
                         bulkId = operation.bulkId,
-                        status = "204"
+                        status = "204",
                     )
                 }
 
@@ -151,7 +150,7 @@ class BulkEngine(
             BulkOperationResponse(
                 method = method,
                 bulkId = operation.bulkId,
-                status = e.status.toString()
+                status = e.status.toString(),
             )
         }
     }
@@ -186,10 +185,9 @@ class BulkEngine(
         return resolved
     }
 
-    private fun errorResponse(method: String, bulkId: String?, status: Int, detail: String): BulkOperationResponse =
-        BulkOperationResponse(
-            method = method,
-            bulkId = bulkId,
-            status = status.toString()
-        )
+    private fun errorResponse(method: String, bulkId: String?, status: Int, detail: String): BulkOperationResponse = BulkOperationResponse(
+        method = method,
+        bulkId = bulkId,
+        status = status.toString(),
+    )
 }

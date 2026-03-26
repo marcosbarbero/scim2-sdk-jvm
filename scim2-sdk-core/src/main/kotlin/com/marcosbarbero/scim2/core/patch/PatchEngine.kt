@@ -15,16 +15,16 @@
  */
 package com.marcosbarbero.scim2.core.patch
 
-import tools.jackson.databind.JsonNode
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.databind.node.ArrayNode
-import tools.jackson.databind.node.ObjectNode
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidPathException
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ArrayNode
+import tools.jackson.databind.node.ObjectNode
 
 class PatchEngine(private val objectMapper: ObjectMapper) {
 
@@ -39,12 +39,10 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         return objectMapper.treeToValue(node, resource::class.java) as T
     }
 
-    private fun applyOperation(node: ObjectNode, operation: PatchOperation): ObjectNode {
-        return when (operation.op) {
-            PatchOp.ADD -> applyAdd(node, operation)
-            PatchOp.REMOVE -> applyRemove(node, operation)
-            PatchOp.REPLACE -> applyReplace(node, operation)
-        }
+    private fun applyOperation(node: ObjectNode, operation: PatchOperation): ObjectNode = when (operation.op) {
+        PatchOp.ADD -> applyAdd(node, operation)
+        PatchOp.REMOVE -> applyRemove(node, operation)
+        PatchOp.REPLACE -> applyReplace(node, operation)
     }
 
     private fun applyAdd(node: ObjectNode, operation: PatchOperation): ObjectNode {
@@ -117,7 +115,7 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         attrName: String,
         filterAttr: String,
         filterValue: String,
-        value: JsonNode?
+        value: JsonNode?,
     ) {
         val array = node.get(attrName) as? ArrayNode ?: return
         for (i in 0 until array.size()) {
@@ -135,7 +133,7 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         node: ObjectNode,
         attrName: String,
         filterAttr: String,
-        filterValue: String
+        filterValue: String,
     ) {
         val array = node.get(attrName) as? ArrayNode ?: return
         val newArray = objectMapper.createArrayNode()

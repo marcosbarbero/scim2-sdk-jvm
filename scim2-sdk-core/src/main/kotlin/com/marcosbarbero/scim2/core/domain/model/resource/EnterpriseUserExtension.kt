@@ -26,5 +26,5 @@ data class EnterpriseUserExtension(
     val organization: String? = null,
     val division: String? = null,
     val department: String? = null,
-    val manager: Manager? = null
+    val manager: Manager? = null,
 )

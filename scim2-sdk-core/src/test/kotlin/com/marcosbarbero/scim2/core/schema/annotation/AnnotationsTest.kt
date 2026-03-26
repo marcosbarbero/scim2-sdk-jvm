@@ -25,7 +25,6 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 class AnnotationsTest {
-
     private val faker = Faker()
 
     @Test
@@ -55,29 +54,48 @@ class AnnotationsTest {
 
     @Test
     fun `AttributeType should have expected values`() {
-        AttributeType.entries.map { it.name } shouldBe listOf(
-            "STRING", "BOOLEAN", "DECIMAL", "INTEGER", "DATE_TIME", "BINARY", "REFERENCE", "COMPLEX"
-        )
+        AttributeType.entries.map { it.name } shouldBe
+            listOf(
+                "STRING",
+                "BOOLEAN",
+                "DECIMAL",
+                "INTEGER",
+                "DATE_TIME",
+                "BINARY",
+                "REFERENCE",
+                "COMPLEX",
+            )
     }
 
     @Test
     fun `Mutability should have expected values`() {
-        Mutability.entries.map { it.name } shouldBe listOf(
-            "READ_ONLY", "READ_WRITE", "IMMUTABLE", "WRITE_ONLY"
-        )
+        Mutability.entries.map { it.name } shouldBe
+            listOf(
+                "READ_ONLY",
+                "READ_WRITE",
+                "IMMUTABLE",
+                "WRITE_ONLY",
+            )
     }
 
     @Test
     fun `Returned should have expected values`() {
-        Returned.entries.map { it.name } shouldBe listOf(
-            "ALWAYS", "NEVER", "DEFAULT", "REQUEST"
-        )
+        Returned.entries.map { it.name } shouldBe
+            listOf(
+                "ALWAYS",
+                "NEVER",
+                "DEFAULT",
+                "REQUEST",
+            )
     }
 
     @Test
     fun `Uniqueness should have expected values`() {
-        Uniqueness.entries.map { it.name } shouldBe listOf(
-            "NONE", "SERVER", "GLOBAL"
-        )
+        Uniqueness.entries.map { it.name } shouldBe
+            listOf(
+                "NONE",
+                "SERVER",
+                "GLOBAL",
+            )
     }
 }

@@ -40,7 +40,7 @@ class SchemaRegistry {
     fun registerExtension(resourceType: KClass<out ScimResource>, extensionType: KClass<*>) {
         val extensionAnnotation = extensionType.findAnnotation<ScimExtension>()
             ?: throw IllegalArgumentException(
-                "Class ${extensionType.simpleName} must be annotated with @ScimExtension"
+                "Class ${extensionType.simpleName} must be annotated with @ScimExtension",
             )
 
         val extensionSchema = introspector.introspect(extensionType)
@@ -48,18 +48,18 @@ class SchemaRegistry {
 
         val rtAnnotation = resourceType.findAnnotation<com.marcosbarbero.scim2.core.schema.annotation.ScimResource>()
             ?: throw IllegalArgumentException(
-                "Class ${resourceType.simpleName} must be annotated with @ScimResource"
+                "Class ${resourceType.simpleName} must be annotated with @ScimResource",
             )
 
         val extension = ResourceType.SchemaExtension(
             schema = extensionAnnotation.schema,
-            required = false
+            required = false,
         )
 
         resourceTypes.compute(rtAnnotation.name) { _, existing ->
             existing
                 ?: throw IllegalStateException(
-                    "Resource type ${rtAnnotation.name} must be registered before adding extensions"
+                    "Resource type ${rtAnnotation.name} must be registered before adding extensions",
                 )
             existing.copy(schemaExtensions = existing.schemaExtensions + extension)
         }

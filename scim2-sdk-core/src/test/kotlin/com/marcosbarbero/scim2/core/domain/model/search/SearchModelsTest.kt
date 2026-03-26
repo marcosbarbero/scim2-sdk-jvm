@@ -16,11 +16,11 @@
 package com.marcosbarbero.scim2.core.domain.model.search
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
-import tools.jackson.module.kotlin.jacksonObjectMapper
-import tools.jackson.module.kotlin.readValue
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import tools.jackson.module.kotlin.jacksonObjectMapper
+import tools.jackson.module.kotlin.readValue
 
 class SearchModelsTest {
 
@@ -36,7 +36,7 @@ class SearchModelsTest {
             sortOrder = SortOrder.DESCENDING,
             startIndex = 1,
             count = 10,
-            attributes = listOf("userName", "displayName")
+            attributes = listOf("userName", "displayName"),
         )
 
         val json = mapper.writeValueAsString(request)
@@ -59,7 +59,7 @@ class SearchModelsTest {
             totalResults = 100,
             itemsPerPage = 10,
             startIndex = 1,
-            resources = listOf(mapOf("userName" to userName1), mapOf("userName" to userName2))
+            resources = listOf(mapOf("userName" to userName1), mapOf("userName" to userName2)),
         )
 
         val json = mapper.writeValueAsString(response)

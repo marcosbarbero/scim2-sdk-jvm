@@ -15,7 +15,6 @@
  */
 package com.marcosbarbero.scim2.sample.spring
 
-import tools.jackson.databind.node.StringNode
 import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport
 import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.client.api.ScimClientBuilder
@@ -42,6 +41,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import tools.jackson.databind.node.StringNode
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -201,7 +201,7 @@ class KeycloakE2eTest {
 
         // 3. Search
         val searchRequest = SearchRequest(
-            filter = "userName eq \"${user.userName}\""
+            filter = "userName eq \"${user.userName}\"",
         )
         val searchResult = client.search<User>("/Users", searchRequest)
         searchResult.statusCode shouldBe 200
@@ -212,9 +212,9 @@ class KeycloakE2eTest {
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "displayName",
-                    value = StringNode("Updated via Keycloak JWT")
-                )
-            )
+                    value = StringNode("Updated via Keycloak JWT"),
+                ),
+            ),
         )
         val patched = client.patch<User>("/Users", id, patchRequest)
         patched.statusCode shouldBe 200
@@ -233,7 +233,7 @@ class KeycloakE2eTest {
         val formData = listOf(
             "grant_type" to "client_credentials",
             "client_id" to "scim-client",
-            "client_secret" to "scim-secret"
+            "client_secret" to "scim-secret",
         ).joinToString("&") { (key, value) ->
             "${URLEncoder.encode(key, Charsets.UTF_8)}=${URLEncoder.encode(value, Charsets.UTF_8)}"
         }

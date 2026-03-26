@@ -21,5 +21,5 @@ data class ScimError(
     val schemas: List<String> = listOf(ScimUrns.ERROR),
     val status: String,
     val scimType: String? = null,
-    val detail: String? = null
+    val detail: String? = null,
 )

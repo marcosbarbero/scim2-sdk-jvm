@@ -57,8 +57,8 @@ class FilterToPredicateVisitorTest {
             "name" to mapOf("familyName" to familyName, "givenName" to givenName),
             "emails" to listOf(
                 mapOf("type" to "work", "value" to workEmail, "primary" to true),
-                mapOf("type" to "home", "value" to homeEmail, "primary" to false)
-            )
+                mapOf("type" to "home", "value" to homeEmail, "primary" to false),
+            ),
         )
     }
 
@@ -94,21 +94,21 @@ class FilterToPredicateVisitorTest {
             // Use a substring of the actual userName
             val substring = if (userName.length > 2) userName.substring(1, userName.length - 1) else userName
             matches("userName co \"$substring\"", sampleUser) shouldBe true
-            matches("userName co \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
+            matches("userName co \"${java.util.UUID.randomUUID()}\"", sampleUser) shouldBe false
         }
 
         @Test
         fun `sw should match starts with`() {
             val prefix = if (userName.length > 2) userName.substring(0, 3) else userName
             matches("userName sw \"$prefix\"", sampleUser) shouldBe true
-            matches("userName sw \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
+            matches("userName sw \"${java.util.UUID.randomUUID()}\"", sampleUser) shouldBe false
         }
 
         @Test
         fun `ew should match ends with`() {
             val suffix = if (userName.length > 2) userName.substring(userName.length - 3) else userName
             matches("userName ew \"$suffix\"", sampleUser) shouldBe true
-            matches("userName ew \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
+            matches("userName ew \"${java.util.UUID.randomUUID()}\"", sampleUser) shouldBe false
         }
 
         @Test
@@ -174,7 +174,7 @@ class FilterToPredicateVisitorTest {
         @Test
         fun `or should require at least one condition`() {
             matches("userName eq \"$userName\" or userName eq \"${faker.name.firstName()}other\"", sampleUser) shouldBe true
-            matches("userName eq \"${java.util.UUID.randomUUID().toString()}\" or userName eq \"${java.util.UUID.randomUUID().toString()}\"", sampleUser) shouldBe false
+            matches("userName eq \"${java.util.UUID.randomUUID()}\" or userName eq \"${java.util.UUID.randomUUID()}\"", sampleUser) shouldBe false
         }
 
         @Test

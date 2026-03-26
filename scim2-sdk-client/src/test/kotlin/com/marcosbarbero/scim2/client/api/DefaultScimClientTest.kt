@@ -16,14 +16,10 @@
 package com.marcosbarbero.scim2.client.api
 
 import com.marcosbarbero.scim2.client.error.ScimClientException
-import com.marcosbarbero.scim2.client.port.AuthenticationStrategy
 import com.marcosbarbero.scim2.client.port.BearerTokenAuthentication
 import com.marcosbarbero.scim2.client.port.HttpRequest
 import com.marcosbarbero.scim2.client.port.HttpResponse
 import com.marcosbarbero.scim2.client.port.HttpTransport
-import com.marcosbarbero.scim2.core.domain.ScimUrns
-import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
-import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
 import com.marcosbarbero.scim2.core.domain.model.error.ScimError
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.User
@@ -78,9 +74,9 @@ class DefaultScimClientTest {
             statusCode = 201,
             headers = mapOf(
                 "ETag" to listOf("W/\"1\""),
-                "Location" to listOf("$baseUrl/Users/123")
+                "Location" to listOf("$baseUrl/Users/123"),
             ),
-            body = responseBody
+            body = responseBody,
         )
 
         val response = client.create("/Users", user, User::class)
@@ -106,7 +102,7 @@ class DefaultScimClientTest {
         every { serializer.deserialize(responseBody, User::class) } returns user
         every { transport.execute(any()) } returns HttpResponse(
             statusCode = 200,
-            body = responseBody
+            body = responseBody,
         )
 
         val response = client.get("/Users", userId, User::class)
@@ -206,7 +202,7 @@ class DefaultScimClientTest {
     fun `error response throws ScimClientException with ScimError`() {
         val scimError = ScimError(
             status = "404",
-            detail = "Resource not found"
+            detail = "Resource not found",
         )
         val errorBody = """{"status":"404","detail":"Resource not found"}""".toByteArray()
 
@@ -292,9 +288,9 @@ class DefaultScimClientTest {
             statusCode = 201,
             headers = mapOf(
                 "ETag" to listOf("W/\"abc\""),
-                "Location" to listOf("https://scim.example.com/Users/456")
+                "Location" to listOf("https://scim.example.com/Users/456"),
             ),
-            body = responseBody
+            body = responseBody,
         )
 
         val response = client.create("/Users", user, User::class)
@@ -326,5 +322,95 @@ class DefaultScimClientTest {
         client.close()
 
         verify { transport.close() }
+    }
+
+    @Test
+    fun `error response with null body throws ScimClientException with null scimError`() {
+        every { transport.execute(any()) } returns HttpResponse(statusCode = 500, body = null)
+
+        val exception = shouldThrow<ScimClientException> {
+            client.get("/Users", "123", User::class)
+        }
+
+        exception.statusCode shouldBe 500
+        exception.scimError shouldBe null
+    }
+
+    @Test
+    fun `response with empty body on GET throws ScimClientException`() {
+        every { transport.execute(any()) } returns HttpResponse(statusCode = 200, body = null)
+
+        val exception = shouldThrow<ScimClientException> {
+            client.get("/Users", "123", User::class)
+        }
+
+        exception.statusCode shouldBe 200
+        exception.message shouldNotBe null
+    }
+
+    @Test
+    fun `bulk sends POST to Bulk endpoint`() {
+        val bulkRequest = BulkRequest(operations = emptyList())
+        val bulkResponse = BulkResponse(operations = emptyList())
+        val serializedBody = """{"Operations":[]}""".toByteArray()
+        val responseBody = """{"Operations":[]}""".toByteArray()
+
+        every { serializer.serialize(bulkRequest) } returns serializedBody
+        every { serializer.deserialize(responseBody, BulkResponse::class) } returns bulkResponse
+        every { transport.execute(any()) } returns HttpResponse(statusCode = 200, body = responseBody)
+
+        val response = client.bulk(bulkRequest)
+
+        response.statusCode shouldBe 200
+        response.value shouldBe bulkResponse
+
+        val requestSlot = slot<HttpRequest>()
+        verify { transport.execute(capture(requestSlot)) }
+        requestSlot.captured.method shouldBe "POST"
+        requestSlot.captured.url shouldBe "$baseUrl/Bulk"
+    }
+
+    @Test
+    fun `getSchemas sends GET to Schemas endpoint`() {
+        val listResponse = ListResponse<com.marcosbarbero.scim2.core.domain.model.schema.Schema>(
+            totalResults = 0,
+            resources = emptyList(),
+        )
+        val responseBody = """{"totalResults":0}""".toByteArray()
+
+        @Suppress("UNCHECKED_CAST")
+        every { serializer.deserialize(responseBody, ListResponse::class as KClass<ListResponse<*>>) } returns listResponse
+        every { transport.execute(any()) } returns HttpResponse(statusCode = 200, body = responseBody)
+
+        val response = client.getSchemas()
+
+        response.statusCode shouldBe 200
+
+        val requestSlot = slot<HttpRequest>()
+        verify { transport.execute(capture(requestSlot)) }
+        requestSlot.captured.method shouldBe "GET"
+        requestSlot.captured.url shouldBe "$baseUrl/Schemas"
+    }
+
+    @Test
+    fun `getResourceTypes sends GET to ResourceTypes endpoint`() {
+        val listResponse = ListResponse<com.marcosbarbero.scim2.core.domain.model.schema.ResourceType>(
+            totalResults = 0,
+            resources = emptyList(),
+        )
+        val responseBody = """{"totalResults":0}""".toByteArray()
+
+        @Suppress("UNCHECKED_CAST")
+        every { serializer.deserialize(responseBody, ListResponse::class as KClass<ListResponse<*>>) } returns listResponse
+        every { transport.execute(any()) } returns HttpResponse(statusCode = 200, body = responseBody)
+
+        val response = client.getResourceTypes()
+
+        response.statusCode shouldBe 200
+
+        val requestSlot = slot<HttpRequest>()
+        verify { transport.execute(capture(requestSlot)) }
+        requestSlot.captured.method shouldBe "GET"
+        requestSlot.captured.url shouldBe "$baseUrl/ResourceTypes"
     }
 }
