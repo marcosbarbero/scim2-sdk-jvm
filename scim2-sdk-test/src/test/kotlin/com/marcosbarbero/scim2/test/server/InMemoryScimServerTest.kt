@@ -153,7 +153,7 @@ class InMemoryScimServerTest {
     fun `dispatch routes arbitrary requests`() {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
-            path = "${server.config.basePath}/ServiceProviderConfig"
+            path = "${server.config.basePath}/ServiceProviderConfig",
         )
 
         val response = server.dispatch(request)

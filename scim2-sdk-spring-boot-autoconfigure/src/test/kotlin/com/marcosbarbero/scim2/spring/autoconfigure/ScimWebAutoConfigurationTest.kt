@@ -34,8 +34,8 @@ class ScimWebAutoConfigurationTest {
                 JacksonAutoConfiguration::class.java,
                 ScimJacksonAutoConfiguration::class.java,
                 ScimServerAutoConfiguration::class.java,
-                ScimWebAutoConfiguration::class.java
-            )
+                ScimWebAutoConfiguration::class.java,
+            ),
         )
 
     @Test

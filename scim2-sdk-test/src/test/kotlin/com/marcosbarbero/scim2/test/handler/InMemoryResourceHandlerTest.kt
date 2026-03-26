@@ -53,7 +53,7 @@ class InMemoryResourceHandlerTest {
         resourceType = User::class.java,
         endpoint = "/Users",
         repository = repository,
-        patchApplier = patchApplier
+        patchApplier = patchApplier,
     )
 
     @BeforeEach
@@ -108,9 +108,9 @@ class InMemoryResourceHandlerTest {
                 PatchOperation(
                     op = PatchOp.REPLACE,
                     path = "displayName",
-                    value = tools.jackson.module.kotlin.jacksonObjectMapper().valueToTree(newDisplayName)
-                )
-            )
+                    value = tools.jackson.module.kotlin.jacksonObjectMapper().valueToTree(newDisplayName),
+                ),
+            ),
         )
 
         val patched = handler.patch(created.id!!, patchRequest, null, context)
@@ -123,13 +123,13 @@ class InMemoryResourceHandlerTest {
         val handlerWithoutPatch = InMemoryResourceHandler(
             resourceType = User::class.java,
             endpoint = "/Users",
-            repository = repository
+            repository = repository,
         )
         val created = handlerWithoutPatch.create(User(userName = faker.name.firstName()), context)
         val patchRequest = PatchRequest(
             operations = listOf(
-                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = null)
-            )
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = null),
+            ),
         )
 
         val patched = handlerWithoutPatch.patch(created.id!!, patchRequest, null, context)

@@ -1190,8 +1190,7 @@ class ScimEndpointDispatcherTest {
 
     private val testMeHandler = object : com.marcosbarbero.scim2.server.port.MeHandler<User> {
         override fun getMe(context: ScimRequestContext): User = meUser
-        override fun replaceMe(context: ScimRequestContext, resource: User, version: String?): User =
-            resource.copy(id = meUser.id)
+        override fun replaceMe(context: ScimRequestContext, resource: User, version: String?): User = resource.copy(id = meUser.id)
         override fun patchMe(context: ScimRequestContext, request: PatchRequest, version: String?): User = meUser
         override fun deleteMe(context: ScimRequestContext, version: String?) {}
     }
@@ -1212,14 +1211,14 @@ class ScimEndpointDispatcherTest {
     }
 
     private fun dispatcherWithMe(
-        meHandler: com.marcosbarbero.scim2.server.port.MeHandler<*>? = testMeHandler
+        meHandler: com.marcosbarbero.scim2.server.port.MeHandler<*>? = testMeHandler,
     ) = ScimEndpointDispatcher(
         handlers = listOf(userHandler),
         bulkHandler = null,
         meHandler = meHandler,
         discoveryService = discoveryService,
         config = config,
-        serializer = meSerializer()
+        serializer = meSerializer(),
     )
 
     @Test
@@ -1227,7 +1226,7 @@ class ScimEndpointDispatcherTest {
         val d = dispatcherWithMe()
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
-            path = "${config.basePath}/Me"
+            path = "${config.basePath}/Me",
         )
 
         val response = d.dispatch(request)
@@ -1241,12 +1240,12 @@ class ScimEndpointDispatcherTest {
     fun `PUT Me returns 200`() {
         val d = dispatcherWithMe()
         val body = objectMapper.writeValueAsBytes(
-            mapOf("schemas" to listOf(com.marcosbarbero.scim2.core.domain.ScimUrns.USER), "userName" to "updated-me")
+            mapOf("schemas" to listOf(com.marcosbarbero.scim2.core.domain.ScimUrns.USER), "userName" to "updated-me"),
         )
         val request = ScimHttpRequest(
             method = HttpMethod.PUT,
             path = "${config.basePath}/Me",
-            body = body
+            body = body,
         )
 
         val response = d.dispatch(request)
@@ -1259,13 +1258,13 @@ class ScimEndpointDispatcherTest {
         val d = dispatcherWithMe()
         val patchRequest = PatchRequest(
             operations = listOf(
-                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree("New"))
-            )
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree("New")),
+            ),
         )
         val request = ScimHttpRequest(
             method = HttpMethod.PATCH,
             path = "${config.basePath}/Me",
-            body = objectMapper.writeValueAsBytes(patchRequest)
+            body = objectMapper.writeValueAsBytes(patchRequest),
         )
 
         val response = d.dispatch(request)
@@ -1278,7 +1277,7 @@ class ScimEndpointDispatcherTest {
         val d = dispatcherWithMe()
         val request = ScimHttpRequest(
             method = HttpMethod.DELETE,
-            path = "${config.basePath}/Me"
+            path = "${config.basePath}/Me",
         )
 
         val response = d.dispatch(request)
@@ -1293,7 +1292,7 @@ class ScimEndpointDispatcherTest {
         val request = ScimHttpRequest(
             method = HttpMethod.POST,
             path = "${config.basePath}/Me",
-            body = body
+            body = body,
         )
 
         val response = d.dispatch(request)
@@ -1306,7 +1305,7 @@ class ScimEndpointDispatcherTest {
         val d = dispatcherWithMe(meHandler = null)
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
-            path = "${config.basePath}/Me"
+            path = "${config.basePath}/Me",
         )
 
         val response = d.dispatch(request)
@@ -1323,18 +1322,12 @@ class ScimEndpointDispatcherTest {
         val failingHandler = object : ResourceHandler<User> {
             override val resourceType: Class<User> = User::class.java
             override val endpoint: String = "/Users"
-            override fun get(id: String, context: ScimRequestContext): User =
-                throw RuntimeException("Unexpected failure")
-            override fun create(resource: User, context: ScimRequestContext): User =
-                throw RuntimeException("Unexpected failure")
-            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User =
-                throw RuntimeException("Unexpected failure")
-            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User =
-                throw RuntimeException("Unexpected failure")
-            override fun delete(id: String, version: String?, context: ScimRequestContext) =
-                throw RuntimeException("Unexpected failure")
-            override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> =
-                throw RuntimeException("Unexpected failure")
+            override fun get(id: String, context: ScimRequestContext): User = throw RuntimeException("Unexpected failure")
+            override fun create(resource: User, context: ScimRequestContext): User = throw RuntimeException("Unexpected failure")
+            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = throw RuntimeException("Unexpected failure")
+            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = throw RuntimeException("Unexpected failure")
+            override fun delete(id: String, version: String?, context: ScimRequestContext) = throw RuntimeException("Unexpected failure")
+            override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = throw RuntimeException("Unexpected failure")
         }
 
         val d = ScimEndpointDispatcher(
@@ -1343,12 +1336,12 @@ class ScimEndpointDispatcherTest {
             meHandler = null,
             discoveryService = discoveryService,
             config = config,
-            serializer = serializer
+            serializer = serializer,
         )
 
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
-            path = "${config.basePath}/Users/some-id"
+            path = "${config.basePath}/Users/some-id",
         )
 
         val response = d.dispatch(request)

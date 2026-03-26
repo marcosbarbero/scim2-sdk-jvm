@@ -31,8 +31,8 @@ class ScimObservabilityAutoConfigurationTest {
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(
             AutoConfigurations.of(
-                ScimObservabilityAutoConfiguration::class.java
-            )
+                ScimObservabilityAutoConfiguration::class.java,
+            ),
         )
 
     @Test

@@ -27,12 +27,12 @@ class ScimFlywayAutoConfigurationTest {
         .withConfiguration(
             AutoConfigurations.of(
                 DataSourceAutoConfiguration::class.java,
-                ScimFlywayAutoConfiguration::class.java
-            )
+                ScimFlywayAutoConfiguration::class.java,
+            ),
         )
         .withPropertyValues(
             "spring.datasource.url=jdbc:h2:mem:scim_flyway_test;DB_CLOSE_DELAY=-1",
-            "spring.datasource.driver-class-name=org.h2.Driver"
+            "spring.datasource.driver-class-name=org.h2.Driver",
         )
 
     @Test
