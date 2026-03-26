@@ -85,4 +85,33 @@ class ScimHttpRequestTest {
         (r1 == r2) shouldBe true
         (r1 == r3) shouldBe false
     }
+
+    @Test
+    fun `equals should return false for non-ScimHttpRequest`() {
+        val request = ScimHttpRequest(method = HttpMethod.GET, path = "/Users")
+
+        (request.equals("not a request")) shouldBe false
+    }
+
+    @Test
+    fun `equals should return true for same reference`() {
+        val request = ScimHttpRequest(method = HttpMethod.GET, path = "/Users")
+
+        (request == request) shouldBe true
+    }
+
+    @Test
+    fun `hashCode should be consistent for equal objects`() {
+        val r1 = ScimHttpRequest(method = HttpMethod.POST, path = "/Users", body = "a".toByteArray())
+        val r2 = ScimHttpRequest(method = HttpMethod.POST, path = "/Users", body = "a".toByteArray())
+
+        r1.hashCode() shouldBe r2.hashCode()
+    }
+
+    @Test
+    fun `hashCode should handle null body`() {
+        val request = ScimHttpRequest(method = HttpMethod.GET, path = "/Users")
+
+        request.hashCode() shouldBe request.hashCode()
+    }
 }
