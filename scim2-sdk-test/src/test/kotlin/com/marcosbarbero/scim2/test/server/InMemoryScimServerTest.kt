@@ -45,13 +45,13 @@ class InMemoryScimServerTest {
 
         response.status shouldBe 201
         val body = objectMapper.readTree(response.body)
-        body.get("id").asText() shouldNotBe null
+        body.get("id").stringValue() shouldNotBe null
     }
 
     @Test
     fun `getUser returns 200 for existing user`() {
         val createResponse = server.createUser(User(userName = faker.name.firstName()))
-        val id = objectMapper.readTree(createResponse.body).get("id").asText()
+        val id = objectMapper.readTree(createResponse.body).get("id").stringValue()
 
         val response = server.getUser(id)
 
@@ -68,20 +68,20 @@ class InMemoryScimServerTest {
     @Test
     fun `replaceUser returns 200`() {
         val createResponse = server.createUser(User(userName = faker.name.firstName()))
-        val id = objectMapper.readTree(createResponse.body).get("id").asText()
+        val id = objectMapper.readTree(createResponse.body).get("id").stringValue()
         val newUserName = faker.name.firstName()
 
         val response = server.replaceUser(id, User(userName = newUserName))
 
         response.status shouldBe 200
         val body = objectMapper.readTree(response.body)
-        body.get("userName").asText() shouldBe newUserName
+        body.get("userName").stringValue() shouldBe newUserName
     }
 
     @Test
     fun `deleteUser returns 204`() {
         val createResponse = server.createUser(User(userName = faker.name.firstName()))
-        val id = objectMapper.readTree(createResponse.body).get("id").asText()
+        val id = objectMapper.readTree(createResponse.body).get("id").stringValue()
 
         val response = server.deleteUser(id)
 
@@ -121,7 +121,7 @@ class InMemoryScimServerTest {
     @Test
     fun `getGroup returns 200 for existing group`() {
         val createResponse = server.createGroup(Group(displayName = faker.name.lastName()))
-        val id = objectMapper.readTree(createResponse.body).get("id").asText()
+        val id = objectMapper.readTree(createResponse.body).get("id").stringValue()
 
         val response = server.getGroup(id)
 
@@ -131,7 +131,7 @@ class InMemoryScimServerTest {
     @Test
     fun `deleteGroup returns 204`() {
         val createResponse = server.createGroup(Group(displayName = faker.name.lastName()))
-        val id = objectMapper.readTree(createResponse.body).get("id").asText()
+        val id = objectMapper.readTree(createResponse.body).get("id").stringValue()
 
         val response = server.deleteGroup(id)
 

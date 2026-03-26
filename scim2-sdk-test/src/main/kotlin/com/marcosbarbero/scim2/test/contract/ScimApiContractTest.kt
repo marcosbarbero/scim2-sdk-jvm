@@ -100,7 +100,7 @@ abstract class ScimApiContractTest {
         val response = post("/Users", sampleUserJson())
         val body = parseJson(response)
         body.has("id") shouldBe true
-        body["id"].asText().isNotBlank() shouldBe true
+        body["id"].stringValue().isNotBlank() shouldBe true
         body.has("meta") shouldBe true
         body["meta"].has("resourceType") shouldBe true
         body["meta"].has("created") shouldBe true
@@ -115,7 +115,7 @@ abstract class ScimApiContractTest {
     @Test
     fun `GET by id returns 200 OK (RFC 7644 §3-2)`() {
         val created = post("/Users", sampleUserJson())
-        val id = parseJson(created)["id"].asText()
+        val id = parseJson(created)["id"].stringValue()
         val response = get("/Users/$id")
         response.status shouldBe 200
     }
@@ -138,8 +138,8 @@ abstract class ScimApiContractTest {
     fun `GET 404 response is a valid ScimError (RFC 7644 §3-12)`() {
         val response = get("/Users/nonexistent-id")
         val body = parseJson(response)
-        body["schemas"][0].asText() shouldBe ScimUrns.ERROR
-        body["status"].asText() shouldBe "404"
+        body["schemas"][0].stringValue() shouldBe ScimUrns.ERROR
+        body["status"].stringValue() shouldBe "404"
     }
 
     // === ETAG — RFC 7644 §3.14 ===
@@ -151,7 +151,7 @@ abstract class ScimApiContractTest {
     @Test
     fun `GET response includes ETag header (RFC 7644 §3-14)`() {
         val created = post("/Users", sampleUserJson())
-        val id = parseJson(created)["id"].asText()
+        val id = parseJson(created)["id"].stringValue()
         val response = get("/Users/$id")
         response.headers["ETag"].shouldNotBeNull()
     }
@@ -164,7 +164,7 @@ abstract class ScimApiContractTest {
     @Test
     fun `GET with matching If-None-Match returns 304 Not Modified (RFC 7644 §3-14)`() {
         val created = post("/Users", sampleUserJson())
-        val id = parseJson(created)["id"].asText()
+        val id = parseJson(created)["id"].stringValue()
         val getResponse = get("/Users/$id")
         val etag = getResponse.headers["ETag"]!!
         val conditionalResponse = get("/Users/$id", headers = mapOf("If-None-Match" to listOf(etag)))
@@ -180,7 +180,7 @@ abstract class ScimApiContractTest {
     @Test
     fun `DELETE returns 204 No Content (RFC 7644 §3-6)`() {
         val created = post("/Users", sampleUserJson())
-        val id = parseJson(created)["id"].asText()
+        val id = parseJson(created)["id"].stringValue()
         val response = delete("/Users/$id")
         response.status shouldBe 204
     }
@@ -194,7 +194,7 @@ abstract class ScimApiContractTest {
     @Test
     fun `PUT returns 200 OK (RFC 7644 §3-3)`() {
         val created = post("/Users", sampleUserJson())
-        val id = parseJson(created)["id"].asText()
+        val id = parseJson(created)["id"].stringValue()
         val response = put("/Users/$id", sampleUserJson())
         response.status shouldBe 200
     }
@@ -208,7 +208,7 @@ abstract class ScimApiContractTest {
     @Test
     fun `PATCH returns 200 OK (RFC 7644 §3-5-2)`() {
         val created = post("/Users", sampleUserJson())
-        val id = parseJson(created)["id"].asText()
+        val id = parseJson(created)["id"].stringValue()
         val patchBody = objectMapper.writeValueAsBytes(
             mapOf(
                 "schemas" to listOf(ScimUrns.PATCH_OP),
@@ -235,7 +235,7 @@ abstract class ScimApiContractTest {
         response.status shouldBe 200
         val body = parseJson(response)
         body.has("schemas") shouldBe true
-        body["schemas"][0].asText() shouldBe ScimUrns.LIST_RESPONSE
+        body["schemas"][0].stringValue() shouldBe ScimUrns.LIST_RESPONSE
         body.has("totalResults") shouldBe true
         body.has("startIndex") shouldBe true
         body.has("itemsPerPage") shouldBe true
@@ -261,7 +261,7 @@ abstract class ScimApiContractTest {
         val response = postSearch("/Users/.search", searchBody)
         response.status shouldBe 200
         val body = parseJson(response)
-        body["schemas"][0].asText() shouldBe ScimUrns.LIST_RESPONSE
+        body["schemas"][0].stringValue() shouldBe ScimUrns.LIST_RESPONSE
     }
 
     // === DISCOVERY — RFC 7644 §4 ===

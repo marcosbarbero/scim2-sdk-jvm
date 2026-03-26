@@ -145,7 +145,7 @@ class KeycloakScimProvisioningE2E {
                 .POST(HttpRequest.BodyPublishers.ofString(formData))
                 .build()
             val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-            return objectMapper.readTree(response.body()).get("access_token").asText()
+            return objectMapper.readTree(response.body()).get("access_token").stringValue()
         }
 
         @BeforeAll
@@ -363,7 +363,7 @@ class KeycloakScimProvisioningE2E {
             "Failed to obtain token: ${response.statusCode()} ${response.body()}"
         }
 
-        return objectMapper.readTree(response.body()).get("access_token").asText()
+        return objectMapper.readTree(response.body()).get("access_token").stringValue()
     }
 
     private fun obtainAdminToken(): String {
@@ -388,7 +388,7 @@ class KeycloakScimProvisioningE2E {
             "Failed to obtain admin token: ${response.statusCode()} ${response.body()}"
         }
 
-        return objectMapper.readTree(response.body()).get("access_token").asText()
+        return objectMapper.readTree(response.body()).get("access_token").stringValue()
     }
 
     private fun createKeycloakUser(
@@ -494,12 +494,12 @@ class KeycloakScimProvisioningE2E {
      * before sending it to the Service Provider.
      */
     private fun mapKeycloakUserToScim(keycloakUser: JsonNode): User {
-        val username = keycloakUser.get("username").asText()
-        val firstName = keycloakUser.path("firstName").asText(null)
-        val lastName = keycloakUser.path("lastName").asText(null)
-        val email = keycloakUser.path("email").asText(null)
+        val username = keycloakUser.get("username").stringValue()
+        val firstName = keycloakUser.path("firstName").stringValue(null)
+        val lastName = keycloakUser.path("lastName").stringValue(null)
+        val email = keycloakUser.path("email").stringValue(null)
         val enabled = keycloakUser.path("enabled").asBoolean(true)
-        val keycloakId = keycloakUser.get("id").asText()
+        val keycloakId = keycloakUser.get("id").stringValue()
 
         return User(
             externalId = keycloakId,

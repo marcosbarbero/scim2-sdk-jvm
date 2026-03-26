@@ -168,7 +168,7 @@ class ScimProblemDetailTest {
             tree.has("detail") shouldBe true
             tree.has("title") shouldBe true
             tree.has("type") shouldBe true
-            tree.get("type").asText() shouldBe "about:blank"
+            tree.get("type").stringValue() shouldBe "about:blank"
             // null fields should be absent
             tree.has("instance") shouldBe false
             tree.has("scimType") shouldBe false
@@ -187,8 +187,8 @@ class ScimProblemDetailTest {
             val json = mapper.writeValueAsString(problemDetail)
             val tree = mapper.readTree(json)
 
-            tree.get("scimType").asText() shouldBe "invalidFilter"
-            tree.get("type").asText() shouldBe "urn:ietf:params:scim:api:messages:2.0:Error:invalidFilter"
+            tree.get("scimType").stringValue() shouldBe "invalidFilter"
+            tree.get("type").stringValue() shouldBe "urn:ietf:params:scim:api:messages:2.0:Error:invalidFilter"
         }
 
         @Test
