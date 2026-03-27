@@ -73,7 +73,7 @@ jobs:
           path: '**/target/site/jacoco/'
           retention-days: 7
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: false
