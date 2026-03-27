@@ -15,10 +15,13 @@
  */
 package com.marcosbarbero.scim2.spring.autoconfigure
 
+import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.core.event.ScimEventPublisher
 import com.marcosbarbero.scim2.spring.event.SpringScimEventPublisher
+import com.marcosbarbero.scim2.spring.provisioning.ScimOutboundProvisioningListener
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.mockk.mockk
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
@@ -44,6 +47,23 @@ class ScimEventAutoConfigurationTest {
             .withBean(ScimEventPublisher::class.java, { com.marcosbarbero.scim2.core.event.NoOpEventPublisher })
             .run { context ->
                 context.containsBean("springScimEventPublisher") shouldBe false
+            }
+    }
+
+    @Test
+    fun `should not register outbound listener when ScimClient is not configured`() {
+        contextRunner.run { context ->
+            context.containsBean("scimOutboundProvisioningListener") shouldBe false
+        }
+    }
+
+    @Test
+    fun `should register outbound listener when ScimClient bean exists`() {
+        contextRunner
+            .withBean(ScimClient::class.java, { mockk<ScimClient>(relaxed = true) })
+            .run { context ->
+                context.containsBean("scimOutboundProvisioningListener") shouldBe true
+                context.getBean(ScimOutboundProvisioningListener::class.java).shouldBeInstanceOf<ScimOutboundProvisioningListener>()
             }
     }
 }
