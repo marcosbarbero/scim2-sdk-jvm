@@ -36,6 +36,5 @@ class ScimEventAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ScimEventPublisher::class)
-    fun springScimEventPublisher(applicationEventPublisher: ApplicationEventPublisher): ScimEventPublisher =
-        SpringScimEventPublisher(applicationEventPublisher)
+    fun springScimEventPublisher(applicationEventPublisher: ApplicationEventPublisher): ScimEventPublisher = SpringScimEventPublisher(applicationEventPublisher)
 }
