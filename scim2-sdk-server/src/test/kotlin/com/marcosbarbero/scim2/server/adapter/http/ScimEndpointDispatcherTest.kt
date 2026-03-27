@@ -271,6 +271,22 @@ class ScimEndpointDispatcherTest {
     }
 
     @Test
+    fun `GET ServiceProviderConfig should include schemas attribute`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/ServiceProviderConfig",
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.has("schemas") shouldBe true
+        responseBody.get("schemas").isArray shouldBe true
+        responseBody.get("schemas").get(0).asString() shouldBe ScimUrns.SERVICE_PROVIDER_CONFIG
+    }
+
+    @Test
     fun `GET Schemas should return schemas`() {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
@@ -285,6 +301,21 @@ class ScimEndpointDispatcherTest {
     }
 
     @Test
+    fun `GET Schemas response should include schemas attribute`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Schemas",
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.has("schemas") shouldBe true
+        responseBody.get("schemas").get(0).asString() shouldBe ScimUrns.LIST_RESPONSE
+    }
+
+    @Test
     fun `GET ResourceTypes should return resource types`() {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
@@ -296,6 +327,36 @@ class ScimEndpointDispatcherTest {
         response.status shouldBe 200
         val responseBody = objectMapper.readTree(response.body)
         responseBody.get("totalResults").asInt() shouldBe 1
+    }
+
+    @Test
+    fun `GET ResourceTypes response should include schemas attribute`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/ResourceTypes",
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.has("schemas") shouldBe true
+        responseBody.get("schemas").get(0).asString() shouldBe ScimUrns.LIST_RESPONSE
+    }
+
+    @Test
+    fun `GET ResourceTypes by name should include schemas attribute in response`() {
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/ResourceTypes/User",
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.has("schemas") shouldBe true
+        responseBody.get("schemas").get(0).asString() shouldBe ScimUrns.RESOURCE_TYPE
     }
 
     @Test
