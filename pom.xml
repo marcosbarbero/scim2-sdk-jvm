@@ -65,7 +65,7 @@
         <kotlinx-coroutines.version>1.10.1</kotlinx-coroutines.version>
         <okhttp.version>4.12.0</okhttp.version>
         <testcontainers.version>1.21.0</testcontainers.version>
-        <wiremock.version>3.12.1</wiremock.version>
+        <wiremock.version>3.13.2</wiremock.version>
         <pact.version>4.6.16</pact.version>
 
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
