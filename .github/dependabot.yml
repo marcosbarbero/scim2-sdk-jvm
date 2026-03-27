@@ -1,0 +1,45 @@
+version: 2
+updates:
+  # Maven dependencies
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+    groups:
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+          - "org.jetbrains.dokka*"
+      spring-boot:
+        patterns:
+          - "org.springframework.boot*"
+          - "org.springframework*"
+      jackson:
+        patterns:
+          - "tools.jackson*"
+          - "com.fasterxml.jackson*"
+      testing:
+        patterns:
+          - "io.kotest*"
+          - "io.mockk*"
+          - "org.testcontainers*"
+          - "au.com.dius.pact*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
