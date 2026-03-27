@@ -1071,7 +1071,13 @@ components:
 
     Schema:
       type: object
+      required: [schemas, id]
       properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:Schema"]
         id:
           type: string
         name:
