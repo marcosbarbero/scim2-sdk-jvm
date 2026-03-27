@@ -15,12 +15,14 @@
  */
 package com.marcosbarbero.scim2.core.domain.model.schema
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.schema.annotation.AttributeType
 import com.marcosbarbero.scim2.core.schema.annotation.Mutability
 import com.marcosbarbero.scim2.core.schema.annotation.Returned
 import com.marcosbarbero.scim2.core.schema.annotation.Uniqueness
 
 data class Schema(
+    val schemas: List<String> = listOf(ScimUrns.SCHEMA),
     val id: String,
     val name: String?,
     val description: String?,

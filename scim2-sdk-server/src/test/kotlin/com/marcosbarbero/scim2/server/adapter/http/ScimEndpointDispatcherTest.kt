@@ -1426,6 +1426,24 @@ class ScimEndpointDispatcherTest {
     }
 
     @Test
+    fun `GET Schemas by id should include schemas attribute`() {
+        val schemas = discoveryService.getSchemas()
+        val schemaId = schemas.resources.first().id
+
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Schemas/$schemaId",
+        )
+
+        val response = dispatcher.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        responseBody.has("schemas") shouldBe true
+        responseBody.get("schemas").get(0).asString() shouldBe ScimUrns.SCHEMA
+    }
+
+    @Test
     fun `GET ResourceTypes by name should return specific resource type`() {
         val request = ScimHttpRequest(
             method = HttpMethod.GET,
