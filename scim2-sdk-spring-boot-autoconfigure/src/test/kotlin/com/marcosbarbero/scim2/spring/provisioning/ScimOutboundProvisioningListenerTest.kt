@@ -17,6 +17,7 @@ package com.marcosbarbero.scim2.spring.provisioning
 
 import com.marcosbarbero.scim2.client.api.ScimClient
 import com.marcosbarbero.scim2.client.api.ScimResponse
+import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.event.BulkOperationCompletedEvent
 import com.marcosbarbero.scim2.core.event.ResourceCreatedEvent
@@ -45,8 +46,8 @@ class ScimOutboundProvisioningListenerTest {
         every { userHandler.resourceType } returns User::class.java
         every { userHandler.endpoint } returns "/Users"
         every { userHandler.get(eq("user-123"), any<ScimRequestContext>()) } returns testUser
-        every { client.create(any(), any<User>(), any<KClass<User>>()) } returns ScimResponse(201, testUser)
-        every { client.replace(any(), any(), any<User>(), any<KClass<User>>()) } returns ScimResponse(200, testUser)
+        every { client.create(any(), any<ScimResource>(), any<KClass<ScimResource>>()) } returns ScimResponse(201, testUser)
+        every { client.replace(any(), any(), any<ScimResource>(), any<KClass<ScimResource>>()) } returns ScimResponse(200, testUser)
 
         listener = ScimOutboundProvisioningListener(client, listOf(userHandler))
     }
@@ -56,7 +57,7 @@ class ScimOutboundProvisioningListenerTest {
         listener.onScimEvent(ResourceCreatedEvent(resourceType = "User", resourceId = "user-123"))
 
         verify { userHandler.get("user-123", any<ScimRequestContext>()) }
-        verify { client.create("/Users", testUser, User::class) }
+        verify { client.create("/Users", testUser, any<KClass<ScimResource>>()) }
     }
 
     @Test
@@ -64,7 +65,7 @@ class ScimOutboundProvisioningListenerTest {
         listener.onScimEvent(ResourceReplacedEvent(resourceType = "User", resourceId = "user-123"))
 
         verify { userHandler.get("user-123", any<ScimRequestContext>()) }
-        verify { client.replace("/Users", "user-123", testUser, User::class) }
+        verify { client.replace("/Users", "user-123", testUser, any<KClass<ScimResource>>()) }
     }
 
     @Test
@@ -72,7 +73,7 @@ class ScimOutboundProvisioningListenerTest {
         listener.onScimEvent(ResourcePatchedEvent(resourceType = "User", resourceId = "user-123", operationCount = 1))
 
         verify { userHandler.get("user-123", any<ScimRequestContext>()) }
-        verify { client.replace("/Users", "user-123", testUser, User::class) }
+        verify { client.replace("/Users", "user-123", testUser, any<KClass<ScimResource>>()) }
     }
 
     @Test
@@ -86,7 +87,7 @@ class ScimOutboundProvisioningListenerTest {
     fun `should ignore bulk events`() {
         listener.onScimEvent(BulkOperationCompletedEvent(operationCount = 5))
 
-        verify(exactly = 0) { client.create(any(), any<User>(), any<KClass<User>>()) }
+        verify(exactly = 0) { client.create(any(), any<ScimResource>(), any<KClass<ScimResource>>()) }
         verify(exactly = 0) { client.delete(any(), any()) }
     }
 
@@ -94,12 +95,12 @@ class ScimOutboundProvisioningListenerTest {
     fun `should skip when handler not found for resource type`() {
         listener.onScimEvent(ResourceCreatedEvent(resourceType = "UnknownType", resourceId = "123"))
 
-        verify(exactly = 0) { client.create(any(), any<User>(), any<KClass<User>>()) }
+        verify(exactly = 0) { client.create(any(), any<ScimResource>(), any<KClass<ScimResource>>()) }
     }
 
     @Test
     fun `should not propagate exceptions from client`() {
-        every { client.create(any(), any<User>(), any<KClass<User>>()) } throws RuntimeException("Connection refused")
+        every { client.create(any(), any<ScimResource>(), any<KClass<ScimResource>>()) } throws RuntimeException("Connection refused")
 
         listener.onScimEvent(ResourceCreatedEvent(resourceType = "User", resourceId = "user-123"))
         // No exception thrown — logged and swallowed
