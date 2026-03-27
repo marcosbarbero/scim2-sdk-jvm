@@ -53,54 +53,55 @@ The CI workflow uses these secrets automatically. For local releases, configure 
 
 ## Release Process
 
-### 1. Prepare the release
+Releases are fully automated via [Conventional Commits](https://www.conventionalcommits.org/) and semantic versioning.
 
-```bash
-# Ensure main is up to date
-git checkout main && git pull
+### How it works
 
-# Verify the build
-mvn clean verify -B
+1. Every push to `main` triggers the `release.yml` workflow
+2. The workflow analyzes commit messages since the last tag using [github-tag-action](https://github.com/mathieudutour/github-tag-action)
+3. It determines the version bump type based on conventional commit prefixes:
+   - `fix:` → **patch** bump (e.g., 1.0.0 → 1.0.1)
+   - `feat:` → **minor** bump (e.g., 1.0.0 → 1.1.0)
+   - `feat!:` or `BREAKING CHANGE:` → **major** bump (e.g., 1.0.0 → 2.0.0)
+4. A new `v*` tag and GitHub Release are created automatically
+5. The tag push triggers the publish job, which builds, signs, and deploys to Maven Central
+6. The `central-publishing-maven-plugin` auto-publishes and waits until artifacts are live
 
-# Run mutation tests
-mvn verify -Pmutation -pl scim2-sdk-core -B
-```
+### Manual release (if needed)
 
-### 2. Create a release
+You can still create a release manually:
 
-#### Option A: Release via GitHub UI (Recommended)
+#### Option A: Release via GitHub UI
 
 1. Go to the repository -> Releases -> "Create a new release"
-2. Create a new tag (e.g., `v1.0.0-M1`)
+2. Create a new tag (e.g., `v1.0.0`)
 3. Add release title and notes
 4. Click "Publish release"
-5. GitHub Actions automatically builds, tests, signs, and deploys to Maven Central
 
 #### Option B: Release via command line
 
 ```bash
-# Create and push a tag
-git tag v1.0.0-M1
-git push origin v1.0.0-M1
-
-# Then create GitHub Release
-gh release create v1.0.0-M1 --title "1.0.0-M1" --generate-notes
+git tag v1.0.0
+git push origin v1.0.0
 ```
 
-### 3. GitHub Actions handles the rest
+### Commit message conventions
 
-The `release.yml` workflow triggers on `v*` tags and GitHub Release publication:
-1. Builds all modules
-2. Runs all tests
-3. Signs artifacts with GPG
-4. Deploys to Sonatype Central Portal
-5. The artifacts are automatically published to Maven Central
+Follow [Conventional Commits](https://www.conventionalcommits.org/) to control versioning:
+
+```
+fix: resolve null pointer in ScimUser parser        → patch
+feat: add bulk operations support                   → minor
+feat!: redesign ResourceHandler SPI                 → major
+refactor: simplify filter parsing                   → patch (default bump)
+docs: update API documentation                      → patch (default bump)
+```
 
 ## Version Management
 
 The project uses `${revision}` with `flatten-maven-plugin` for CI-friendly versioning:
 - Development: `0.1.0-SNAPSHOT` (set in parent pom.xml)
-- Release: version from tag, passed as `-Drevision=1.0.0-M1`
+- Release: version derived automatically from conventional commits, passed as `-Drevision=X.Y.Z`
 
 ## Checklist for 1.0.0-M1
 
