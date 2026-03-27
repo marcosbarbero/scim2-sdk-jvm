@@ -58,15 +58,15 @@
         <java.version>25</java.version>
         <kotlin.jvm-target>23</kotlin.jvm-target>
         <kotlin.version>2.3.20</kotlin.version>
-        <kotest.version>5.9.1</kotest.version>
-        <mockk.version>1.13.16</mockk.version>
+        <kotest.version>6.1.9</kotest.version>
+        <mockk.version>1.14.9</mockk.version>
         <spring-boot.version>4.0.5</spring-boot.version>
 
         <kotlinx-coroutines.version>1.10.2</kotlinx-coroutines.version>
         <okhttp.version>4.12.0</okhttp.version>
-        <testcontainers.version>1.21.0</testcontainers.version>
+        <testcontainers.version>2.0.4</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <pact.version>4.6.16</pact.version>
+        <pact.version>4.6.20</pact.version>
 
         <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.2</maven-surefire-plugin.version>
