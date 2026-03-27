@@ -73,14 +73,14 @@ class ScimOutboundProvisioningListener(
         val handler = findHandler(event.resourceType) ?: return
         val resource = fetchResource(handler, event.resourceId)
         log.info("Outbound CREATE {} {} to {}", event.resourceType, event.resourceId, handler.endpoint)
-        createResource(handler, resource)
+        pushCreate(handler, resource)
     }
 
     private fun handleReplaced(event: ScimEvent) {
         val handler = findHandler(event.resourceType) ?: return
         val resource = fetchResource(handler, event.resourceId)
         log.info("Outbound REPLACE {} {} to {}", event.resourceType, event.resourceId, handler.endpoint)
-        replaceResource(handler, event.resourceId, resource)
+        pushReplace(handler, event.resourceId, resource)
     }
 
     private fun handleDeleted(event: ResourceDeletedEvent) {
@@ -97,19 +97,22 @@ class ScimOutboundProvisioningListener(
         return handler
     }
 
+    private val provisioningContext = ScimRequestContext(principalId = "scim-outbound-provisioning", roles = setOf("admin"))
+
     @Suppress("UNCHECKED_CAST")
-    private fun <T : ScimResource> fetchResource(handler: ResourceHandler<*>, id: String): T {
-        val context = ScimRequestContext(principalId = "scim-outbound-provisioning", roles = setOf("admin"))
-        return (handler as ResourceHandler<T>).get(id, context)
+    private fun fetchResource(handler: ResourceHandler<*>, id: String): ScimResource {
+        return (handler as ResourceHandler<ScimResource>).get(id, provisioningContext)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : ScimResource> createResource(handler: ResourceHandler<*>, resource: T) {
-        client.create(handler.endpoint, resource, handler.resourceType.kotlin as KClass<T>)
+    private fun pushCreate(handler: ResourceHandler<*>, resource: ScimResource) {
+        val type = handler.resourceType.kotlin as KClass<ScimResource>
+        client.create(handler.endpoint, resource, type)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun <T : ScimResource> replaceResource(handler: ResourceHandler<*>, id: String, resource: T) {
-        client.replace(handler.endpoint, id, resource, handler.resourceType.kotlin as KClass<T>)
+    private fun pushReplace(handler: ResourceHandler<*>, id: String, resource: ScimResource) {
+        val type = handler.resourceType.kotlin as KClass<ScimResource>
+        client.replace(handler.endpoint, id, resource, type)
     }
 }
