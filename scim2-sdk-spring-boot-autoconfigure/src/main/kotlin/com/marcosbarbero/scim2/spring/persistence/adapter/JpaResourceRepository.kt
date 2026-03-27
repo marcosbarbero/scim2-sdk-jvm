@@ -43,6 +43,14 @@ class JpaResourceRepository<T : ScimResource>(
 ) : ResourceRepository<T> {
 
     override fun create(resource: T): T {
+        // Idempotency: if a resource with the same externalId already exists, update it
+        val existingByExternalId = resource.externalId?.let {
+            jpaRepository.findByResourceTypeAndExternalId(resourceTypeName, it)
+        }
+        if (existingByExternalId != null) {
+            return replace(existingByExternalId.id, resource, null)
+        }
+
         val id = resource.id ?: UUID.randomUUID().toString()
         val now = Instant.now()
         val meta = Meta(

@@ -35,6 +35,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.test.context.TestPropertySource
+import java.util.UUID
 
 @DataJpaTest
 @EnableJpaRepositories(basePackages = ["com.marcosbarbero.scim2.spring.persistence.repository"])
@@ -185,6 +186,44 @@ class JpaResourceRepositoryTest {
         created.meta.shouldNotBeNull()
         created.meta!!.resourceType shouldBe "Group"
         created.displayName shouldBe displayName
+    }
+
+    @Test
+    fun `create with same externalId updates existing resource instead of duplicating`() {
+        val externalId = UUID.randomUUID().toString()
+        val user1 = User(externalId = externalId, userName = "original")
+        val created = userRepository.create(user1)
+
+        val user2 = User(externalId = externalId, userName = "updated")
+        val result = userRepository.create(user2)
+
+        result.id shouldBe created.id
+        result.userName shouldBe "updated"
+
+        val all = userRepository.search(SearchRequest())
+        all.totalResults shouldBe 1
+    }
+
+    @Test
+    fun `create without externalId always creates new resource`() {
+        val user1 = User(userName = "user-a")
+        val user2 = User(userName = "user-b")
+        userRepository.create(user1)
+        userRepository.create(user2)
+
+        val all = userRepository.search(SearchRequest())
+        all.totalResults shouldBe 2
+    }
+
+    @Test
+    fun `create with different externalIds creates separate resources`() {
+        val user1 = User(externalId = "ext-1", userName = "user-1")
+        val user2 = User(externalId = "ext-2", userName = "user-2")
+        userRepository.create(user1)
+        userRepository.create(user2)
+
+        val all = userRepository.search(SearchRequest())
+        all.totalResults shouldBe 2
     }
 
     @Test
