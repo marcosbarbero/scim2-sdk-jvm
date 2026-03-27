@@ -2,17 +2,57 @@ name: Release
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
-  release:
-    types: [published]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  release:
-    name: Release to Maven Central
+  # Automatically create a semver tag based on conventional commits
+  tag:
+    name: Determine version and tag
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.tag_version.outputs.new_tag }}
+      new_version: ${{ steps.tag_version.outputs.new_version }}
+      changelog: ${{ steps.tag_version.outputs.changelog }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          default_bump: patch
+          tag_prefix: v
+          release_branches: main
+
+  # Create a GitHub Release from the new tag
+  github-release:
+    name: Create GitHub Release
+    needs: tag
+    if: needs.tag.outputs.new_tag != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.tag.outputs.new_tag }}
+          name: ${{ needs.tag.outputs.new_version }}
+          body: ${{ needs.tag.outputs.changelog }}
+          generate_release_notes: false
+
+  # Publish to Maven Central when a version tag is pushed
+  publish:
+    name: Publish to Maven Central
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,14 +76,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Set release version from tag
+      - name: Extract version from tag
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            VERSION="${{ github.event.release.tag_name }}"
-          else
-            VERSION="${GITHUB_REF#refs/tags/}"
-          fi
-          VERSION="${VERSION#v}"
+          VERSION="${GITHUB_REF#refs/tags/v}"
           echo "RELEASE_VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Build, test, and deploy
