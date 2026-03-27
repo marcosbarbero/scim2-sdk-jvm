@@ -100,9 +100,7 @@ class ScimOutboundProvisioningListener(
     private val provisioningContext = ScimRequestContext(principalId = "scim-outbound-provisioning", roles = setOf("admin"))
 
     @Suppress("UNCHECKED_CAST")
-    private fun fetchResource(handler: ResourceHandler<*>, id: String): ScimResource {
-        return (handler as ResourceHandler<ScimResource>).get(id, provisioningContext)
-    }
+    private fun fetchResource(handler: ResourceHandler<*>, id: String): ScimResource = (handler as ResourceHandler<ScimResource>).get(id, provisioningContext)
 
     @Suppress("UNCHECKED_CAST")
     private fun pushCreate(handler: ResourceHandler<*>, resource: ScimResource) {
