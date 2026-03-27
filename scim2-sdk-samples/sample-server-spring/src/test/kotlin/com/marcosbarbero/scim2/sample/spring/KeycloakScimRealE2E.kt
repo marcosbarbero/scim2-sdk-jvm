@@ -135,6 +135,8 @@ class KeycloakScimRealE2E {
             try {
                 startKeycloak()
             } catch (e: Exception) {
+                System.err.println("Keycloak SCIM E2E setup failed: ${e.message}")
+                e.printStackTrace(System.err)
                 assumeTrue(false, "Keycloak container failed to start: ${e.message}")
             }
         }
@@ -157,6 +159,16 @@ class KeycloakScimRealE2E {
             .waitingFor(Wait.forHttp("/realms/master").forStatusCode(200).withStartupTimeout(Duration.ofMinutes(3)))
 
         keycloak!!.start()
+
+        // Verify SCIM server is reachable from the test process
+        val healthCheck = HttpRequest.newBuilder()
+            .uri(URI.create("http://localhost:$port/scim/v2/ServiceProviderConfig"))
+            .GET()
+            .build()
+        val healthResponse = httpClient.send(healthCheck, HttpResponse.BodyHandlers.ofString())
+        check(healthResponse.statusCode() == 200) {
+            "SCIM server not reachable at localhost:$port: ${healthResponse.statusCode()}"
+        }
 
         val adminToken = obtainAdminToken()
         createRealm(adminToken)
