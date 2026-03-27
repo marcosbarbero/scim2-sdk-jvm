@@ -377,7 +377,7 @@
                         <execution>
                             <phase>package</phase>
                             <goals>
-                                <goal>javadoc</goal>
+                                <goal>javadocJar</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -448,6 +448,11 @@
                         <publishingServerId>central</publishingServerId>
                         <autoPublish>true</autoPublish>
                         <waitUntil>published</waitUntil>
+                        <excludeArtifacts>
+                            <excludeArtifact>sample-server-plain</excludeArtifact>
+                            <excludeArtifact>sample-server-java</excludeArtifact>
+                            <excludeArtifact>sample-server-spring</excludeArtifact>
+                        </excludeArtifacts>
                     </configuration>
                 </plugin>
             </plugins>
