@@ -46,8 +46,8 @@ class ScimOutboundProvisioningListenerTest {
         every { userHandler.resourceType } returns User::class.java
         every { userHandler.endpoint } returns "/Users"
         every { userHandler.get(eq("user-123"), any<ScimRequestContext>()) } returns testUser
-        every { client.create(any(), any<ScimResource>(), any<KClass<ScimResource>>()) } returns ScimResponse(201, testUser)
-        every { client.replace(any(), any(), any<ScimResource>(), any<KClass<ScimResource>>()) } returns ScimResponse(200, testUser)
+        every { client.create(any(), any<ScimResource>(), any<KClass<ScimResource>>()) } returns ScimResponse(testUser, 201)
+        every { client.replace(any(), any(), any<ScimResource>(), any<KClass<ScimResource>>()) } returns ScimResponse(testUser, 200)
 
         listener = ScimOutboundProvisioningListener(client, listOf(userHandler))
     }
