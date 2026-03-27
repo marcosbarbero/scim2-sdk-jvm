@@ -30,6 +30,7 @@ data class ScimProperties(
     val client: ClientProperties = ClientProperties(),
     val persistence: PersistenceProperties = PersistenceProperties(),
     val idp: IdpProperties = IdpProperties(),
+    val provisioning: ProvisioningProperties = ProvisioningProperties(),
 ) {
     data class IdpProperties(
         val provider: String? = null,
@@ -85,6 +86,12 @@ data class ScimProperties(
         val baseUrl: String? = null,
         val connectTimeout: java.time.Duration = java.time.Duration.ofSeconds(10),
         val readTimeout: java.time.Duration = java.time.Duration.ofSeconds(30),
+    )
+
+    data class ProvisioningProperties(
+        val enabled: Boolean = false,
+        val targetUrl: String? = null,
+        val bearerToken: String? = null,
     )
 
     data class PersistenceProperties(

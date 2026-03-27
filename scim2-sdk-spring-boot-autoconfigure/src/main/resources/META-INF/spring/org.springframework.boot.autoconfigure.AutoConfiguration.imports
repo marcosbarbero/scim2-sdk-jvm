@@ -6,3 +6,4 @@ com.marcosbarbero.scim2.spring.autoconfigure.ScimObservabilityAutoConfiguration
 com.marcosbarbero.scim2.spring.autoconfigure.ScimPersistenceAutoConfiguration
 com.marcosbarbero.scim2.spring.autoconfigure.ScimFlywayAutoConfiguration
 com.marcosbarbero.scim2.spring.autoconfigure.ScimIdentityAutoConfiguration
+com.marcosbarbero.scim2.spring.autoconfigure.ScimProvisioningAutoConfiguration
