@@ -35,5 +35,5 @@ class ScimJacksonAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ScimSerializer::class)
-    fun scimSerializer(objectMapper: ObjectMapper): ScimSerializer = JacksonScimSerializer(objectMapper)
+    fun scimSerializer(): ScimSerializer = JacksonScimSerializer()
 }

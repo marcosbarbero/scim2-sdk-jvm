@@ -1,0 +1,3 @@
+# Enable auto-env to automatically switch JDK when entering this directory
+# Usage: sdk env install
+java=25.0.2-tem
