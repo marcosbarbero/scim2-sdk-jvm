@@ -48,6 +48,6 @@ class SpringScimEventPublisherTest {
         publisher.publish(ResourceCreatedEvent(resourceType = "User", resourceId = "1"))
         publisher.publish(ResourceDeletedEvent(resourceType = "Group", resourceId = "2"))
 
-        verify(exactly = 2) { appPublisher.publishEvent(any()) }
+        verify(exactly = 2) { appPublisher.publishEvent(any<ScimEvent>()) }
     }
 }
