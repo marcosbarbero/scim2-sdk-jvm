@@ -276,6 +276,20 @@ abstract class ScimApiContractTest {
         response.status shouldBe 200
     }
 
+    /**
+     * RFC 7643 §3: "The 'schemas' attribute is a REQUIRED attribute and is of type List of URIs."
+     * ServiceProviderConfig MUST include schemas attribute.
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc7643#section-3">RFC 7643 §3</a>
+     */
+    @Test
+    fun `GET ServiceProviderConfig includes schemas attribute (RFC 7643 §3)`() {
+        val response = get("/ServiceProviderConfig")
+        val body = parseJson(response)
+        body.has("schemas") shouldBe true
+        body["schemas"].isArray shouldBe true
+        body["schemas"][0].stringValue() shouldBe ScimUrns.SERVICE_PROVIDER_CONFIG
+    }
+
     @Test
     fun `GET Schemas returns 200 with schema list (RFC 7644 §4)`() {
         val response = get("/Schemas")
@@ -283,9 +297,25 @@ abstract class ScimApiContractTest {
     }
 
     @Test
+    fun `GET Schemas response includes schemas attribute (RFC 7643 §3)`() {
+        val response = get("/Schemas")
+        val body = parseJson(response)
+        body.has("schemas") shouldBe true
+        body["schemas"][0].stringValue() shouldBe ScimUrns.LIST_RESPONSE
+    }
+
+    @Test
     fun `GET ResourceTypes returns 200 with resource types (RFC 7644 §4)`() {
         val response = get("/ResourceTypes")
         response.status shouldBe 200
+    }
+
+    @Test
+    fun `GET ResourceTypes response includes schemas attribute (RFC 7643 §3)`() {
+        val response = get("/ResourceTypes")
+        val body = parseJson(response)
+        body.has("schemas") shouldBe true
+        body["schemas"][0].stringValue() shouldBe ScimUrns.LIST_RESPONSE
     }
 
     // === CONTENT-TYPE — RFC 7644 §3.1 ===
