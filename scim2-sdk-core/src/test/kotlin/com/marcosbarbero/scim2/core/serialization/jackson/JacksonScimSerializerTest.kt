@@ -23,6 +23,8 @@ import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.common.Name
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
+import com.marcosbarbero.scim2.core.domain.model.schema.ResourceType
+import com.marcosbarbero.scim2.core.domain.model.schema.ServiceProviderConfig
 import io.github.serpro69.kfaker.Faker
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -237,6 +239,46 @@ class JacksonScimSerializerTest {
                     "costCenter" to costCenter,
                     "organization" to organization,
                 )
+        }
+    }
+
+    @Nested
+    inner class DiscoverySerializationTest {
+        @Test
+        fun `should serialize ResourceType with schemas attribute`() {
+            val rt = ResourceType(
+                id = "User",
+                name = "User",
+                description = "User Account",
+                endpoint = "/Users",
+                schema = ScimUrns.USER,
+            )
+
+            val json = serializer.serializeToString(rt)
+
+            json shouldContain "\"schemas\""
+            json shouldContain ScimUrns.RESOURCE_TYPE
+
+            val deserialized = serializer.deserializeFromString(json, ResourceType::class)
+            deserialized.schemas shouldBe listOf(ScimUrns.RESOURCE_TYPE)
+            deserialized.name shouldBe "User"
+        }
+
+        @Test
+        fun `should serialize ServiceProviderConfig with schemas attribute`() {
+            val spc = ServiceProviderConfig(
+                patch = ServiceProviderConfig.SupportedConfig(supported = true),
+                filter = ServiceProviderConfig.FilterConfig(supported = true, maxResults = 200),
+            )
+
+            val json = serializer.serializeToString(spc)
+
+            json shouldContain "\"schemas\""
+            json shouldContain ScimUrns.SERVICE_PROVIDER_CONFIG
+
+            val deserialized = serializer.deserializeFromString(json, ServiceProviderConfig::class)
+            deserialized.schemas shouldBe listOf(ScimUrns.SERVICE_PROVIDER_CONFIG)
+            deserialized.patch.supported shouldBe true
         }
     }
 

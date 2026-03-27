@@ -15,7 +15,10 @@
  */
 package com.marcosbarbero.scim2.core.domain.model.schema
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
+
 data class ResourceType(
+    val schemas: List<String> = listOf(ScimUrns.RESOURCE_TYPE),
     val id: String,
     val name: String,
     val description: String?,

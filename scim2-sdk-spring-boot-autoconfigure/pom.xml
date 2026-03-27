@@ -131,7 +131,6 @@
         <dependency>
             <groupId>tools.jackson.module</groupId>
             <artifactId>jackson-module-kotlin</artifactId>
-            <scope>test</scope>
         </dependency>
         <!-- Jackson 2.x Kotlin module needed for Flyway's Jackson 2.x SPI compatibility -->
         <dependency>

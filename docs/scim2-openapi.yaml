@@ -1014,11 +1014,13 @@ components:
 
     ServiceProviderConfig:
       type: object
+      required: [schemas]
       properties:
         schemas:
           type: array
           items:
             type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"]
         patch:
           type: object
           properties:
@@ -1111,7 +1113,13 @@ components:
 
     ResourceType:
       type: object
+      required: [schemas, id, name, endpoint, schema]
       properties:
+        schemas:
+          type: array
+          items:
+            type: string
+          example: ["urn:ietf:params:scim:schemas:core:2.0:ResourceType"]
         id:
           type: string
         name:

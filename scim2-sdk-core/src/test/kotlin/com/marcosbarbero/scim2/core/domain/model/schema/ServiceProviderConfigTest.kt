@@ -15,7 +15,9 @@
  */
 package com.marcosbarbero.scim2.core.domain.model.schema
 
+import com.marcosbarbero.scim2.core.domain.ScimUrns
 import io.github.serpro69.kfaker.Faker
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
@@ -23,6 +25,13 @@ import org.junit.jupiter.api.Test
 class ServiceProviderConfigTest {
 
     private val faker = Faker()
+
+    @Test
+    fun `should include schemas attribute with default ServiceProviderConfig URN`() {
+        val config = ServiceProviderConfig()
+
+        config.schemas shouldContainExactly listOf(ScimUrns.SERVICE_PROVIDER_CONFIG)
+    }
 
     @Test
     fun `should create ServiceProviderConfig with defaults`() {

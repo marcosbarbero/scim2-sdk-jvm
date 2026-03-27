@@ -22,6 +22,7 @@ import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.server.port.ResourceHandler
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.mockk.every
@@ -61,6 +62,20 @@ class DiscoveryServiceTest {
         schemaRegistry.register(User::class)
         schemaRegistry.register(Group::class)
         discoveryService = DiscoveryService(listOf(userHandler, groupHandler), schemaRegistry, config)
+    }
+
+    @Test
+    fun `getServiceProviderConfig should include schemas attribute`() {
+        val spc = discoveryService.getServiceProviderConfig()
+
+        spc.schemas shouldContainExactly listOf(ScimUrns.SERVICE_PROVIDER_CONFIG)
+    }
+
+    @Test
+    fun `getResourceType should include schemas attribute`() {
+        val rt = discoveryService.getResourceType("User")
+
+        rt.schemas shouldContainExactly listOf(ScimUrns.RESOURCE_TYPE)
     }
 
     @Test
