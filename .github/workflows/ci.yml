@@ -67,7 +67,7 @@ jobs:
         if: always()
       - name: Upload JaCoCo reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jacoco-reports
           path: '**/target/site/jacoco/'
@@ -161,7 +161,7 @@ jobs:
         run: mvn verify -Pmutation -pl scim2-sdk-core -am -B
       - name: Upload PITest reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pitest-reports
           path: '**/target/pit-reports/'
