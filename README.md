@@ -114,41 +114,11 @@ public class CustomUserHandler implements ResourceHandler<User> {
 }
 ```
 
-See [sample-server-java](scim2-sdk-samples/sample-server-java/) for a complete Java example.
+See the [Spring Boot full-stack sample](scim2-sdk-samples/sample-fullstack-spring/) for a production-like example with Keycloak, PostgreSQL, and React.
 
 ### Without Spring Boot
 
-```kotlin
-fun main() {
-    // Create handlers
-    val userHandler = InMemoryResourceHandler(User::class.java, "/Users", userRepository)
-    val groupHandler = InMemoryResourceHandler(Group::class.java, "/Groups", groupRepository)
-
-    // Create infrastructure
-    val schemaRegistry = SchemaRegistry().apply {
-        register(User::class)
-        register(Group::class)
-    }
-    val serializer = JacksonScimSerializer()
-    val config = ScimServerConfig(basePath = "/scim/v2")
-    val discoveryService = DiscoveryService(listOf(userHandler, groupHandler), schemaRegistry, config)
-
-    // Create dispatcher
-    val dispatcher = ScimEndpointDispatcher(
-        handlers = listOf(userHandler, groupHandler),
-        discoveryService = discoveryService,
-        config = config,
-        serializer = serializer,
-        bulkHandler = null,
-        meHandler = null
-    )
-
-    // Use with any HTTP server - dispatch(ScimHttpRequest) returns ScimHttpResponse
-    val response = dispatcher.dispatch(scimRequest)
-}
-```
-
-See [sample-server-plain](scim2-sdk-samples/sample-server-plain/) for a complete example using JDK's built-in HTTP server.
+The SDK works with any JVM HTTP framework. See the [plain Java full-stack sample](scim2-sdk-samples/sample-fullstack-plain/) for a production-like example using only the JDK HTTP server with PostgreSQL (plain JDBC) — no Spring Boot.
 
 ### Client Usage
 
@@ -201,6 +171,40 @@ ScimClients.searchUsers(client, new SearchRequest());
 ScimClients.createGroup(client, group);
 ScimClients.getGroup(client, id);
 ```
+
+## Outbound Provisioning
+
+The SDK supports automatic outbound provisioning — when resources are created, updated, or deleted on your SCIM server, changes can be pushed to a target SCIM endpoint.
+
+### With Spring Boot
+
+Set `scim.client.base-url` to enable automatic outbound provisioning:
+
+```yaml
+scim:
+  client:
+    base-url: https://target-scim-server.example.com/scim/v2
+```
+
+The SDK auto-configures:
+1. `SpringScimEventPublisher` — bridges SCIM events to Spring `ApplicationEvent`
+2. `ScimOutboundProvisioningListener` — reacts to events and pushes via `ScimClient`
+
+Authentication to the target is handled by providing an `AuthenticationStrategy` bean (e.g., `BearerTokenAuthentication`, OAuth2 client credentials).
+
+For reliable delivery, implement a custom `ScimEventPublisher` using the [transactional outbox pattern](docs/outbox-pattern.md) with [namastack-outbox](https://github.com/namastack/namastack-outbox).
+
+### Without Spring Boot
+
+Outbound provisioning currently requires Spring's event system. Framework-agnostic support is tracked in [#87](https://github.com/marcosbarbero/scim2-sdk-jvm/issues/87). In the meantime, you can implement a custom `ScimEventPublisher` that calls `ScimClient` directly.
+
+## Sample Applications
+
+| Sample | Description |
+|---|---|
+| [sample-fullstack-spring](scim2-sdk-samples/sample-fullstack-spring/) | **Production-like**: Spring Boot + PostgreSQL + Keycloak + React + bidirectional SCIM sync. `docker compose up -d` |
+| [sample-fullstack-plain](scim2-sdk-samples/sample-fullstack-plain/) | **Production-like**: JDK HttpServer + plain JDBC + PostgreSQL + Keycloak + React. No Spring. `docker compose up -d` |
+| [sample-server-spring](scim2-sdk-samples/sample-server-spring/) | Minimal Spring Boot server (hosts E2E and contract tests) |
 
 ## Modules
 
