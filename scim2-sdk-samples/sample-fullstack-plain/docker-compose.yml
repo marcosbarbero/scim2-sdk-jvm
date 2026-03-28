@@ -88,6 +88,51 @@ services:
       postgres-target:
         condition: service_healthy
 
+  # Automatically configures the SCIM User Federation in Keycloak on startup
+  scim-federation-setup:
+    image: curlimages/curl:latest
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for backend..."
+        until curl -sf http://backend:8080/scim/v2/ServiceProviderConfig > /dev/null 2>&1; do sleep 2; done
+
+        echo "Getting admin token..."
+        TOKEN=$$(curl -sf -X POST "http://keycloak:9090/realms/master/protocol/openid-connect/token" \
+          -d "grant_type=password&client_id=admin-cli&username=admin&password=admin" \
+          | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+
+        echo "Getting realm ID..."
+        REALM_ID=$$(curl -sf -H "Authorization: Bearer $$TOKEN" \
+          "http://keycloak:9090/admin/realms/scim-sample" \
+          | sed -n 's/.*"id":"\([^"]*\)".*/\1/p')
+
+        echo "Checking if SCIM federation exists..."
+        EXISTS=$$(curl -sf -H "Authorization: Bearer $$TOKEN" \
+          "http://keycloak:9090/admin/realms/scim-sample/components" \
+          | grep -o '"skss-scim2-storage"' || true)
+
+        if [ -n "$$EXISTS" ]; then
+          echo "SCIM federation already configured. Done."
+          exit 0
+        fi
+
+        echo "Creating SCIM federation (realm=$$REALM_ID)..."
+        curl -sf -X POST \
+          -H "Authorization: Bearer $$TOKEN" \
+          -H "Content-Type: application/json" \
+          "http://keycloak:9090/admin/realms/scim-sample/components" \
+          -d "{\"name\":\"scim-provider\",\"providerId\":\"skss-scim2-storage\",\"providerType\":\"org.keycloak.storage.UserStorageProvider\",\"parentId\":\"$$REALM_ID\",\"config\":{\"endPoint\":[\"http://backend:8080/scim/v2\"],\"priority\":[\"0\"],\"enabled\":[\"true\"],\"cachePolicy\":[\"DEFAULT\"]}}"
+
+        echo ""
+        echo "SCIM federation configured successfully!"
+
   frontend:
     build:
       context: ../shared-frontend

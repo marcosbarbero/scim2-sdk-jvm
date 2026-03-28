@@ -18,51 +18,75 @@ graph TD
     TS --- PG2[(PostgreSQL :5433)]
 ```
 
-**Inbound**: Create a user in Keycloak -> automatically appears in the primary SCIM server
-**Outbound**: Create a user in the primary SCIM server -> automatically pushed to the target SCIM server
-
 ## Quick Start
 
 ```bash
 docker compose up -d
 ```
 
-Wait ~60 seconds for all services to start, then:
+Wait ~90 seconds for all services to build and start. The SCIM federation in Keycloak is **configured automatically** on startup.
 
-1. **Set up SCIM federation** in Keycloak:
+Open **http://localhost:5173** and log in:
+
+| Username | Password | Role        |
+|----------|----------|-------------|
+| admin    | admin    | scim-admin  |
+| viewer   | viewer   | scim-reader |
+
+## Testing Bidirectional Sync
+
+### Inbound: Keycloak -> SCIM Server
+
+1. Open the Keycloak Admin Console at **http://localhost:9090** (admin/admin)
+2. Switch to the **scim-sample** realm
+3. Go to **Users** -> **Add user** -> create a user
+4. Within ~15 seconds, the user appears in:
+   - The React frontend at **http://localhost:5173**
+   - The primary SCIM server: `curl -s http://localhost:8080/scim/v2/Users | python3 -m json.tool`
+   - The target SCIM server: `curl -s http://localhost:8081/scim/v2/Users | python3 -m json.tool`
+
+### Outbound: SCIM Server -> Target Server
+
+1. Create a group in the React frontend at **http://localhost:5173** (Groups tab -> Add Group)
+2. The group is pushed to the target SCIM server automatically:
    ```bash
-   SCIM_ENDPOINT=http://backend:8080/scim/v2 bash docker/setup-scim-federation.sh
+   curl -s http://localhost:8081/scim/v2/Groups | python3 -m json.tool
    ```
+3. Users and groups created/updated/deleted via the frontend are provisioned to the target
 
-2. Open **http://localhost:5173** and log in:
+### Full Round-Trip
 
-   | Username | Password | Role        |
-   |----------|----------|-------------|
-   | admin    | admin    | scim-admin  |
-   | viewer   | viewer   | scim-reader |
+```bash
+# 1. Check both servers are empty
+curl -s http://localhost:8080/scim/v2/Users | python3 -c "import sys,json; print('Primary:', json.load(sys.stdin)['totalResults'])"
+curl -s http://localhost:8081/scim/v2/Users | python3 -c "import sys,json; print('Target:', json.load(sys.stdin)['totalResults'])"
 
-3. **Test inbound sync**: Create a user in Keycloak Admin Console (http://localhost:9090, admin/admin, switch to `scim-sample` realm) -> user appears in the app
+# 2. Create a user in Keycloak
+TOKEN=$(curl -s -X POST "http://localhost:9090/realms/master/protocol/openid-connect/token" \
+  -d "grant_type=password&client_id=admin-cli&username=admin&password=admin" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-4. **Test outbound sync**: The primary SCIM server (`:8080`) pushes to the target (`:8081`):
-   ```bash
-   # Check target SCIM server
-   curl -s http://localhost:8081/scim/v2/Users | python3 -m json.tool
-   ```
+curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  "http://localhost:9090/admin/realms/scim-sample/users" \
+  -d '{"username":"round.trip.test","email":"rt@test.com","firstName":"Round","lastName":"Trip","enabled":true}'
+
+# 3. Wait for sync and verify both servers
+sleep 15
+curl -s http://localhost:8080/scim/v2/Users | python3 -c "import sys,json; [print(f'  Primary: {r[\"userName\"]}') for r in json.load(sys.stdin).get('Resources',[])]"
+curl -s http://localhost:8081/scim/v2/Users | python3 -c "import sys,json; [print(f'  Target: {r[\"userName\"]}') for r in json.load(sys.stdin).get('Resources',[])]"
+```
 
 ## Local Development
 
 ```bash
 # 1. Start infrastructure
-docker compose up postgres postgres-target keycloak -d
+docker compose up postgres postgres-target keycloak scim-federation-setup -d
 
 # 2. Start backend
-cd backend && mvn spring-boot:run
+mvn spring-boot:run
 
-# 3. Start frontend
-cd frontend && npm install && npm run dev
-
-# 4. Set up SCIM federation
-SCIM_ENDPOINT=http://host.docker.internal:8080/scim/v2 bash docker/setup-scim-federation.sh
+# 3. Start frontend (from repo root)
+cd ../shared-frontend && npm install && npm run dev
 ```
 
 ## Services
