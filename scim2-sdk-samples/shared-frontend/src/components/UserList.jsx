@@ -48,7 +48,7 @@ export default function UserList() {
       <div style={styles.filterRow}>
         <input
           style={styles.filterInput}
-          placeholder='SCIM filter (e.g. userName eq "john")'
+          placeholder='Search users or SCIM filter (e.g. userName eq "john")'
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
