@@ -136,6 +136,31 @@ These are limitations of the suvera extension, not the SDK. All SCIM operations 
 
 For full bidirectional sync with Keycloak, consider using a SCIM extension that supports all operations (e.g., the commercial [scim-for-keycloak](https://scim-for-keycloak.de/) or [mitodl/keycloak-scim](https://github.com/mitodl/keycloak-scim)).
 
+## Playwright E2E Tests
+
+End-to-end tests exercise the full stack (Keycloak, Spring Boot SCIM servers, React frontend) through the browser.
+
+**Prerequisites:** The full stack must be running (`docker compose up -d`).
+
+```bash
+cd scim2-sdk-samples/shared-frontend
+npm install
+npx playwright install --with-deps chromium
+npx playwright test
+```
+
+To run tests in headed mode (visible browser):
+
+```bash
+npx playwright test --headed
+```
+
+To open the Playwright UI for interactive debugging:
+
+```bash
+npx playwright test --ui
+```
+
 ## Local Development
 
 ```bash

@@ -40,3 +40,8 @@ out/
 *.log
 hs_err_pid*
 .claude/
+
+# Playwright
+.auth/
+test-results/
+playwright-report/
