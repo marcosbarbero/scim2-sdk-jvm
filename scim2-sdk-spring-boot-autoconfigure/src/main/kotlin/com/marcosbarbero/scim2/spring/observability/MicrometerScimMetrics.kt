@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 class MicrometerScimMetrics(private val registry: MeterRegistry) : ScimMetrics {
 
-    private val activeGauges = mutableMapOf<String, AtomicLong>()
+    private val activeGauges = java.util.concurrent.ConcurrentHashMap<String, AtomicLong>()
 
     override fun recordOperation(endpoint: String, method: String, status: Int, duration: Duration) {
         registry.timer(

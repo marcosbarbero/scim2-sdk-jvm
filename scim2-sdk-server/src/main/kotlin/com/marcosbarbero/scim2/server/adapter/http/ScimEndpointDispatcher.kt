@@ -187,8 +187,11 @@ class ScimEndpointDispatcher(
                     }
                 }
                 val bulkRequest = deserializeBody<com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest>(request)
+                val bulkStart = Instant.now()
                 val result = handler.processBulk(bulkRequest, context)
+                val bulkDuration = Duration.between(bulkStart, Instant.now())
                 val failureCount = result.operations.count { !it.status.startsWith("2") }
+                metrics.recordBulkOperation(result.operations.size, failureCount, bulkDuration)
                 eventPublisher.publish(
                     BulkOperationCompletedEvent(
                         correlationId = tracer.currentCorrelationId(),
@@ -227,8 +230,13 @@ class ScimEndpointDispatcher(
             val searchRequest = deserializeBody<SearchRequest>(request)
             validateSearchRequest(searchRequest)
             val effectiveRequest = applyPaginationDefaults(searchRequest)
+            // Timing: scim.search.duration measures handler search time only (excludes request
+            // deserialization, pagination defaults, response serialization, and meta enrichment).
+            val searchStart = Instant.now()
             val result = handler.search(effectiveRequest, context)
+            val searchDuration = Duration.between(searchStart, Instant.now())
             val capped = capSearchResults(result)
+            metrics.recordSearchResults(handler.endpoint, capped.totalResults, searchDuration)
             return okWithEnrichedListResponse(capped, handler, resourceTypeName)
         }
 
@@ -266,8 +274,13 @@ class ScimEndpointDispatcher(
                     val searchRequest = request.toSearchRequest()
                     validateSearchRequest(searchRequest)
                     val effectiveRequest = applyPaginationDefaults(searchRequest)
+                    // Timing: scim.search.duration measures handler search time only (excludes request
+                    // deserialization, pagination defaults, response serialization, and meta enrichment).
+                    val searchStart = Instant.now()
                     val result = handler.search(effectiveRequest, context)
+                    val searchDuration = Duration.between(searchStart, Instant.now())
                     val capped = capSearchResults(result)
+                    metrics.recordSearchResults(handler.endpoint, capped.totalResults, searchDuration)
                     okWithEnrichedListResponse(capped, handler, resourceTypeName)
                 } else {
                     requireAuthorization { it.canRead(handler.endpoint, resourceId, context) }
@@ -313,7 +326,13 @@ class ScimEndpointDispatcher(
                 requireAuthorization { it.canUpdate(handler.endpoint, resourceId, context) }
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val patchRequest = deserializeBody<PatchRequest>(request)
+                // Timing: scim.patch.duration measures handler patch time only (excludes request
+                // deserialization, ETag extraction, response serialization, and meta enrichment).
+                // This differs from scim.request.duration which captures the full request lifecycle.
+                val patchStart = Instant.now()
                 val result = handler.patch(resourceId, patchRequest, ifMatch?.value, context)
+                val patchDuration = Duration.between(patchStart, Instant.now())
+                metrics.recordPatchOperations(handler.endpoint, patchRequest.operations.size, patchDuration)
                 val absoluteLocation = result.id?.let { rid -> normalizedBaseUrl?.let { "$it${config.basePath}${handler.endpoint}/$rid" } }
                 eventPublisher.publish(
                     ResourcePatchedEvent(

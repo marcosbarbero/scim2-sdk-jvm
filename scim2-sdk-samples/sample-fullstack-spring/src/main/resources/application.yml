@@ -50,6 +50,19 @@ scim:
     default-count: 20
     max-count: 100
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+  metrics:
+    tags:
+      application: scim-sample
+    distribution:
+      percentiles-histogram:
+        scim.request.duration: true
+        scim.search.duration: true
+
 logging:
   level:
     com.example.scim: DEBUG

@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'scim-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['backend:8080']
+  - job_name: 'scim-target'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['backend-target:8080']
