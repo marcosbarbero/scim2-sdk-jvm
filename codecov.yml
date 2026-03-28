@@ -11,3 +11,4 @@ coverage:
 ignore:
   - "scim2-sdk-samples/**"
   - "**/src/test/**"
+  - "**/test/contract/**"
