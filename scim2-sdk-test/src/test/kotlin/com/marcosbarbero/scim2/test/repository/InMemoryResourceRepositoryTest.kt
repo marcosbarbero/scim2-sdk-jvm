@@ -19,6 +19,7 @@ import com.marcosbarbero.scim2.core.domain.model.error.ResourceConflictException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import com.marcosbarbero.scim2.core.domain.model.search.SortOrder
 import io.github.serpro69.kfaker.Faker
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -216,5 +217,71 @@ class InMemoryResourceRepositoryTest {
         repository.deleteIfExists("nonexistent")
 
         repository.count() shouldBe 0
+    }
+
+    @Test
+    fun `search with filter returns matching resources`() {
+        repository.create(User(userName = "alice"))
+        repository.create(User(userName = "bob"))
+        repository.create(User(userName = "charlie"))
+
+        val result = repository.search(SearchRequest(filter = "userName eq \"bob\""))
+
+        result.totalResults shouldBe 1
+        result.resources shouldHaveSize 1
+        result.resources[0].userName shouldBe "bob"
+    }
+
+    @Test
+    fun `search with filter returns empty when no match`() {
+        repository.create(User(userName = "alice"))
+        repository.create(User(userName = "bob"))
+
+        val result = repository.search(SearchRequest(filter = "userName eq \"nonexistent\""))
+
+        result.totalResults shouldBe 0
+        result.resources.shouldBeEmpty()
+    }
+
+    @Test
+    fun `search with filter and sortBy returns sorted results`() {
+        repository.create(User(userName = "charlie"))
+        repository.create(User(userName = "alice"))
+        repository.create(User(userName = "bob"))
+
+        val result = repository.search(
+            SearchRequest(
+                filter = "userName sw \"\"",
+                sortBy = "userName",
+                sortOrder = SortOrder.ASCENDING,
+            ),
+        )
+
+        result.totalResults shouldBe 3
+        result.resources shouldHaveSize 3
+        result.resources[0].userName shouldBe "alice"
+        result.resources[1].userName shouldBe "bob"
+        result.resources[2].userName shouldBe "charlie"
+    }
+
+    @Test
+    fun `search with filter and descending sort order`() {
+        repository.create(User(userName = "alice"))
+        repository.create(User(userName = "bob"))
+        repository.create(User(userName = "charlie"))
+
+        val result = repository.search(
+            SearchRequest(
+                filter = "userName sw \"\"",
+                sortBy = "userName",
+                sortOrder = SortOrder.DESCENDING,
+            ),
+        )
+
+        result.totalResults shouldBe 3
+        result.resources shouldHaveSize 3
+        result.resources[0].userName shouldBe "charlie"
+        result.resources[1].userName shouldBe "bob"
+        result.resources[2].userName shouldBe "alice"
     }
 }

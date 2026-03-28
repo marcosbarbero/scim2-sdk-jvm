@@ -19,6 +19,7 @@ import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import com.marcosbarbero.scim2.core.domain.model.search.SortOrder
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.spring.persistence.adapter.JpaResourceRepository
@@ -276,5 +277,49 @@ class JpaResourceRepositoryTest {
 
         userResults.totalResults shouldBe 1
         groupResults.totalResults shouldBe 1
+    }
+
+    @Test
+    fun `search with filter and sortBy returns sorted results`() {
+        userRepository.create(User(userName = "charlie"))
+        userRepository.create(User(userName = "alice"))
+        userRepository.create(User(userName = "bob"))
+        userRepository.create(User(userName = "other"))
+
+        val result = userRepository.search(
+            SearchRequest(
+                filter = "userName sw \"\"",
+                sortBy = "userName",
+                sortOrder = SortOrder.ASCENDING,
+            ),
+        )
+
+        result.totalResults shouldBe 4
+        result.resources.size shouldBe 4
+        result.resources[0].userName shouldBe "alice"
+        result.resources[1].userName shouldBe "bob"
+        result.resources[2].userName shouldBe "charlie"
+        result.resources[3].userName shouldBe "other"
+    }
+
+    @Test
+    fun `search with filter and descending sort order`() {
+        userRepository.create(User(userName = "alice"))
+        userRepository.create(User(userName = "bob"))
+        userRepository.create(User(userName = "charlie"))
+
+        val result = userRepository.search(
+            SearchRequest(
+                filter = "userName sw \"\"",
+                sortBy = "userName",
+                sortOrder = SortOrder.DESCENDING,
+            ),
+        )
+
+        result.totalResults shouldBe 3
+        result.resources.size shouldBe 3
+        result.resources[0].userName shouldBe "charlie"
+        result.resources[1].userName shouldBe "bob"
+        result.resources[2].userName shouldBe "alice"
     }
 }
