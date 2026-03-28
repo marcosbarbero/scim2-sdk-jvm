@@ -61,7 +61,7 @@ class ScimObservabilityAutoConfigurationTest {
     fun `does not create ScimMetrics when no MeterRegistry`() {
         contextRunner
             .run { context ->
-                context.containsBean("micrometerScimMetrics") shouldBe false
+                context.getBeansOfType(ScimMetrics::class.java).isEmpty() shouldBe true
             }
     }
 
