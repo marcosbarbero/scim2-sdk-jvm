@@ -31,9 +31,10 @@ class DiscoveryService(
     private val schemaRegistry: SchemaRegistry,
     private val config: ScimServerConfig,
 ) {
+    private val normalizedBaseUrl: String? = config.baseUrl?.trimEnd('/')
 
     fun getServiceProviderConfig(): ServiceProviderConfig = ServiceProviderConfig(
-        meta = config.baseUrl?.let {
+        meta = normalizedBaseUrl?.let {
             Meta(
                 resourceType = "ServiceProviderConfig",
                 location = URI("${it}${config.basePath}/ServiceProviderConfig"),
@@ -86,7 +87,7 @@ class DiscoveryService(
         return enrichResourceTypeMeta(type)
     }
 
-    private fun enrichSchemaMeta(schema: Schema): Schema = config.baseUrl?.let {
+    private fun enrichSchemaMeta(schema: Schema): Schema = normalizedBaseUrl?.let {
         schema.copy(
             meta = Meta(
                 resourceType = "Schema",
@@ -95,7 +96,7 @@ class DiscoveryService(
         )
     } ?: schema
 
-    private fun enrichResourceTypeMeta(resourceType: ResourceType): ResourceType = config.baseUrl?.let {
+    private fun enrichResourceTypeMeta(resourceType: ResourceType): ResourceType = normalizedBaseUrl?.let {
         resourceType.copy(
             meta = Meta(
                 resourceType = "ResourceType",

@@ -285,14 +285,15 @@ class JacksonScimSerializerTest {
     @Nested
     inner class EmptyCollectionSerializationTest {
         @Test
-        fun `should omit empty lists from serialized output`() {
+        fun `should include empty lists in serialized output`() {
             val user = User(userName = "emptytest")
             val json = serializer.serializeToString(user)
 
-            json shouldNotContain "\"emails\""
-            json shouldNotContain "\"phoneNumbers\""
-            json shouldNotContain "\"addresses\""
-            json shouldNotContain "\"groups\""
+            // NON_NULL inclusion: empty lists are valid SCIM values and should be serialized
+            json shouldContain "\"emails\""
+            json shouldContain "\"phoneNumbers\""
+            json shouldContain "\"addresses\""
+            json shouldContain "\"groups\""
         }
 
         @Test
@@ -310,13 +311,23 @@ class JacksonScimSerializerTest {
         }
 
         @Test
-        fun `should still omit null fields`() {
+        fun `should omit null fields but not empty strings`() {
             val user = User(userName = "nulltest")
             val json = serializer.serializeToString(user)
 
+            // Null fields are omitted
             json shouldNotContain "\"displayName\""
             json shouldNotContain "\"nickName\""
             json shouldContain "\"userName\""
+        }
+
+        @Test
+        fun `should preserve empty string values`() {
+            val user = User(userName = "test", displayName = "")
+            val json = serializer.serializeToString(user)
+
+            // Empty strings are valid SCIM attribute values and must not be suppressed
+            json shouldContain "\"displayName\""
         }
     }
 
@@ -332,6 +343,73 @@ class JacksonScimSerializerTest {
 
             deserialized.userName shouldBe userName
             deserialized.displayName shouldBe displayName
+        }
+    }
+
+    @Nested
+    inner class EnrichMetaLocationTest {
+        @Test
+        fun `should add meta location to JSON without existing meta`() {
+            val user = User(userName = "test")
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"location\":\"https://example.com/scim/v2/Users/123\""
+        }
+
+        @Test
+        fun `should add meta location to JSON with existing meta`() {
+            val user = User(
+                userName = "test",
+                meta = Meta(created = Instant.parse("2025-04-01T12:00:00Z")),
+            )
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"location\":\"https://example.com/scim/v2/Users/123\""
+            json shouldContain "2025-04-01T12:00:00Z"
+        }
+
+        @Test
+        fun `should set resourceType when not already present`() {
+            val user = User(userName = "test")
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123", "User")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"resourceType\":\"User\""
+        }
+
+        @Test
+        fun `should not overwrite existing resourceType`() {
+            val user = User(
+                userName = "test",
+                meta = Meta(resourceType = "OriginalType"),
+            )
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123", "User")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"resourceType\":\"OriginalType\""
+            json shouldNotContain "\"resourceType\":\"User\""
+        }
+
+        @Test
+        fun `should not set resourceType when parameter is null`() {
+            val user = User(userName = "test")
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123", null)
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"location\""
+            json shouldNotContain "\"resourceType\""
         }
     }
 }

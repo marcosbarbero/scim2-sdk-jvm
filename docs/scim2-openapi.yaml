@@ -142,7 +142,9 @@ paths:
         - $ref: '#/components/parameters/excludedAttributes'
       responses:
         '200':
-          description: Search results
+          description: |
+            Search results. Each resource in the response includes `meta.location`
+            (absolute URI) and `meta.resourceType` when `baseUrl` is configured.
           content:
             application/scim+json:
               schema:
@@ -165,10 +167,15 @@ paths:
               $ref: '#/components/schemas/User'
       responses:
         '201':
-          description: User created
+          description: |
+            User created. The response body includes `meta.location` set to the absolute
+            URI of the new resource when `baseUrl` is configured. The `Location` header
+            matches `meta.location`.
           headers:
             Location:
-              description: URI of the created resource
+              description: |
+                URI of the created resource. Absolute when baseUrl is configured,
+                relative path otherwise. Matches meta.location in the response body.
               schema:
                 type: string
             ETag:
@@ -219,7 +226,9 @@ paths:
         - $ref: '#/components/parameters/ifNoneMatch'
       responses:
         '200':
-          description: User found
+          description: |
+            User found. Response includes `meta.location` (absolute URI) and
+            `meta.resourceType` when `baseUrl` is configured.
           headers:
             ETag:
               schema:
@@ -251,7 +260,9 @@ paths:
               $ref: '#/components/schemas/User'
       responses:
         '200':
-          description: User replaced
+          description: |
+            User replaced. Response includes `meta.location` and `meta.resourceType`
+            when `baseUrl` is configured.
           headers:
             ETag:
               schema:
@@ -283,7 +294,9 @@ paths:
               $ref: '#/components/schemas/PatchRequest'
       responses:
         '200':
-          description: User patched
+          description: |
+            User patched. Response includes `meta.location` and `meta.resourceType`
+            when `baseUrl` is configured.
           content:
             application/scim+json:
               schema:
@@ -344,12 +357,19 @@ paths:
               $ref: '#/components/schemas/Group'
       responses:
         '201':
-          description: Group created
+          description: |
+            Group created. The response body includes `meta.location` set to the absolute
+            URI of the new resource when `baseUrl` is configured. The `Location` header
+            matches `meta.location`.
           headers:
             Location:
+              description: |
+                URI of the created resource. Absolute when baseUrl is configured,
+                relative path otherwise. Matches meta.location in the response body.
               schema:
                 type: string
             ETag:
+              description: Version of the created resource
               schema:
                 type: string
           content:
@@ -800,21 +820,31 @@ components:
     Meta:
       type: object
       readOnly: true
+      description: |
+        Resource metadata per RFC 7643 S3.1. The `location` field is an absolute URI
+        set by the server when `baseUrl` is configured (RFC 7644 S3.1). The `resourceType`
+        field indicates the resource type name (e.g., "User", "Group").
       properties:
         resourceType:
           type: string
+          description: The resource type name (e.g., "User", "Group", "ServiceProviderConfig")
         created:
           type: string
           format: date-time
+          description: Date and time the resource was created (RFC 7643 S3.1)
         lastModified:
           type: string
           format: date-time
+          description: Date and time the resource was last modified (RFC 7643 S3.1)
         location:
           type: string
           format: uri
+          description: |
+            Absolute URI of the resource (RFC 7643 S3.1). Set by the server when `baseUrl`
+            is configured. For POST responses, this matches the Location header value.
         version:
           type: string
-          description: ETag value (e.g., W/"1")
+          description: ETag value for optimistic concurrency (e.g., W/"1")
 
     ListResponse:
       type: object
@@ -1021,6 +1051,8 @@ components:
           items:
             type: string
           example: ["urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"]
+        meta:
+          $ref: '#/components/schemas/Meta'
         patch:
           type: object
           properties:
@@ -1084,6 +1116,8 @@ components:
           type: string
         description:
           type: string
+        meta:
+          $ref: '#/components/schemas/Meta'
         attributes:
           type: array
           items:
@@ -1132,6 +1166,8 @@ components:
           type: string
         description:
           type: string
+        meta:
+          $ref: '#/components/schemas/Meta'
         endpoint:
           type: string
         schema:

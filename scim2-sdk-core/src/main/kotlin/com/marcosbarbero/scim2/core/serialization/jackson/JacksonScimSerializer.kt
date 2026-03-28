@@ -20,6 +20,7 @@ import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.KotlinModule
 import kotlin.reflect.KClass
 
@@ -35,13 +36,28 @@ class JacksonScimSerializer(private val objectMapper: ObjectMapper) : ScimSerial
 
     override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
 
+    override fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String?): ByteArray {
+        val tree = objectMapper.readTree(json) as ObjectNode
+        val metaNode = tree.get("meta")
+        val meta = if (metaNode != null && metaNode is ObjectNode) {
+            metaNode
+        } else {
+            objectMapper.createObjectNode().also { tree.set("meta", it) }
+        }
+        meta.put("location", location)
+        if (resourceType != null && !meta.has("resourceType")) {
+            meta.put("resourceType", resourceType)
+        }
+        return objectMapper.writeValueAsBytes(tree)
+    }
+
     companion object {
         fun defaultObjectMapper(): ObjectMapper = JsonMapper.builder()
             .addModule(KotlinModule.Builder().build())
             .addModule(ScimModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .changeDefaultPropertyInclusion { incl ->
-                incl.withValueInclusion(JsonInclude.Include.NON_EMPTY)
+                incl.withValueInclusion(JsonInclude.Include.NON_NULL)
             }
             .build()
     }

@@ -26,4 +26,12 @@ interface ScimSerializer {
     fun serializeToString(value: Any): String
 
     fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T
+
+    /**
+     * Enriches already-serialized JSON bytes by setting `meta.location` (and optionally
+     * `meta.resourceType` if not already present).
+     *
+     * Operates on the wire format to avoid lossy domain-object round-trips.
+     */
+    fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String? = null): ByteArray
 }
