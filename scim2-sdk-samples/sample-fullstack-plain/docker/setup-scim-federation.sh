@@ -21,9 +21,15 @@ TOKEN=$(curl -sf -X POST "$KEYCLOAK_URL/realms/master/protocol/openid-connect/to
   -d "grant_type=password&client_id=admin-cli&username=admin&password=admin" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
+echo "Getting realm ID..."
+REALM_ID=$(curl -sf -H "Authorization: Bearer $TOKEN" \
+  "$KEYCLOAK_URL/admin/realms/$REALM" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+echo "Realm ID: $REALM_ID"
+
 echo "Checking if SCIM federation already exists..."
 EXISTING=$(curl -sf -H "Authorization: Bearer $TOKEN" \
-  "$KEYCLOAK_URL/admin/realms/$REALM/components?type=org.keycloak.storage.UserStorageProvider" \
+  "$KEYCLOAK_URL/admin/realms/$REALM/components" \
   | python3 -c "
 import sys, json
 components = json.load(sys.stdin)
@@ -47,7 +53,7 @@ curl -sf -X POST \
     "name": "scim-provider",
     "providerId": "skss-scim2-storage",
     "providerType": "org.keycloak.storage.UserStorageProvider",
-    "parentId": "'"$REALM"'",
+    "parentId": "'"$REALM_ID"'",
     "config": {
       "endPoint": ["'"$SCIM_ENDPOINT"'"],
       "priority": ["0"],
