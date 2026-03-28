@@ -87,6 +87,17 @@ class FilterEngineTest {
 
     @Test
     fun `compound filter with and should narrow results`() {
+        // "active eq true" matches alice and charlie; "displayName co "Jones"" matches bob
+        // AND of these should return 0 because Bob Jones is inactive
+        val result = FilterEngine.filter(users, "active eq true and displayName co \"Jones\"", objectMapper)
+
+        result shouldHaveSize 0
+    }
+
+    @Test
+    fun `compound filter with and returns intersection`() {
+        // "active eq true" matches alice and charlie; "displayName co "Smith"" matches alice and charlie
+        // AND of these should return both alice and charlie
         val result = FilterEngine.filter(users, "active eq true and displayName co \"Smith\"", objectMapper)
 
         result shouldHaveSize 2

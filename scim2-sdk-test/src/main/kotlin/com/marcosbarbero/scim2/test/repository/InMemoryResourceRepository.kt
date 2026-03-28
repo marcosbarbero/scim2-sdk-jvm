@@ -21,15 +21,18 @@ import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
+import com.marcosbarbero.scim2.core.domain.model.search.SortOrder
 import com.marcosbarbero.scim2.core.domain.vo.ETag
 import com.marcosbarbero.scim2.core.filter.FilterEngine
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.server.port.ResourceRepository
+import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 class InMemoryResourceRepository<T : ScimResource>(
+    private val objectMapper: ObjectMapper = defaultObjectMapper(),
     private val copyWithIdAndMeta: (T, String, Meta) -> T,
 ) : ResourceRepository<T> {
 
@@ -84,21 +87,38 @@ class InMemoryResourceRepository<T : ScimResource>(
     override fun search(request: SearchRequest): ListResponse<T> {
         val all = store.values.toList()
         val filtered = FilterEngine.filter(all, request.filter, objectMapper)
+        val sorted = applySorting(filtered, request.sortBy, request.sortOrder)
         val startIndex = request.startIndex ?: 1
-        val count = request.count ?: filtered.size
+        val count = request.count ?: sorted.size
         val start = (startIndex - 1).coerceAtLeast(0)
-        val end = (start + count).coerceAtMost(filtered.size)
-        val page = if (start < filtered.size) filtered.subList(start, end) else emptyList()
+        val end = (start + count).coerceAtMost(sorted.size)
+        val page = if (start < sorted.size) sorted.subList(start, end) else emptyList()
         return ListResponse(
-            totalResults = filtered.size,
+            totalResults = sorted.size,
             itemsPerPage = page.size,
             startIndex = startIndex,
             resources = page,
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun applySorting(resources: List<T>, sortBy: String?, sortOrder: SortOrder?): List<T> {
+        if (sortBy == null) return resources
+        val descending = sortOrder == SortOrder.DESCENDING
+        return resources.sortedWith(
+            Comparator { a, b ->
+                val mapA = objectMapper.convertValue(a, Map::class.java) as Map<String, Any?>
+                val mapB = objectMapper.convertValue(b, Map::class.java) as Map<String, Any?>
+                val valA = mapA[sortBy]
+                val valB = mapB[sortBy]
+                val cmp = compareValues(valA as? Comparable<Any>, valB as? Comparable<Any>)
+                if (descending) -cmp else cmp
+            },
+        )
+    }
+
     companion object {
-        private val objectMapper = JacksonScimSerializer.defaultObjectMapper()
+        fun defaultObjectMapper(): ObjectMapper = JacksonScimSerializer.defaultObjectMapper()
     }
 
     fun count(): Int = store.size

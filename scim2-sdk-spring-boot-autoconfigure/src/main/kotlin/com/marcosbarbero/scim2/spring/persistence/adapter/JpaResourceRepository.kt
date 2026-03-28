@@ -30,8 +30,10 @@ import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.spring.persistence.entity.ScimResourceEntity
 import com.marcosbarbero.scim2.spring.persistence.repository.ScimResourceJpaRepository
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.node.ObjectNode
 import java.time.Instant
@@ -42,7 +44,11 @@ class JpaResourceRepository<T : ScimResource>(
     private val serializer: ScimSerializer,
     private val resourceType: Class<T>,
     private val resourceTypeName: String,
+    private val filterObjectMapper: ObjectMapper = JacksonScimSerializer.defaultObjectMapper(),
+    private val maxFetchSize: Int = DEFAULT_MAX_FETCH_SIZE,
 ) : ResourceRepository<T> {
+
+    private val logger = LoggerFactory.getLogger(JpaResourceRepository::class.java)
 
     override fun create(resource: T): T {
         // Idempotency: if a resource with the same externalId already exists, update it
@@ -119,7 +125,7 @@ class JpaResourceRepository<T : ScimResource>(
 
         val filterString = request.filter
         if (!filterString.isNullOrBlank()) {
-            return searchWithFilter(filterString, startIndex, count)
+            return searchWithFilter(filterString, startIndex, count, request.sortBy, request.sortOrder)
         }
 
         val sortDirection = if (request.sortOrder == SortOrder.DESCENDING) {
@@ -146,25 +152,54 @@ class JpaResourceRepository<T : ScimResource>(
         )
     }
 
-    private fun searchWithFilter(filterString: String, startIndex: Int, count: Int): ListResponse<T> {
-        val allEntities = jpaRepository.findByResourceType(resourceTypeName)
-        val allResources = allEntities.map {
+    private fun searchWithFilter(
+        filterString: String,
+        startIndex: Int,
+        count: Int,
+        sortBy: String?,
+        sortOrder: SortOrder?,
+    ): ListResponse<T> {
+        logger.warn(
+            "Applying SCIM filter in memory — all resources of type {} loaded from database. " +
+                "Consider SQL-level filtering for large datasets.",
+            resourceTypeName,
+        )
+        val pageable = PageRequest.of(0, maxFetchSize, Sort.by(Sort.Direction.ASC, "created"))
+        val fetchedPage = jpaRepository.findByResourceType(resourceTypeName, pageable)
+        val allResources = fetchedPage.content.map {
             serializer.deserializeFromString(it.resourceJson, resourceType.kotlin)
         }
         val filtered = FilterEngine.filter(allResources, filterString, filterObjectMapper)
+        val sorted = applySorting(filtered, sortBy, sortOrder)
         val start = (startIndex - 1).coerceAtLeast(0)
-        val end = (start + count).coerceAtMost(filtered.size)
-        val page = if (start < filtered.size) filtered.subList(start, end) else emptyList()
+        val end = (start + count).coerceAtMost(sorted.size)
+        val page = if (start < sorted.size) sorted.subList(start, end) else emptyList()
         return ListResponse(
-            totalResults = filtered.size,
+            totalResults = sorted.size,
             itemsPerPage = page.size,
             startIndex = startIndex,
             resources = page,
         )
     }
 
+    @Suppress("UNCHECKED_CAST")
+    private fun applySorting(resources: List<T>, sortBy: String?, sortOrder: SortOrder?): List<T> {
+        if (sortBy == null) return resources
+        val descending = sortOrder == SortOrder.DESCENDING
+        return resources.sortedWith(
+            Comparator { a, b ->
+                val mapA = filterObjectMapper.convertValue(a, Map::class.java) as Map<String, Any?>
+                val mapB = filterObjectMapper.convertValue(b, Map::class.java) as Map<String, Any?>
+                val valA = mapA[sortBy]
+                val valB = mapB[sortBy]
+                val cmp = compareValues(valA as? Comparable<Any>, valB as? Comparable<Any>)
+                if (descending) -cmp else cmp
+            },
+        )
+    }
+
     companion object {
-        private val filterObjectMapper = JacksonScimSerializer.defaultObjectMapper()
+        const val DEFAULT_MAX_FETCH_SIZE = 10_000
     }
 
     private fun extractDisplayName(resource: T): String? = when (resource) {

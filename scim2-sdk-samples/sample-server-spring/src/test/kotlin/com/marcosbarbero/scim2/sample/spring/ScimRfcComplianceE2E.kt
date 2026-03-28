@@ -309,6 +309,21 @@ class ScimRfcComplianceE2E(@LocalServerPort val port: Int) {
         json["totalResults"].intValue() shouldBe 0
     }
 
+    @Test
+    fun `search with invalid filter returns 400 invalidFilter`() {
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val encodedFilter = java.net.URLEncoder.encode("this is not a valid filter !!!", "UTF-8")
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Users?filter=$encodedFilter"))
+            .GET()
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 400
+        json["scimType"].stringValue() shouldBe "invalidFilter"
+    }
+
     // === Verify raw JSON wire format ===
 
     @Test
