@@ -29,6 +29,22 @@ REALM="scim-sample"
 EXISTING=$(/opt/keycloak/bin/kcadm.sh get components -r "$REALM" 2>/dev/null | grep -o '"skss-scim2-storage"' || true)
 
 if [ -z "$EXISTING" ]; then
+  # Wait for the SCIM backend to be reachable before creating the federation
+  # (the suvera extension validates the endpoint during component creation)
+  # Use bash TCP check since curl may not be available in the Keycloak image
+  SCIM_HOST=$(echo "$SCIM_ENDPOINT" | sed -E 's|https?://([^:/]+).*|\1|')
+  SCIM_PORT=$(echo "$SCIM_ENDPOINT" | sed -E 's|https?://[^:]+:([0-9]+).*|\1|')
+  SCIM_PORT=${SCIM_PORT:-8080}
+  echo "Waiting for SCIM backend at $SCIM_HOST:$SCIM_PORT..."
+  for i in $(seq 1 60); do
+    if exec 3<>/dev/tcp/$SCIM_HOST/$SCIM_PORT 2>/dev/null; then
+      exec 3>&-
+      sleep 3
+      break
+    fi
+    sleep 3
+  done
+
   echo "Creating SCIM User Federation pointing to $SCIM_ENDPOINT..."
   /opt/keycloak/bin/kcadm.sh create components -r "$REALM" \
     -s name=scim-provider \

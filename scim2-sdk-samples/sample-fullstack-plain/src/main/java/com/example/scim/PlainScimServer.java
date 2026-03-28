@@ -77,7 +77,10 @@ public class PlainScimServer {
         var discoveryService = new DiscoveryService(handlers, schemaRegistry, config);
         var dispatcher = new ScimEndpointDispatcher(
                 handlers, null, null, discoveryService, config, serializer,
-                new ETagEngine(), List.of(), null, null, null, null, null
+                new ETagEngine(), List.of(), null, null,
+                com.marcosbarbero.scim2.core.event.NoOpEventPublisher.INSTANCE,
+                com.marcosbarbero.scim2.core.observability.NoOpScimMetrics.INSTANCE,
+                com.marcosbarbero.scim2.core.observability.NoOpScimTracer.INSTANCE
         );
 
         // Start JDK HTTP server with virtual threads
