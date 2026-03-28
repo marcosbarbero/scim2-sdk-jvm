@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.marcosbarbero.scim2.core.domain.vo
+package com.example.scim.config;
 
-@JvmInline
-value class ETag(val value: String) {
-    override fun toString(): String = value
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-    companion object {
-        @JvmStatic
-        fun of(value: String): ETag = ETag(value)
-    }
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
 }

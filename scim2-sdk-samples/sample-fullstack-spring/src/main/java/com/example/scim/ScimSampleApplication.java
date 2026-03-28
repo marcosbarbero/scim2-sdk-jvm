@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.marcosbarbero.scim2.core.domain.vo
+package com.example.scim;
 
-@JvmInline
-value class ETag(val value: String) {
-    override fun toString(): String = value
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-    companion object {
-        @JvmStatic
-        fun of(value: String): ETag = ETag(value)
+@SpringBootApplication
+public class ScimSampleApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ScimSampleApplication.class, args);
     }
 }

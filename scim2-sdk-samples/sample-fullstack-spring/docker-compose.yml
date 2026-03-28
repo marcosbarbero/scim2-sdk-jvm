@@ -1,0 +1,118 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: scimdb
+      POSTGRES_USER: scim
+      POSTGRES_PASSWORD: scim
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scim -d scimdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Second PostgreSQL for the target SCIM server (bidirectional sync)
+  postgres-target:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: scimdb
+      POSTGRES_USER: scim
+      POSTGRES_PASSWORD: scim
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-target:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scim -d scimdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    build:
+      context: ./docker/keycloak
+      dockerfile: Dockerfile
+    command: start-dev --import-realm
+    environment:
+      KC_HTTP_PORT: 9090
+      KC_HTTP_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: true
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/keycloak/scim-sample-realm.json:/opt/keycloak/data/import/scim-sample-realm.json:ro
+    healthcheck:
+      test: >-
+        bash -c 'exec 3<>/dev/tcp/localhost/9000 &&
+        printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 &&
+        timeout 3 cat <&3 | grep -q UP'
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  # Primary SCIM server — receives users from Keycloak, pushes to target
+  backend:
+    build:
+      context: ../..
+      dockerfile: scim2-sdk-samples/sample-fullstack-spring/Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scimdb
+      SPRING_DATASOURCE_USERNAME: scim
+      SPRING_DATASOURCE_PASSWORD: scim
+      KEYCLOAK_CLIENT_ID: scim-sample-app
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:9090/realms/scim-sample
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:9090/realms/scim-sample/protocol/openid-connect/certs
+      # Outbound provisioning — push changes to the target SCIM server
+      SCIM_CLIENT_BASE_URL: http://backend-target:8080/scim/v2
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      backend-target:
+        condition: service_started
+
+  # Target SCIM server — receives outbound provisioning from the primary
+  backend-target:
+    build:
+      context: ../..
+      dockerfile: scim2-sdk-samples/sample-fullstack-spring/Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-target:5432/scimdb
+      SPRING_DATASOURCE_USERNAME: scim
+      SPRING_DATASOURCE_PASSWORD: scim
+      # No Keycloak auth — permit all for simplicity
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:9090/realms/scim-sample
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:9090/realms/scim-sample/protocol/openid-connect/certs
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres-target:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../shared-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_KEYCLOAK_URL: http://localhost:9090
+        VITE_KEYCLOAK_REALM: scim-sample
+        VITE_KEYCLOAK_CLIENT_ID: scim-sample-app
+        VITE_API_MODE: rest
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  pgdata-target:
