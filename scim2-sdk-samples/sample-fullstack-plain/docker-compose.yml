@@ -59,8 +59,8 @@ services:
   # Primary SCIM server — plain JDK HTTP server with PostgreSQL
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: scim2-sdk-samples/sample-fullstack-plain/Dockerfile
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/scimdb
       DATABASE_USER: scim
@@ -76,8 +76,8 @@ services:
   # Target SCIM server — receives outbound provisioning
   backend-target:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: scim2-sdk-samples/sample-fullstack-plain/Dockerfile
     environment:
       DATABASE_URL: jdbc:postgresql://postgres-target:5432/scimdb
       DATABASE_USER: scim

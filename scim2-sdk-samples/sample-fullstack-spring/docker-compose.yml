@@ -60,8 +60,8 @@ services:
   # Primary SCIM server — receives users from Keycloak, pushes to target
   backend:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: scim2-sdk-samples/sample-fullstack-spring/Dockerfile
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scimdb
       SPRING_DATASOURCE_USERNAME: scim
@@ -84,8 +84,8 @@ services:
   # Target SCIM server — receives outbound provisioning from the primary
   backend-target:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: scim2-sdk-samples/sample-fullstack-spring/Dockerfile
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-target:5432/scimdb
       SPRING_DATASOURCE_USERNAME: scim
