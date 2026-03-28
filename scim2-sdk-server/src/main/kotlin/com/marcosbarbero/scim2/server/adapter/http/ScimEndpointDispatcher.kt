@@ -246,8 +246,9 @@ class ScimEndpointDispatcher(
                 val relativeLocation = created.id?.let { "${config.basePath}${handler.endpoint}/$it" }
                 val absoluteLocation = if (relativeLocation != null) normalizedBaseUrl?.let { "$it$relativeLocation" } else null
                 val locationHeader = absoluteLocation ?: relativeLocation ?: "${config.basePath}${handler.endpoint}"
-                val bytes = serializer.serialize(created)
-                val enrichedBytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                var bytes = serializer.serialize(created)
+                bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                val enrichedBytes = enrichMemberRefs(bytes)
                 eventPublisher.publish(
                     ResourceCreatedEvent(
                         resourceType = resourceTypeName,
@@ -418,9 +419,15 @@ class ScimEndpointDispatcher(
         absoluteLocation: String?,
         resourceType: String?,
     ): ScimHttpResponse {
-        val bytes = serializer.serialize(resource)
-        val enrichedBytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceType)
-        return ScimHttpResponse.ok(enrichedBytes)
+        var bytes = serializer.serialize(resource)
+        bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceType)
+        bytes = enrichMemberRefs(bytes)
+        return ScimHttpResponse.ok(bytes)
+    }
+
+    private fun enrichMemberRefs(bytes: ByteArray): ByteArray {
+        normalizedBaseUrl ?: return bytes
+        return serializer.enrichMemberRefs(bytes, "$normalizedBaseUrl${config.basePath}")
     }
 
     private fun <T : ScimResource> okWithEnrichedListResponse(
@@ -429,13 +436,15 @@ class ScimEndpointDispatcher(
         resourceTypeName: String,
     ): ScimHttpResponse {
         if (normalizedBaseUrl == null) return ok(result)
+        val baseScimUrl = "$normalizedBaseUrl${config.basePath}"
         val enrichedResources = result.resources.map { resource ->
-            if (resource.id == null) {
-                serializer.serialize(resource)
-            } else {
-                val location = "$normalizedBaseUrl${config.basePath}${handler.endpoint}/${resource.id}"
-                serializer.enrichMetaLocation(serializer.serialize(resource), location, resourceTypeName)
+            var bytes = serializer.serialize(resource)
+            if (resource.id != null) {
+                val location = "$baseScimUrl${handler.endpoint}/${resource.id}"
+                bytes = serializer.enrichMetaLocation(bytes, location, resourceTypeName)
             }
+            bytes = serializer.enrichMemberRefs(bytes, baseScimUrl)
+            bytes
         }
         // Build the ListResponse JSON manually with enriched resource bytes
         val listBytes = serializer.serialize(result.copy(resources = emptyList()))

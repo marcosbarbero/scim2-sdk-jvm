@@ -34,4 +34,12 @@ interface ScimSerializer {
      * Operates on the wire format to avoid lossy domain-object round-trips.
      */
     fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String? = null): ByteArray
+
+    /**
+     * Enriches already-serialized JSON bytes by setting `$ref` on `members` and `groups` arrays.
+     *
+     * For each member/group entry that has a `value` (ID) and `type` but no `$ref`,
+     * computes `$ref` as `{baseUrl}/{type}s/{value}` (e.g., `https://example.com/scim/v2/Users/123`).
+     */
+    fun enrichMemberRefs(json: ByteArray, baseScimUrl: String): ByteArray = json
 }

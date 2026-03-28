@@ -811,6 +811,7 @@ components:
         $ref:
           type: string
           format: uri
+          description: Absolute URI of the member resource (e.g., https://example.com/scim/v2/Users/123). Populated by the server when baseUrl is configured.
         display:
           type: string
         type:

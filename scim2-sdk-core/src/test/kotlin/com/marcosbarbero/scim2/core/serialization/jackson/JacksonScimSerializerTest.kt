@@ -412,4 +412,57 @@ class JacksonScimSerializerTest {
             json shouldNotContain "\"resourceType\""
         }
     }
+
+    @Nested
+    inner class EnrichMemberRefsTest {
+        @Test
+        fun `should add ref to group members`() {
+            val group = Group(
+                displayName = "Engineering",
+                members = listOf(GroupMembership(value = "user-123", display = "Jane", type = "User")),
+            )
+            val bytes = serializer.serialize(group)
+
+            val enriched = serializer.enrichMemberRefs(bytes, "https://example.com/scim/v2")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"\$ref\":\"https://example.com/scim/v2/Users/user-123\""
+        }
+
+        @Test
+        fun `should not overwrite existing ref`() {
+            val group = Group(
+                displayName = "Engineering",
+                members = listOf(
+                    GroupMembership(
+                        value = "user-123",
+                        display = "Jane",
+                        type = "User",
+                        ref = URI.create("https://other.com/scim/v2/Users/user-123"),
+                    ),
+                ),
+            )
+            val bytes = serializer.serialize(group)
+
+            val enriched = serializer.enrichMemberRefs(bytes, "https://example.com/scim/v2")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "https://other.com/scim/v2/Users/user-123"
+            json shouldNotContain "https://example.com"
+        }
+
+        @Test
+        fun `should add ref to user groups`() {
+            val user = User(
+                userName = "jane",
+                groups = listOf(GroupMembership(value = "group-456", display = "Admins", type = "Group")),
+            )
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMemberRefs(bytes, "https://example.com/scim/v2")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"\$ref\":\"https://example.com/scim/v2/Groups/group-456\""
+        }
+    }
 }

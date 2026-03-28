@@ -51,6 +51,26 @@ class JacksonScimSerializer(private val objectMapper: ObjectMapper) : ScimSerial
         return objectMapper.writeValueAsBytes(tree)
     }
 
+    override fun enrichMemberRefs(json: ByteArray, baseScimUrl: String): ByteArray {
+        val tree = objectMapper.readTree(json) as ObjectNode
+        val base = baseScimUrl.trimEnd('/')
+        enrichArrayRefs(tree, "members", base)
+        enrichArrayRefs(tree, "groups", base)
+        return objectMapper.writeValueAsBytes(tree)
+    }
+
+    private fun enrichArrayRefs(tree: ObjectNode, fieldName: String, baseScimUrl: String) {
+        val array = tree.get(fieldName) ?: return
+        if (!array.isArray) return
+        for (element in array) {
+            if (element !is ObjectNode) continue
+            if (element.has("\$ref")) continue
+            val value = element.get("value")?.asString() ?: continue
+            val type = element.get("type")?.asString() ?: continue
+            element.put("\$ref", "$baseScimUrl/${type}s/$value")
+        }
+    }
+
     companion object {
         fun defaultObjectMapper(): ObjectMapper = JsonMapper.builder()
             .addModule(KotlinModule.Builder().build())
