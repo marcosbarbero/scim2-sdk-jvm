@@ -117,6 +117,23 @@ class ScimServerAutoConfiguration {
     )
 
     @Bean
+    @ConditionalOnMissingBean(BulkHandler::class)
+    fun scimBulkHandler(
+        handlers: ObjectProvider<ResourceHandler<*>>,
+        serializer: ScimSerializer,
+        config: ScimServerConfig,
+    ): BulkHandler {
+        val engine = com.marcosbarbero.scim2.server.engine.BulkEngine(
+            handlers = handlers.orderedStream().toList(),
+            serializer = serializer,
+            config = config,
+        )
+        return object : BulkHandler {
+            override fun processBulk(request: com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest, context: com.marcosbarbero.scim2.server.port.ScimRequestContext) = engine.execute(request, context)
+        }
+    }
+
+    @Bean
     @ConditionalOnMissingBean(name = ["scimUserHandler"])
     fun scimUserHandler(repository: ObjectProvider<ResourceRepository<User>>, objectMapper: ObjectProvider<ObjectMapper>): ResourceHandler<User>? {
         val repo = repository.ifAvailable ?: return null
