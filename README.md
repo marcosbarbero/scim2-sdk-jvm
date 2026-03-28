@@ -213,6 +213,26 @@ Chain multiple publishers with `CompositeEventPublisher`:
 var publisher = new CompositeEventPublisher(outboundPublisher, auditPublisher);
 ```
 
+## Observability
+
+The SDK provides built-in observability via [Micrometer](https://micrometer.io/) metrics, structured logging, and event correlation.
+
+See the [Observability Guide](docs/observability.md) for details.
+
+### Quick Start (Spring Boot)
+
+Add Micrometer and actuator:
+
+```yaml
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,metrics
+```
+
+Metrics are automatically recorded for all SCIM operations. See the [Spring Boot full-stack sample](scim2-sdk-samples/sample-fullstack-spring/) for a complete example with Prometheus + Grafana.
+
 ## Sample Applications
 
 | Sample | Description |
@@ -242,6 +262,7 @@ All properties are optional with sensible defaults:
 | Property | Default | Description |
 |---|---|---|
 | `scim.base-path` | `/scim/v2` | Base URL path for all SCIM endpoints |
+| `scim.base-url` | *(none)* | Base URL for absolute `meta.location` URIs. When set, all responses include `meta.location`. Example: `http://localhost:8080` |
 | `scim.bulk.enabled` | `true` | Enable [Bulk Operations (RFC 7644 §3.7)](https://www.rfc-editor.org/rfc/rfc7644#section-3.7) — allows clients to batch multiple create/update/delete operations into a single HTTP request, reducing round-trips for large provisioning jobs |
 | `scim.bulk.max-operations` | `1000` | Maximum number of individual operations allowed in a single bulk request |
 | `scim.bulk.max-payload-size` | `1048576` | Maximum payload size (bytes) for bulk requests (default: 1 MB) |

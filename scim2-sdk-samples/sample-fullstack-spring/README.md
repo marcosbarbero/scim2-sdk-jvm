@@ -76,6 +76,42 @@ curl -s http://localhost:8080/scim/v2/Users | python3 -c "import sys,json; [prin
 curl -s http://localhost:8081/scim/v2/Users | python3 -c "import sys,json; [print(f'  Target: {r[\"userName\"]}') for r in json.load(sys.stdin).get('Resources',[])]"
 ```
 
+## Observability
+
+The sample includes an optional observability stack (Prometheus + Grafana) for monitoring SCIM operations.
+
+### Start with observability
+
+```bash
+docker compose --profile observability up -d
+```
+
+This starts all services plus:
+- **Prometheus** at http://localhost:9091 -- scrapes `/actuator/prometheus` from both SCIM servers
+- **Grafana** at http://localhost:3000 (login: admin / admin) -- pre-built SCIM dashboard
+
+### SCIM Dashboard
+
+Open Grafana and navigate to **Dashboards > SCIM Overview**. The dashboard includes:
+
+1. **Request Rate by Endpoint** -- requests per second broken down by endpoint, method, and status
+2. **Request Latency p95** -- 95th percentile latency for each endpoint
+3. **Active Requests** -- current in-flight SCIM requests
+4. **Error Rate** -- rate of 4xx/5xx responses
+
+### Metrics Exposed
+
+The SCIM SDK automatically registers the following metrics when Micrometer is on the classpath:
+
+| Metric | Type | Tags |
+|---|---|---|
+| `scim.request.duration` | Timer | endpoint, method, status |
+| `scim.request.active` | Gauge | endpoint |
+| `scim.filter.parse.duration` | Timer | success |
+| `scim.patch.duration` | Timer | endpoint |
+| `scim.bulk.duration` | Timer | -- |
+| `scim.search.duration` | Timer | endpoint |
+
 ## Known Limitations
 
 ### Keycloak SCIM Extension (suvera/keycloak-scim2-storage)

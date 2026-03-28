@@ -15,7 +15,17 @@
  */
 package com.marcosbarbero.scim2.spring.autoconfigure
 
+import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
+import com.marcosbarbero.scim2.core.domain.model.resource.User
+import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
+import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.observability.ScimMetrics
+import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
+import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
+import com.marcosbarbero.scim2.server.http.HttpMethod
+import com.marcosbarbero.scim2.server.http.ScimHttpRequest
+import com.marcosbarbero.scim2.server.port.ResourceHandler
+import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import com.marcosbarbero.scim2.spring.observability.MicrometerScimMetrics
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -24,6 +34,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Test
 import org.springframework.boot.autoconfigure.AutoConfigurations
+import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 
 class ScimObservabilityAutoConfigurationTest {
@@ -50,7 +61,7 @@ class ScimObservabilityAutoConfigurationTest {
     fun `does not create ScimMetrics when no MeterRegistry`() {
         contextRunner
             .run { context ->
-                context.containsBean("micrometerScimMetrics") shouldBe false
+                context.getBeansOfType(ScimMetrics::class.java).isEmpty() shouldBe true
             }
     }
 
@@ -71,5 +82,73 @@ class ScimObservabilityAutoConfigurationTest {
             .run { context ->
                 context.containsBean("micrometerScimMetrics") shouldBe false
             }
+    }
+
+    @Test
+    fun `SCIM request through dispatcher records metrics in MeterRegistry`() {
+        val fullContextRunner = ApplicationContextRunner()
+            .withConfiguration(
+                AutoConfigurations.of(
+                    JacksonAutoConfiguration::class.java,
+                    ScimJacksonAutoConfiguration::class.java,
+                    ScimServerAutoConfiguration::class.java,
+                    ScimObservabilityAutoConfiguration::class.java,
+                ),
+            )
+
+        fullContextRunner
+            .withPropertyValues("scim.base-url=http://test.local")
+            .withBean(MeterRegistry::class.java, { SimpleMeterRegistry() })
+            .withBean("testUserHandler", ResourceHandler::class.java, { StubUserHandler() })
+            .run { context ->
+                val dispatcher = context.getBean(ScimEndpointDispatcher::class.java)
+                val registry = context.getBean(MeterRegistry::class.java)
+
+                val serializer = JacksonScimSerializer()
+                val userJson = serializer.serialize(User(userName = "metrics.test"))
+
+                // Dispatch a POST /Users request
+                val request = ScimHttpRequest(
+                    method = HttpMethod.POST,
+                    path = "/scim/v2/Users",
+                    headers = mapOf("Content-Type" to listOf("application/scim+json")),
+                    body = userJson,
+                )
+                val response = dispatcher.dispatch(request)
+                response.status shouldBe 201
+
+                // Verify scim.request.duration timer was recorded
+                val timer = registry.find("scim.request.duration")
+                    .tag("endpoint", "/Users")
+                    .tag("method", "POST")
+                    .tag("status", "201")
+                    .timer()
+                timer.shouldNotBeNull()
+                timer.count() shouldBe 1
+
+                // Verify scim.request.active gauge exists (should be 0 after request completes)
+                val gauge = registry.find("scim.request.active")
+                    .tag("endpoint", "/Users")
+                    .gauge()
+                gauge.shouldNotBeNull()
+                gauge.value() shouldBe 0.0
+            }
+    }
+
+    private class StubUserHandler : ResourceHandler<User> {
+        override val resourceType: Class<User> = User::class.java
+        override val endpoint: String = "/Users"
+
+        override fun get(id: String, context: ScimRequestContext): User = User(id = id, userName = "stub")
+
+        override fun create(resource: User, context: ScimRequestContext): User = resource.copy(id = "generated-id")
+
+        override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = resource.copy(id = id)
+
+        override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = User(id = id, userName = "patched")
+
+        override fun delete(id: String, version: String?, context: ScimRequestContext) {}
+
+        override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = ListResponse(totalResults = 0, resources = emptyList())
     }
 }
