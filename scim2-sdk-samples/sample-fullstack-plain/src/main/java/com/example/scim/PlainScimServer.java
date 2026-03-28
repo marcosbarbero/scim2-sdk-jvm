@@ -22,10 +22,10 @@ import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer;
 import com.marcosbarbero.scim2.server.adapter.discovery.DiscoveryService;
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher;
 import com.marcosbarbero.scim2.server.config.ScimServerConfig;
+import com.marcosbarbero.scim2.server.engine.ETagEngine;
 import com.marcosbarbero.scim2.server.http.HttpMethod;
 import com.marcosbarbero.scim2.server.http.ScimHttpRequest;
 import com.marcosbarbero.scim2.server.port.ResourceHandler;
-import com.marcosbarbero.scim2.test.handler.InMemoryResourceHandler;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -43,10 +43,7 @@ import java.util.Map;
 
 /**
  * Production-like SCIM 2.0 server using only the JDK HTTP server — no Spring Boot.
- * Demonstrates that scim2-sdk-jvm works without any framework.
- *
- * <p>Uses JDBC for PostgreSQL persistence when DATABASE_URL is set,
- * falls back to in-memory storage otherwise.
+ * Demonstrates that scim2-sdk-jvm works without any framework, with PostgreSQL via plain JDBC.
  */
 public class PlainScimServer {
 
@@ -55,41 +52,21 @@ public class PlainScimServer {
         var config = new ScimServerConfig("/scim/v2");
         var serializer = new JacksonScimSerializer();
 
-        // Create handlers — JDBC if DATABASE_URL is set, in-memory otherwise
-        var dbUrl = System.getenv("DATABASE_URL");
-        List<ResourceHandler<?>> handlers;
+        // PostgreSQL data source
+        var dbUrl = env("DATABASE_URL", "jdbc:postgresql://localhost:5432/scimdb");
+        var ds = new PGSimpleDataSource();
+        ds.setUrl(dbUrl);
+        ds.setUser(env("DATABASE_USER", "scim"));
+        ds.setPassword(env("DATABASE_PASSWORD", "scim"));
 
-        if (dbUrl != null && !dbUrl.isBlank()) {
-            System.out.println("Using PostgreSQL persistence: " + dbUrl);
-            var ds = new PGSimpleDataSource();
-            ds.setUrl(dbUrl);
-            ds.setUser(env("DATABASE_USER", "scim"));
-            ds.setPassword(env("DATABASE_PASSWORD", "scim"));
+        initSchema(ds);
 
-            initSchema(ds);
-
-            var userRepo = new JdbcResourceRepository<>(ds, serializer, User.class, "User");
-            var groupRepo = new JdbcResourceRepository<>(ds, serializer, Group.class, "Group");
-            var userHandler = new InMemoryResourceHandler<>(User.class, "/Users", userRepo);
-            var groupHandler = new InMemoryResourceHandler<>(Group.class, "/Groups", groupRepo);
-            handlers = List.of(userHandler, groupHandler);
-        } else {
-            System.out.println("Using in-memory persistence (set DATABASE_URL for PostgreSQL)");
-            var userRepo = new com.marcosbarbero.scim2.test.repository.InMemoryResourceRepository<>(User.class, (user, id, meta) -> user.copy(
-                    user.getSchemas(), id, user.getExternalId(), meta, user.getUserName(), user.getName(),
-                    user.getDisplayName(), user.getNickName(), user.getProfileUrl(), user.getTitle(),
-                    user.getUserType(), user.getPreferredLanguage(), user.getLocale(), user.getTimezone(),
-                    user.getActive(), user.getPassword(), user.getEmails(), user.getPhoneNumbers(),
-                    user.getIms(), user.getPhotos(), user.getAddresses(), user.getGroups(),
-                    user.getEntitlements(), user.getRoles(), user.getX509Certificates()
-            ));
-            var groupRepo = new com.marcosbarbero.scim2.test.repository.InMemoryResourceRepository<>(Group.class, (group, id, meta) -> group.copy(
-                    group.getSchemas(), id, group.getExternalId(), meta, group.getDisplayName(), group.getMembers()
-            ));
-            var userHandler = new InMemoryResourceHandler<>(User.class, "/Users", userRepo);
-            var groupHandler = new InMemoryResourceHandler<>(Group.class, "/Groups", groupRepo);
-            handlers = List.of(userHandler, groupHandler);
-        }
+        // Create repositories and handlers
+        var userRepo = new JdbcResourceRepository<>(ds, serializer, User.class, "User");
+        var groupRepo = new JdbcResourceRepository<>(ds, serializer, Group.class, "Group");
+        ResourceHandler<User> userHandler = new SimpleResourceHandler<>(User.class, "/Users", userRepo);
+        ResourceHandler<Group> groupHandler = new SimpleResourceHandler<>(Group.class, "/Groups", groupRepo);
+        List<ResourceHandler<?>> handlers = List.of(userHandler, groupHandler);
 
         // Schema registry
         var schemaRegistry = new SchemaRegistry();
@@ -100,10 +77,10 @@ public class PlainScimServer {
         var discoveryService = new DiscoveryService(handlers, schemaRegistry, config);
         var dispatcher = new ScimEndpointDispatcher(
                 handlers, null, null, discoveryService, config, serializer,
-                List.of(), null, null, null, null, null
+                new ETagEngine(), List.of(), null, null, null, null, null
         );
 
-        // Start JDK HTTP server
+        // Start JDK HTTP server with virtual threads
         var server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/scim/v2", exchange -> {
             // CORS headers
@@ -136,6 +113,7 @@ public class PlainScimServer {
         server.start();
 
         System.out.println("Plain SCIM server started on http://localhost:" + port + "/scim/v2");
+        System.out.println("Database: " + dbUrl);
         System.out.println("Try: curl http://localhost:" + port + "/scim/v2/ServiceProviderConfig");
     }
 

@@ -20,7 +20,6 @@ import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource;
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse;
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest;
-import com.marcosbarbero.scim2.core.domain.vo.ETag;
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer;
 import com.marcosbarbero.scim2.server.port.ResourceRepository;
 
@@ -64,7 +63,7 @@ public class JdbcResourceRepository<T extends ScimResource> implements ResourceR
 
         var id = resource.getId() != null ? resource.getId() : UUID.randomUUID().toString();
         var now = Instant.now();
-        var meta = new Meta(resourceTypeName, now, now, null, new ETag("W/\"1\""));
+        var meta = new Meta(resourceTypeName, now, now, null);
         var withMeta = setIdAndMeta(resource, id, meta);
 
         var json = serializer.serializeToString(withMeta);
@@ -121,7 +120,7 @@ public class JdbcResourceRepository<T extends ScimResource> implements ResourceR
 
         var now = Instant.now();
         var newVersion = currentVersion + 1;
-        var meta = new Meta(resourceTypeName, created, now, null, new ETag("W/\"" + newVersion + "\""));
+        var meta = new Meta(resourceTypeName, created, now, null);
         var withMeta = setIdAndMeta(resource, id, meta);
         var json = serializer.serializeToString(withMeta);
 
@@ -187,7 +186,7 @@ public class JdbcResourceRepository<T extends ScimResource> implements ResourceR
             throw new RuntimeException("Failed to search resources", e);
         }
 
-        return new ListResponse<>(total, resources.size(), startIndex, resources);
+        return new ListResponse<>(List.of(com.marcosbarbero.scim2.core.domain.ScimUrns.LIST_RESPONSE), total, resources.size(), startIndex, resources);
     }
 
     private T findByExternalId(String externalId) {
