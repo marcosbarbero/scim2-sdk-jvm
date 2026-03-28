@@ -350,4 +350,140 @@ class ScimRfcComplianceE2E(@LocalServerPort val port: Int) {
         // schemas present
         json shouldContain "\"schemas\""
     }
+
+    // === Bulk Operations (RFC 7644 §3.7) ===
+
+    @Test
+    fun `bulk POST creates multiple users in a single request`() {
+        val suffix = System.nanoTime()
+        val bulkJson = """
+        {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"],
+            "Operations": [
+                {"method": "POST", "path": "/Users", "bulkId": "u1", "data": {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"], "userName": "bulk.user1.$suffix"}},
+                {"method": "POST", "path": "/Users", "bulkId": "u2", "data": {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"], "userName": "bulk.user2.$suffix"}}
+            ]
+        }
+        """.trimIndent()
+
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Bulk"))
+            .header("Content-Type", "application/scim+json")
+            .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bulkJson))
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 200
+        json["schemas"][0].stringValue() shouldBe "urn:ietf:params:scim:api:messages:2.0:BulkResponse"
+        val ops = json["Operations"]
+        ops.size() shouldBe 2
+        ops[0]["status"].stringValue() shouldBe "201"
+        ops[0]["location"].shouldNotBeNull()
+        ops[1]["status"].stringValue() shouldBe "201"
+
+        // Verify users actually exist
+        val user1 = client.get<User>("/Users", ops[0]["location"].stringValue().substringAfterLast("/"))
+        user1.value.userName shouldBe "bulk.user1.$suffix"
+    }
+
+    @Test
+    fun `bulk error response contains ScimError per RFC 7644 §3-7-3`() {
+        val bulkJson = """
+        {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"],
+            "Operations": [
+                {"method": "POST", "path": "/Users", "bulkId": "good", "data": {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"], "userName": "bulk.good.${System.nanoTime()}"}},
+                {"method": "POST", "path": "/Unknown", "bulkId": "bad", "data": {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"], "userName": "bulk.bad"}}
+            ]
+        }
+        """.trimIndent()
+
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Bulk"))
+            .header("Content-Type", "application/scim+json")
+            .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bulkJson))
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 200
+        val ops = json["Operations"]
+        ops.size() shouldBe 2
+
+        // First operation succeeds
+        ops[0]["status"].stringValue() shouldBe "201"
+
+        // Second operation fails with proper ScimError in response
+        ops[1]["status"].stringValue() shouldBe "404"
+        val errorResponse = ops[1]["response"]
+        errorResponse.shouldNotBeNull()
+        errorResponse["schemas"][0].stringValue() shouldBe "urn:ietf:params:scim:api:messages:2.0:Error"
+        errorResponse["status"].stringValue() shouldBe "404"
+        errorResponse["detail"].shouldNotBeNull()
+    }
+
+    @Test
+    fun `bulk DELETE removes user and returns 204`() {
+        val user = client.create<User>("/Users", User(userName = "bulk.delete.${System.nanoTime()}"))
+        val userId = user.value.id!!
+
+        val bulkJson = """
+        {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"],
+            "Operations": [
+                {"method": "DELETE", "path": "/Users/$userId", "bulkId": "d1"}
+            ]
+        }
+        """.trimIndent()
+
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Bulk"))
+            .header("Content-Type", "application/scim+json")
+            .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bulkJson))
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 200
+        json["Operations"][0]["status"].stringValue() shouldBe "204"
+    }
+
+    @Test
+    fun `bulk mixed operations create and update in single request`() {
+        val suffix = System.nanoTime()
+        // First create a user
+        val existing = client.create<User>("/Users", User(userName = "bulk.existing.$suffix"))
+        val existingId = existing.value.id!!
+
+        val bulkJson = """
+        {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:BulkRequest"],
+            "Operations": [
+                {"method": "POST", "path": "/Users", "bulkId": "new1", "data": {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"], "userName": "bulk.new.$suffix"}},
+                {"method": "PUT", "path": "/Users/$existingId", "bulkId": "upd1", "data": {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"], "userName": "bulk.existing.$suffix", "displayName": "Updated via Bulk"}}
+            ]
+        }
+        """.trimIndent()
+
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Bulk"))
+            .header("Content-Type", "application/scim+json")
+            .POST(java.net.http.HttpRequest.BodyPublishers.ofString(bulkJson))
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 200
+        json["Operations"][0]["status"].stringValue() shouldBe "201"
+        json["Operations"][1]["status"].stringValue() shouldBe "200"
+
+        // Verify update applied
+        val updated = client.get<User>("/Users", existingId)
+        updated.value.displayName shouldBe "Updated via Bulk"
+    }
 }

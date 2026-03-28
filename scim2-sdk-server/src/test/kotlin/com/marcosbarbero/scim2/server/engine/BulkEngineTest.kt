@@ -18,6 +18,7 @@ package com.marcosbarbero.scim2.server.engine
 import com.marcosbarbero.scim2.core.domain.ScimUrns
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkOperation
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
+import com.marcosbarbero.scim2.core.domain.model.error.ResourceConflictException
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.User
@@ -28,6 +29,7 @@ import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import io.github.serpro69.kfaker.Faker
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -326,5 +328,171 @@ class BulkEngineTest {
         response.operations.size shouldBe 1
         response.operations[0].status shouldBe "201"
         response.operations[0].bulkId shouldBe null
+    }
+
+    @Test
+    fun `failed operation response contains ScimError with schemas and status`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "DELETE", path = "/Users/nonexistent"),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        val op = response.operations[0]
+        op.status shouldBe "404"
+        val errorNode = op.response.shouldNotBeNull()
+        errorNode.get("schemas").shouldNotBeNull()
+        errorNode.get("schemas")[0].textValue() shouldBe ScimUrns.ERROR
+        errorNode.get("status").textValue() shouldBe "404"
+    }
+
+    @Test
+    fun `failed operation response contains detail message`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "DELETE", path = "/Users/nonexistent"),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        val errorNode = response.operations[0].response.shouldNotBeNull()
+        errorNode.get("detail").shouldNotBeNull()
+        errorNode.get("detail").textValue() shouldBe "User not found: nonexistent"
+    }
+
+    @Test
+    fun `failed operation response contains scimType for known errors`() {
+        val conflictHandler = object : ResourceHandler<User> {
+            override val resourceType: Class<User> = User::class.java
+            override val endpoint: String = "/Users"
+            override fun get(id: String, context: ScimRequestContext): User = throw ResourceConflictException("Duplicate user")
+            override fun create(resource: User, context: ScimRequestContext): User = throw ResourceConflictException("Duplicate user")
+            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = throw ResourceConflictException("Duplicate user")
+            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = throw ResourceConflictException("Duplicate user")
+            override fun delete(id: String, version: String?, context: ScimRequestContext) = throw ResourceConflictException("Duplicate user")
+            override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = ListResponse(totalResults = 0, resources = emptyList())
+        }
+        val conflictEngine = BulkEngine(listOf(conflictHandler), serializer, config)
+
+        val userData = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test"),
+        )
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "POST", path = "/Users", bulkId = "conflict1", data = userData),
+            ),
+        )
+
+        val response = conflictEngine.execute(request, context)
+
+        val errorNode = response.operations[0].response.shouldNotBeNull()
+        errorNode.get("status").textValue() shouldBe "409"
+        errorNode.get("scimType").shouldNotBeNull()
+        errorNode.get("scimType").textValue() shouldBe "uniqueness"
+        errorNode.get("detail").textValue() shouldBe "Duplicate user"
+    }
+
+    @Test
+    fun `unknown endpoint response contains ScimError`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "DELETE", path = "/Unknown/123"),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        val op = response.operations[0]
+        op.status shouldBe "404"
+        val errorNode = op.response.shouldNotBeNull()
+        errorNode.get("schemas")[0].textValue() shouldBe ScimUrns.ERROR
+        errorNode.get("status").textValue() shouldBe "404"
+        errorNode.get("detail").shouldNotBeNull()
+    }
+
+    @Test
+    fun `generic exception produces 500 ScimError in response`() {
+        val brokenHandler = object : ResourceHandler<User> {
+            override val resourceType: Class<User> = User::class.java
+            override val endpoint: String = "/Users"
+            override fun get(id: String, context: ScimRequestContext): User = throw RuntimeException("Something broke")
+            override fun create(resource: User, context: ScimRequestContext): User = throw RuntimeException("Something broke")
+            override fun replace(id: String, resource: User, version: String?, context: ScimRequestContext): User = throw RuntimeException("Something broke")
+            override fun patch(id: String, request: PatchRequest, version: String?, context: ScimRequestContext): User = throw RuntimeException("Something broke")
+            override fun delete(id: String, version: String?, context: ScimRequestContext) = throw RuntimeException("Something broke")
+            override fun search(request: SearchRequest, context: ScimRequestContext): ListResponse<User> = ListResponse(totalResults = 0, resources = emptyList())
+        }
+        val brokenEngine = BulkEngine(listOf(brokenHandler), serializer, config)
+
+        val userData = objectMapper.valueToTree<tools.jackson.databind.JsonNode>(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to "test"),
+        )
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "POST", path = "/Users", bulkId = "broken1", data = userData),
+            ),
+        )
+
+        val response = brokenEngine.execute(request, context)
+
+        val op = response.operations[0]
+        op.status shouldBe "500"
+        val errorNode = op.response.shouldNotBeNull()
+        errorNode.get("schemas")[0].textValue() shouldBe ScimUrns.ERROR
+        errorNode.get("status").textValue() shouldBe "500"
+        errorNode.get("detail").textValue() shouldBe "Internal server error"
+    }
+
+    @Test
+    fun `error response omits null scimType field`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "GET", path = "/Users/nonexistent", bulkId = "get1"),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        val op = response.operations[0]
+        val errorNode = op.response.shouldNotBeNull()
+        errorNode.has("scimType") shouldBe false
+    }
+
+    @Test
+    fun `error response for unsupported method contains ScimError`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "OPTIONS", path = "/Users", bulkId = "opt1"),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        val op = response.operations[0]
+        op.status shouldBe "405"
+        val errorNode = op.response.shouldNotBeNull()
+        errorNode.get("schemas")[0].textValue() shouldBe ScimUrns.ERROR
+        errorNode.get("status").textValue() shouldBe "405"
+        errorNode.get("detail").shouldNotBeNull()
+    }
+
+    @Test
+    fun `error response for missing POST data contains ScimError`() {
+        val request = BulkRequest(
+            operations = listOf(
+                BulkOperation(method = "POST", path = "/Users", bulkId = "nodata1", data = null),
+            ),
+        )
+
+        val response = engine.execute(request, context)
+
+        val op = response.operations[0]
+        op.status shouldBe "400"
+        val errorNode = op.response.shouldNotBeNull()
+        errorNode.get("schemas")[0].textValue() shouldBe ScimUrns.ERROR
+        errorNode.get("status").textValue() shouldBe "400"
     }
 }

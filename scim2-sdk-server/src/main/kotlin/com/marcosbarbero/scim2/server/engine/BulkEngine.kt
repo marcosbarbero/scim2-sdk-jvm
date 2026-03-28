@@ -19,6 +19,7 @@ import com.marcosbarbero.scim2.core.domain.model.bulk.BulkOperation
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkOperationResponse
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
 import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
+import com.marcosbarbero.scim2.core.domain.model.error.ScimError
 import com.marcosbarbero.scim2.core.domain.model.error.ScimException
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
@@ -26,6 +27,8 @@ import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import org.slf4j.LoggerFactory
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.json.JsonMapper
 
 class BulkEngine(
     private val handlers: List<ResourceHandler<*>>,
@@ -69,12 +72,7 @@ class BulkEngine(
         val method = operation.method.uppercase()
         val path = resolveBulkIdReferences(operation.path ?: "", bulkIdMap)
         val handler = findHandler(path) as? ResourceHandler<ScimResource>
-            ?: return BulkOperationResponse(
-                method = method,
-                bulkId = operation.bulkId,
-                status = "404",
-                location = null,
-            )
+            ?: return errorResponse(method, operation.bulkId, 404, "No handler found for path: $path")
 
         return try {
             when (method) {
@@ -151,6 +149,16 @@ class BulkEngine(
                 method = method,
                 bulkId = operation.bulkId,
                 status = e.status.toString(),
+                response = toErrorJsonNode(e.toScimError()),
+            )
+        } catch (e: Exception) {
+            logger.error("Unexpected bulk operation error: {} {}", method, path, e)
+            val error = ScimError(status = "500", detail = "Internal server error")
+            BulkOperationResponse(
+                method = method,
+                bulkId = operation.bulkId,
+                status = "500",
+                response = toErrorJsonNode(error),
             )
         }
     }
@@ -185,9 +193,23 @@ class BulkEngine(
         return resolved
     }
 
-    private fun errorResponse(method: String, bulkId: String?, status: Int, detail: String): BulkOperationResponse = BulkOperationResponse(
-        method = method,
-        bulkId = bulkId,
-        status = status.toString(),
-    )
+    private fun errorResponse(method: String, bulkId: String?, status: Int, detail: String): BulkOperationResponse {
+        val error = ScimError(status = status.toString(), detail = detail)
+        return BulkOperationResponse(
+            method = method,
+            bulkId = bulkId,
+            status = status.toString(),
+            response = toErrorJsonNode(error),
+        )
+    }
+
+    private fun toErrorJsonNode(error: ScimError): JsonNode = errorMapper.valueToTree(error)
+
+    private companion object {
+        private val errorMapper: JsonMapper = JsonMapper.builder()
+            .changeDefaultPropertyInclusion { incl ->
+                incl.withValueInclusion(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+            }
+            .build()
+    }
 }
