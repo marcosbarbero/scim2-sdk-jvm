@@ -24,6 +24,8 @@ import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.domain.model.search.SortOrder
 import com.marcosbarbero.scim2.core.domain.vo.ETag
+import com.marcosbarbero.scim2.core.filter.FilterEngine
+import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import com.marcosbarbero.scim2.spring.persistence.entity.ScimResourceEntity
@@ -114,6 +116,12 @@ class JpaResourceRepository<T : ScimResource>(
     override fun search(request: SearchRequest): ListResponse<T> {
         val startIndex = request.startIndex ?: 1
         val count = request.count ?: 100
+
+        val filterString = request.filter
+        if (!filterString.isNullOrBlank()) {
+            return searchWithFilter(filterString, startIndex, count)
+        }
+
         val sortDirection = if (request.sortOrder == SortOrder.DESCENDING) {
             Sort.Direction.DESC
         } else {
@@ -136,6 +144,27 @@ class JpaResourceRepository<T : ScimResource>(
             startIndex = startIndex,
             resources = resources,
         )
+    }
+
+    private fun searchWithFilter(filterString: String, startIndex: Int, count: Int): ListResponse<T> {
+        val allEntities = jpaRepository.findByResourceType(resourceTypeName)
+        val allResources = allEntities.map {
+            serializer.deserializeFromString(it.resourceJson, resourceType.kotlin)
+        }
+        val filtered = FilterEngine.filter(allResources, filterString, filterObjectMapper)
+        val start = (startIndex - 1).coerceAtLeast(0)
+        val end = (start + count).coerceAtMost(filtered.size)
+        val page = if (start < filtered.size) filtered.subList(start, end) else emptyList()
+        return ListResponse(
+            totalResults = filtered.size,
+            itemsPerPage = page.size,
+            startIndex = startIndex,
+            resources = page,
+        )
+    }
+
+    companion object {
+        private val filterObjectMapper = JacksonScimSerializer.defaultObjectMapper()
     }
 
     private fun extractDisplayName(resource: T): String? = when (resource) {

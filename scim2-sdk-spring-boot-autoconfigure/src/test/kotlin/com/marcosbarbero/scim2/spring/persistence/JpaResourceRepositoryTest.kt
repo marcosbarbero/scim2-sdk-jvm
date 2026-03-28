@@ -227,6 +227,46 @@ class JpaResourceRepositoryTest {
     }
 
     @Test
+    fun `search with userName eq filter returns only matching users`() {
+        userRepository.create(User(userName = "alice"))
+        userRepository.create(User(userName = "bob"))
+        userRepository.create(User(userName = "charlie"))
+
+        val result = userRepository.search(SearchRequest(filter = "userName eq \"bob\""))
+
+        result.totalResults shouldBe 1
+        result.resources.size shouldBe 1
+        result.resources[0].userName shouldBe "bob"
+    }
+
+    @Test
+    fun `search with filter returns empty when no match`() {
+        userRepository.create(User(userName = "alice"))
+        userRepository.create(User(userName = "bob"))
+
+        val result = userRepository.search(SearchRequest(filter = "userName eq \"nonexistent\""))
+
+        result.totalResults shouldBe 0
+        result.resources shouldBe emptyList()
+    }
+
+    @Test
+    fun `search with filter and pagination works correctly`() {
+        repeat(5) { i ->
+            userRepository.create(User(userName = "filtered-user-$i"))
+        }
+        userRepository.create(User(userName = "other-user"))
+
+        val result = userRepository.search(
+            SearchRequest(filter = "userName sw \"filtered\"", startIndex = 1, count = 3),
+        )
+
+        result.totalResults shouldBe 5
+        result.resources.size shouldBe 3
+        result.startIndex shouldBe 1
+    }
+
+    @Test
     fun `users and groups are stored independently`() {
         userRepository.create(User(userName = "user-1"))
         groupRepository.create(Group(displayName = "group-1"))

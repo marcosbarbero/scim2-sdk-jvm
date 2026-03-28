@@ -44,6 +44,16 @@ abstract class ScimApiContractTest {
 
     abstract fun sampleUserJson(): ByteArray
 
+    open fun sampleUserJsonWithUserName(userName: String): ByteArray {
+        val mapper = JacksonScimSerializer.defaultObjectMapper()
+        return mapper.writeValueAsBytes(
+            mapOf(
+                "schemas" to listOf("urn:ietf:params:scim:schemas:core:2.0:User"),
+                "userName" to userName,
+            ),
+        )
+    }
+
     private lateinit var dispatcher: ScimEndpointDispatcher
     private val objectMapper = JacksonScimSerializer.defaultObjectMapper()
 
@@ -318,6 +328,39 @@ abstract class ScimApiContractTest {
         body["schemas"][0].stringValue() shouldBe ScimUrns.LIST_RESPONSE
     }
 
+    // === SEARCH WITH FILTER — RFC 7644 §3.4.2.2 ===
+
+    /**
+     * RFC 7644 §3.4.2.2: "Clients MAY request a partial resource representation on any
+     * operation that returns a resource within the response by specifying either of the
+     * mutually exclusive URL query parameters 'filter'."
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc7644#section-3.4.2.2">RFC 7644 §3.4.2.2</a>
+     */
+    @Test
+    fun `GET search with filter returns only matching resources (RFC 7644 §3-4-2-2)`() {
+        // Create two users with distinct userNames
+        val user1Json = sampleUserJson()
+        val user2Json = sampleUserJsonWithUserName("filter-test-unique-${System.nanoTime()}")
+
+        post("/Users", user1Json)
+        val user2Response = post("/Users", user2Json)
+        val user2Body = parseJson(user2Response)
+        val user2Name = user2Body["userName"].stringValue()
+
+        // Search with filter for the second user
+        val response = get(
+            "/Users",
+            queryParameters = mapOf("filter" to listOf("userName eq \"$user2Name\"")),
+        )
+        response.status shouldBe 200
+        val body = parseJson(response)
+        body.has("totalResults") shouldBe true
+        body["totalResults"].intValue() shouldBe 1
+        body["Resources"].isArray shouldBe true
+        body["Resources"].size() shouldBe 1
+        body["Resources"][0]["userName"].stringValue() shouldBe user2Name
+    }
+
     // === CONTENT-TYPE — RFC 7644 §3.1 ===
 
     /**
@@ -351,11 +394,16 @@ abstract class ScimApiContractTest {
         ),
     )
 
-    private fun get(path: String, headers: Map<String, List<String>> = emptyMap()): ScimHttpResponse = dispatcher.dispatch(
+    private fun get(
+        path: String,
+        headers: Map<String, List<String>> = emptyMap(),
+        queryParameters: Map<String, List<String>> = emptyMap(),
+    ): ScimHttpResponse = dispatcher.dispatch(
         ScimHttpRequest(
             method = HttpMethod.GET,
             path = "${basePath()}$path",
             headers = headers,
+            queryParameters = queryParameters,
         ),
     )
 

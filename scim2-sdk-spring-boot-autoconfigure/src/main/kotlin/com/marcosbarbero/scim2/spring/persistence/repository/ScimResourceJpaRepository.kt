@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional
 
 interface ScimResourceJpaRepository : JpaRepository<ScimResourceEntity, String> {
     fun findByResourceType(resourceType: String, pageable: Pageable): Page<ScimResourceEntity>
+    fun findByResourceType(resourceType: String): List<ScimResourceEntity>
     fun findByResourceTypeAndExternalId(resourceType: String, externalId: String): ScimResourceEntity?
     fun countByResourceType(resourceType: String): Long
 

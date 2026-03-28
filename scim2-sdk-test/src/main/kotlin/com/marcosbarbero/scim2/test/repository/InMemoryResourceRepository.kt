@@ -22,6 +22,8 @@ import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.domain.vo.ETag
+import com.marcosbarbero.scim2.core.filter.FilterEngine
+import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.server.port.ResourceRepository
 import java.time.Instant
 import java.util.UUID
@@ -81,17 +83,22 @@ class InMemoryResourceRepository<T : ScimResource>(
 
     override fun search(request: SearchRequest): ListResponse<T> {
         val all = store.values.toList()
+        val filtered = FilterEngine.filter(all, request.filter, objectMapper)
         val startIndex = request.startIndex ?: 1
-        val count = request.count ?: all.size
+        val count = request.count ?: filtered.size
         val start = (startIndex - 1).coerceAtLeast(0)
-        val end = (start + count).coerceAtMost(all.size)
-        val page = if (start < all.size) all.subList(start, end) else emptyList()
+        val end = (start + count).coerceAtMost(filtered.size)
+        val page = if (start < filtered.size) filtered.subList(start, end) else emptyList()
         return ListResponse(
-            totalResults = all.size,
+            totalResults = filtered.size,
             itemsPerPage = page.size,
             startIndex = startIndex,
             resources = page,
         )
+    }
+
+    companion object {
+        private val objectMapper = JacksonScimSerializer.defaultObjectMapper()
     }
 
     fun count(): Int = store.size

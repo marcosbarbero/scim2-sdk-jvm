@@ -270,6 +270,45 @@ class ScimRfcComplianceE2E(@LocalServerPort val port: Int) {
         eventCollector.events[2]::class.simpleName shouldBe "ResourceDeletedEvent"
     }
 
+    // === Filter search (RFC 7644 §3.4.2.2) ===
+
+    @Test
+    fun `search with userName eq filter returns only matching user`() {
+        val uniqueName = "filter.eq.${System.nanoTime()}"
+        client.create<User>("/Users", User(userName = uniqueName))
+        client.create<User>("/Users", User(userName = "other.${System.nanoTime()}"))
+
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val encodedFilter = java.net.URLEncoder.encode("userName eq \"$uniqueName\"", "UTF-8")
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Users?filter=$encodedFilter"))
+            .GET()
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 200
+        json["totalResults"].intValue() shouldBe 1
+        json["Resources"][0]["userName"].stringValue() shouldBe uniqueName
+    }
+
+    @Test
+    fun `search with filter returns empty when no match`() {
+        client.create<User>("/Users", User(userName = "exists.${System.nanoTime()}"))
+
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val encodedFilter = java.net.URLEncoder.encode("userName eq \"nonexistent-user-xyz\"", "UTF-8")
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Users?filter=$encodedFilter"))
+            .GET()
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 200
+        json["totalResults"].intValue() shouldBe 0
+    }
+
     // === Verify raw JSON wire format ===
 
     @Test
