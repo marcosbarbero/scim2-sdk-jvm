@@ -18,8 +18,12 @@ package com.example.scim.controller;
 import com.marcosbarbero.scim2.core.domain.model.resource.Group;
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse;
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest;
+import com.marcosbarbero.scim2.core.event.ResourceCreatedEvent;
+import com.marcosbarbero.scim2.core.event.ResourceDeletedEvent;
+import com.marcosbarbero.scim2.core.event.ResourceReplacedEvent;
 import com.marcosbarbero.scim2.server.port.ResourceHandler;
 import com.marcosbarbero.scim2.server.port.ScimRequestContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,14 +32,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
+/**
+ * REST API controller for the React frontend.
+ * Delegates to the SCIM ResourceHandler and publishes events so
+ * outbound provisioning triggers for mutations via the UI.
+ */
 @RestController
 @RequestMapping("/api/groups")
 public class GroupController {
 
     private final ResourceHandler<Group> groupHandler;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public GroupController(ResourceHandler<Group> groupHandler) {
+    public GroupController(ResourceHandler<Group> groupHandler, ApplicationEventPublisher eventPublisher) {
         this.groupHandler = groupHandler;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping
@@ -70,6 +81,9 @@ public class GroupController {
 
         var ctx = buildContext(jwt);
         var created = groupHandler.create(group, ctx);
+        eventPublisher.publishEvent(new ResourceCreatedEvent(
+                UUID.randomUUID().toString(), java.time.Instant.now(),
+                "Group", created.getId(), ctx.getCorrelationId()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -81,6 +95,9 @@ public class GroupController {
 
         var ctx = buildContext(jwt);
         var replaced = groupHandler.replace(id, group, null, ctx);
+        eventPublisher.publishEvent(new ResourceReplacedEvent(
+                UUID.randomUUID().toString(), java.time.Instant.now(),
+                "Group", id, ctx.getCorrelationId()));
         return ResponseEntity.ok(replaced);
     }
 
@@ -91,6 +108,9 @@ public class GroupController {
 
         var ctx = buildContext(jwt);
         groupHandler.delete(id, null, ctx);
+        eventPublisher.publishEvent(new ResourceDeletedEvent(
+                UUID.randomUUID().toString(), java.time.Instant.now(),
+                "Group", id, ctx.getCorrelationId()));
         return ResponseEntity.noContent().build();
     }
 

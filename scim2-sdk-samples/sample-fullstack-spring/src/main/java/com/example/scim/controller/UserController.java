@@ -18,8 +18,12 @@ package com.example.scim.controller;
 import com.marcosbarbero.scim2.core.domain.model.resource.User;
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse;
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest;
+import com.marcosbarbero.scim2.core.event.ResourceCreatedEvent;
+import com.marcosbarbero.scim2.core.event.ResourceDeletedEvent;
+import com.marcosbarbero.scim2.core.event.ResourceReplacedEvent;
 import com.marcosbarbero.scim2.server.port.ResourceHandler;
 import com.marcosbarbero.scim2.server.port.ScimRequestContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,17 +34,19 @@ import java.util.*;
 
 /**
  * REST API controller for the React frontend.
- * Delegates to the SCIM ResourceHandler so all mutations go through
- * the same path as SCIM protocol requests.
+ * Delegates to the SCIM ResourceHandler and publishes events so
+ * outbound provisioning triggers for mutations via the UI.
  */
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final ResourceHandler<User> userHandler;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public UserController(ResourceHandler<User> userHandler) {
+    public UserController(ResourceHandler<User> userHandler, ApplicationEventPublisher eventPublisher) {
         this.userHandler = userHandler;
+        this.eventPublisher = eventPublisher;
     }
 
     @GetMapping
@@ -75,6 +81,9 @@ public class UserController {
 
         var ctx = buildContext(jwt);
         var created = userHandler.create(user, ctx);
+        eventPublisher.publishEvent(new ResourceCreatedEvent(
+                UUID.randomUUID().toString(), java.time.Instant.now(),
+                "User", created.getId(), ctx.getCorrelationId()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
@@ -86,6 +95,9 @@ public class UserController {
 
         var ctx = buildContext(jwt);
         var replaced = userHandler.replace(id, user, null, ctx);
+        eventPublisher.publishEvent(new ResourceReplacedEvent(
+                UUID.randomUUID().toString(), java.time.Instant.now(),
+                "User", id, ctx.getCorrelationId()));
         return ResponseEntity.ok(replaced);
     }
 
@@ -96,6 +108,9 @@ public class UserController {
 
         var ctx = buildContext(jwt);
         userHandler.delete(id, null, ctx);
+        eventPublisher.publishEvent(new ResourceDeletedEvent(
+                UUID.randomUUID().toString(), java.time.Instant.now(),
+                "User", id, ctx.getCorrelationId()));
         return ResponseEntity.noContent().build();
     }
 
