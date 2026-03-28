@@ -15,6 +15,22 @@ services:
       timeout: 3s
       retries: 10
 
+  postgres-target:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: scimdb
+      POSTGRES_USER: scim
+      POSTGRES_PASSWORD: scim
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-target:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scim -d scimdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   keycloak:
     build:
       context: ../shared-keycloak
@@ -50,12 +66,31 @@ services:
       DATABASE_URL: jdbc:postgresql://postgres:5432/scimdb
       DATABASE_USER: scim
       DATABASE_PASSWORD: scim
+      # Outbound provisioning — push changes to the target SCIM server
+      SCIM_TARGET_URL: http://backend-target:8080/scim/v2
     ports:
       - "8080:8080"
     depends_on:
       postgres:
         condition: service_healthy
       keycloak:
+        condition: service_healthy
+      backend-target:
+        condition: service_started
+
+  # Target SCIM server — receives outbound provisioning from the primary
+  backend-target:
+    build:
+      context: ../..
+      dockerfile: scim2-sdk-samples/sample-fullstack-plain/Dockerfile
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres-target:5432/scimdb
+      DATABASE_USER: scim
+      DATABASE_PASSWORD: scim
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres-target:
         condition: service_healthy
 
   frontend:
@@ -74,3 +109,4 @@ services:
 
 volumes:
   pgdata:
+  pgdata-target:

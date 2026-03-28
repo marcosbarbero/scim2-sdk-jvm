@@ -26,6 +26,11 @@ import com.marcosbarbero.scim2.server.engine.ETagEngine;
 import com.marcosbarbero.scim2.server.http.HttpMethod;
 import com.marcosbarbero.scim2.server.http.ScimHttpRequest;
 import com.marcosbarbero.scim2.server.port.ResourceHandler;
+import com.marcosbarbero.scim2.server.provisioning.ScimOutboundEventPublisher;
+import com.marcosbarbero.scim2.server.provisioning.ScimOutboundTarget;
+import com.marcosbarbero.scim2.client.adapter.httpclient.HttpClientTransport;
+import com.marcosbarbero.scim2.client.api.ScimClient;
+import com.marcosbarbero.scim2.client.api.ScimClientBuilder;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import org.postgresql.ds.PGSimpleDataSource;
@@ -73,12 +78,27 @@ public class PlainScimServer {
         schemaRegistry.register(kotlin.jvm.JvmClassMappingKt.getKotlinClass(User.class));
         schemaRegistry.register(kotlin.jvm.JvmClassMappingKt.getKotlinClass(Group.class));
 
+        // Outbound provisioning — push changes to a target SCIM server (if configured)
+        var targetUrl = System.getenv("SCIM_TARGET_URL");
+        com.marcosbarbero.scim2.core.event.ScimEventPublisher eventPublisher = com.marcosbarbero.scim2.core.event.NoOpEventPublisher.INSTANCE;
+        if (targetUrl != null && !targetUrl.isBlank()) {
+            System.out.println("Outbound provisioning enabled: " + targetUrl);
+            var scimClient = new ScimClientBuilder()
+                    .baseUrl(targetUrl)
+                    .transport(new HttpClientTransport())
+                    .serializer(serializer)
+                    .build();
+            @SuppressWarnings("unchecked")
+            ScimOutboundTarget target = new ScimClientOutboundTarget(scimClient);
+            eventPublisher = new ScimOutboundEventPublisher(target, handlers);
+        }
+
         // Discovery + dispatcher
         var discoveryService = new DiscoveryService(handlers, schemaRegistry, config);
         var dispatcher = new ScimEndpointDispatcher(
                 handlers, null, null, discoveryService, config, serializer,
                 new ETagEngine(), List.of(), null, null,
-                com.marcosbarbero.scim2.core.event.NoOpEventPublisher.INSTANCE,
+                eventPublisher,
                 com.marcosbarbero.scim2.core.observability.NoOpScimMetrics.INSTANCE,
                 com.marcosbarbero.scim2.core.observability.NoOpScimTracer.INSTANCE
         );
