@@ -9,9 +9,40 @@ permissions:
   contents: write
 
 jobs:
+  # Check if the push contains code changes (not just docs/markdown)
+  changes:
+    name: Detect code changes
+    runs-on: ubuntu-latest
+    outputs:
+      has_code_changes: ${{ steps.check.outputs.has_code_changes }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Check for code changes
+        id: check
+        run: |
+          # Get files changed in the last commit
+          CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          # Check if any non-doc file changed
+          CODE_CHANGES=$(echo "$CHANGED" | grep -v -E '^\.(github/)?README\.md$|\.md$|^docs/|^\.github/(?!workflows)' || true)
+          if [ -n "$CODE_CHANGES" ]; then
+            echo "has_code_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Code changes detected"
+          else
+            echo "has_code_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Only documentation changes — skipping release"
+          fi
+
   # Automatically create a semver tag based on conventional commits
   tag:
     name: Determine version and tag
+    needs: changes
+    if: needs.changes.outputs.has_code_changes == 'true'
     runs-on: ubuntu-latest
     outputs:
       new_tag: ${{ steps.tag_version.outputs.new_tag }}
