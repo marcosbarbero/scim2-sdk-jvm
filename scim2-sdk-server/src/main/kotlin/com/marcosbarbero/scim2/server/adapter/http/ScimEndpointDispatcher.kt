@@ -279,10 +279,11 @@ class ScimEndpointDispatcher(
                     if (ifNoneMatch != null && etag == ifNoneMatch) {
                         ScimHttpResponse(status = 304)
                     } else {
-                        val bytes = serializer.serialize(result)
-                        val enrichedBytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                        var bytes = serializer.serialize(result)
+                        bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                        bytes = enrichMemberRefs(bytes)
                         ScimHttpResponse.ok(
-                            enrichedBytes,
+                            bytes,
                             headers = if (config.etagEnabled) mapOf("ETag" to etag.value) else emptyMap(),
                         )
                     }
