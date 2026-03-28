@@ -48,7 +48,7 @@ export default function GroupList() {
       <div style={styles.filterRow}>
         <input
           style={styles.filterInput}
-          placeholder='SCIM filter (e.g. displayName eq "Admins")'
+          placeholder='Search groups or SCIM filter (e.g. displayName eq "Admins")'
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && fetchGroups()}

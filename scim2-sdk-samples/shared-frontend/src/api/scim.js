@@ -40,10 +40,22 @@ async function request(path, options = {}, getToken) {
   return res.json();
 }
 
+// SCIM filter operators — if input contains one, treat as raw SCIM filter
+const SCIM_OPS = /\b(eq|ne|co|sw|ew|gt|ge|lt|le|pr|and|or|not)\b/i;
+
+function toScimFilter(input, attributes) {
+  if (!input || !input.trim()) return undefined;
+  if (SCIM_OPS.test(input)) return input; // already a SCIM filter
+  // Plain text search — wrap as "contains" across attributes
+  const escaped = input.replace(/"/g, '\\"');
+  return attributes.map(attr => `${attr} co "${escaped}"`).join(' or ');
+}
+
 // Users
 export const listUsers = (getToken, { startIndex = 1, count = 20, filter } = {}) => {
   const params = new URLSearchParams({ startIndex, count });
-  if (filter) params.set('filter', filter);
+  const scimFilter = toScimFilter(filter, ['userName', 'displayName']);
+  if (scimFilter) params.set('filter', scimFilter);
   return request(`${USERS_PATH}?${params}`, {}, getToken);
 };
 
@@ -62,7 +74,8 @@ export const deleteUser = (getToken, id) =>
 // Groups
 export const listGroups = (getToken, { startIndex = 1, count = 20, filter } = {}) => {
   const params = new URLSearchParams({ startIndex, count });
-  if (filter) params.set('filter', filter);
+  const scimFilter = toScimFilter(filter, ['displayName']);
+  if (scimFilter) params.set('filter', scimFilter);
   return request(`${GROUPS_PATH}?${params}`, {}, getToken);
 };
 
