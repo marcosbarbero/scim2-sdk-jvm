@@ -20,6 +20,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 @ConfigurationProperties(prefix = "scim")
 data class ScimProperties(
     val basePath: String = "/scim/v2",
+    val baseUrl: String? = null,
     val bulk: BulkProperties = BulkProperties(),
     val filter: FilterProperties = FilterProperties(),
     val sort: SortProperties = SortProperties(),

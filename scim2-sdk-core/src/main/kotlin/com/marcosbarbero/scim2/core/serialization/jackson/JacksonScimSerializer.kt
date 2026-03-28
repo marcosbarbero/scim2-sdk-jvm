@@ -20,6 +20,7 @@ import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.json.JsonMapper
+import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.KotlinModule
 import kotlin.reflect.KClass
 
@@ -34,6 +35,41 @@ class JacksonScimSerializer(private val objectMapper: ObjectMapper) : ScimSerial
     override fun serializeToString(value: Any): String = objectMapper.writeValueAsString(value)
 
     override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
+
+    override fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String?): ByteArray {
+        val tree = objectMapper.readTree(json) as ObjectNode
+        val metaNode = tree.get("meta")
+        val meta = if (metaNode != null && metaNode is ObjectNode) {
+            metaNode
+        } else {
+            objectMapper.createObjectNode().also { tree.set("meta", it) }
+        }
+        meta.put("location", location)
+        if (resourceType != null && !meta.has("resourceType")) {
+            meta.put("resourceType", resourceType)
+        }
+        return objectMapper.writeValueAsBytes(tree)
+    }
+
+    override fun enrichMemberRefs(json: ByteArray, baseScimUrl: String): ByteArray {
+        val tree = objectMapper.readTree(json) as ObjectNode
+        val base = baseScimUrl.trimEnd('/')
+        enrichArrayRefs(tree, "members", base)
+        enrichArrayRefs(tree, "groups", base)
+        return objectMapper.writeValueAsBytes(tree)
+    }
+
+    private fun enrichArrayRefs(tree: ObjectNode, fieldName: String, baseScimUrl: String) {
+        val array = tree.get(fieldName) ?: return
+        if (!array.isArray) return
+        for (element in array) {
+            if (element !is ObjectNode) continue
+            if (element.has("\$ref")) continue
+            val value = element.get("value")?.asString() ?: continue
+            val type = element.get("type")?.asString() ?: continue
+            element.put("\$ref", "$baseScimUrl/${type}s/$value")
+        }
+    }
 
     companion object {
         fun defaultObjectMapper(): ObjectMapper = JsonMapper.builder()

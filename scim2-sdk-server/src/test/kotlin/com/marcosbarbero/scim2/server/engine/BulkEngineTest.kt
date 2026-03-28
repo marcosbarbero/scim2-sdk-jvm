@@ -47,6 +47,20 @@ class BulkEngineTest {
         override fun <T : Any> deserialize(bytes: ByteArray, type: KClass<T>): T = objectMapper.readValue(bytes, type.java)
         override fun serializeToString(value: Any): String = objectMapper.writeValueAsString(value)
         override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
+        override fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String?): ByteArray {
+            val tree = objectMapper.readTree(json) as tools.jackson.databind.node.ObjectNode
+            val metaNode = tree.get("meta")
+            val meta = if (metaNode != null && metaNode is tools.jackson.databind.node.ObjectNode) {
+                metaNode
+            } else {
+                objectMapper.createObjectNode().also { tree.set("meta", it) }
+            }
+            meta.put("location", location)
+            if (resourceType != null && !meta.has("resourceType")) {
+                meta.put("resourceType", resourceType)
+            }
+            return objectMapper.writeValueAsBytes(tree)
+        }
     }
 
     private val userHandler = object : ResourceHandler<User> {

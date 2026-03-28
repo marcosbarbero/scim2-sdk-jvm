@@ -16,9 +16,11 @@
 package com.marcosbarbero.scim2.core.domain.model.schema
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
+import com.marcosbarbero.scim2.core.domain.model.common.Meta
 
 data class ServiceProviderConfig @JvmOverloads constructor(
     val schemas: List<String> = listOf(ScimUrns.SERVICE_PROVIDER_CONFIG),
+    val meta: Meta? = null,
     val documentationUri: String? = null,
     val patch: SupportedConfig = SupportedConfig(),
     val bulk: BulkConfig = BulkConfig(),

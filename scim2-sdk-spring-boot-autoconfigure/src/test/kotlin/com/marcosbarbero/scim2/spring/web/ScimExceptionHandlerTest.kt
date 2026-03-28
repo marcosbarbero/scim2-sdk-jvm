@@ -39,6 +39,7 @@ class ScimExceptionHandlerTest {
         override fun <T : Any> deserialize(bytes: ByteArray, type: KClass<T>): T = objectMapper.readValue(bytes, type.java)
         override fun serializeToString(value: Any): String = objectMapper.writeValueAsString(value)
         override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
+        override fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String?): ByteArray = json
     }
 
     private val handler = ScimExceptionHandler(serializer)

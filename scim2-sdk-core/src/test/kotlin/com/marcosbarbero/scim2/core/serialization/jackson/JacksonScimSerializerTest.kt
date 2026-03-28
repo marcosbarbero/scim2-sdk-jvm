@@ -283,6 +283,55 @@ class JacksonScimSerializerTest {
     }
 
     @Nested
+    inner class EmptyCollectionSerializationTest {
+        @Test
+        fun `should include empty lists in serialized output`() {
+            val user = User(userName = "emptytest")
+            val json = serializer.serializeToString(user)
+
+            // NON_NULL inclusion: empty lists are valid SCIM values and should be serialized
+            json shouldContain "\"emails\""
+            json shouldContain "\"phoneNumbers\""
+            json shouldContain "\"addresses\""
+            json shouldContain "\"groups\""
+        }
+
+        @Test
+        fun `should include non-empty lists in serialized output`() {
+            val user = User(
+                userName = "nonemptytest",
+                emails = listOf(
+                    MultiValuedAttribute(value = "test@example.com", type = "work", primary = true),
+                ),
+            )
+            val json = serializer.serializeToString(user)
+
+            json shouldContain "\"emails\""
+            json shouldContain "test@example.com"
+        }
+
+        @Test
+        fun `should omit null fields but not empty strings`() {
+            val user = User(userName = "nulltest")
+            val json = serializer.serializeToString(user)
+
+            // Null fields are omitted
+            json shouldNotContain "\"displayName\""
+            json shouldNotContain "\"nickName\""
+            json shouldContain "\"userName\""
+        }
+
+        @Test
+        fun `should preserve empty string values`() {
+            val user = User(userName = "test", displayName = "")
+            val json = serializer.serializeToString(user)
+
+            // Empty strings are valid SCIM attribute values and must not be suppressed
+            json shouldContain "\"displayName\""
+        }
+    }
+
+    @Nested
     inner class ByteArraySerializationTest {
         @Test
         fun `should serialize to and deserialize from byte array`() {
@@ -294,6 +343,126 @@ class JacksonScimSerializerTest {
 
             deserialized.userName shouldBe userName
             deserialized.displayName shouldBe displayName
+        }
+    }
+
+    @Nested
+    inner class EnrichMetaLocationTest {
+        @Test
+        fun `should add meta location to JSON without existing meta`() {
+            val user = User(userName = "test")
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"location\":\"https://example.com/scim/v2/Users/123\""
+        }
+
+        @Test
+        fun `should add meta location to JSON with existing meta`() {
+            val user = User(
+                userName = "test",
+                meta = Meta(created = Instant.parse("2025-04-01T12:00:00Z")),
+            )
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"location\":\"https://example.com/scim/v2/Users/123\""
+            json shouldContain "2025-04-01T12:00:00Z"
+        }
+
+        @Test
+        fun `should set resourceType when not already present`() {
+            val user = User(userName = "test")
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123", "User")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"resourceType\":\"User\""
+        }
+
+        @Test
+        fun `should not overwrite existing resourceType`() {
+            val user = User(
+                userName = "test",
+                meta = Meta(resourceType = "OriginalType"),
+            )
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123", "User")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"resourceType\":\"OriginalType\""
+            json shouldNotContain "\"resourceType\":\"User\""
+        }
+
+        @Test
+        fun `should not set resourceType when parameter is null`() {
+            val user = User(userName = "test")
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMetaLocation(bytes, "https://example.com/scim/v2/Users/123", null)
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"location\""
+            json shouldNotContain "\"resourceType\""
+        }
+    }
+
+    @Nested
+    inner class EnrichMemberRefsTest {
+        @Test
+        fun `should add ref to group members`() {
+            val group = Group(
+                displayName = "Engineering",
+                members = listOf(GroupMembership(value = "user-123", display = "Jane", type = "User")),
+            )
+            val bytes = serializer.serialize(group)
+
+            val enriched = serializer.enrichMemberRefs(bytes, "https://example.com/scim/v2")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"\$ref\":\"https://example.com/scim/v2/Users/user-123\""
+        }
+
+        @Test
+        fun `should not overwrite existing ref`() {
+            val group = Group(
+                displayName = "Engineering",
+                members = listOf(
+                    GroupMembership(
+                        value = "user-123",
+                        display = "Jane",
+                        type = "User",
+                        ref = URI.create("https://other.com/scim/v2/Users/user-123"),
+                    ),
+                ),
+            )
+            val bytes = serializer.serialize(group)
+
+            val enriched = serializer.enrichMemberRefs(bytes, "https://example.com/scim/v2")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "https://other.com/scim/v2/Users/user-123"
+            json shouldNotContain "https://example.com"
+        }
+
+        @Test
+        fun `should add ref to user groups`() {
+            val user = User(
+                userName = "jane",
+                groups = listOf(GroupMembership(value = "group-456", display = "Admins", type = "Group")),
+            )
+            val bytes = serializer.serialize(user)
+
+            val enriched = serializer.enrichMemberRefs(bytes, "https://example.com/scim/v2")
+            val json = String(enriched, Charsets.UTF_8)
+
+            json shouldContain "\"\$ref\":\"https://example.com/scim/v2/Groups/group-456\""
         }
     }
 }

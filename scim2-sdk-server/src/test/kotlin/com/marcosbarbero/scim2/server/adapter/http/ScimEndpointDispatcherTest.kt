@@ -72,6 +72,20 @@ class ScimEndpointDispatcherTest {
         override fun <T : Any> deserialize(bytes: ByteArray, type: KClass<T>): T = objectMapper.readValue(bytes, type.java)
         override fun serializeToString(value: Any): String = objectMapper.writeValueAsString(value)
         override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
+        override fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String?): ByteArray {
+            val tree = objectMapper.readTree(json) as tools.jackson.databind.node.ObjectNode
+            val metaNode = tree.get("meta")
+            val meta = if (metaNode != null && metaNode is tools.jackson.databind.node.ObjectNode) {
+                metaNode
+            } else {
+                objectMapper.createObjectNode().also { tree.set("meta", it) }
+            }
+            meta.put("location", location)
+            if (resourceType != null && !meta.has("resourceType")) {
+                meta.put("resourceType", resourceType)
+            }
+            return objectMapper.writeValueAsBytes(tree)
+        }
     }
 
     private val userHandler = object : ResourceHandler<User> {
@@ -1238,6 +1252,93 @@ class ScimEndpointDispatcherTest {
         capturedCount shouldBe 5
     }
 
+    // --- meta.location tests ---
+
+    @Test
+    fun `POST Users response body should include meta location when baseUrl configured`() {
+        val baseUrlConfig = config.copy(baseUrl = "https://example.com")
+        val baseUrlDiscovery = DiscoveryService(listOf(userHandler), schemaRegistry, baseUrlConfig)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = baseUrlDiscovery,
+            config = baseUrlConfig,
+            serializer = serializer,
+        )
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName()),
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body,
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 201
+        val responseBody = objectMapper.readTree(response.body)
+        val location = responseBody.get("meta")?.get("location")?.asString()
+        location shouldNotBe null
+        location shouldContain "https://example.com"
+        location shouldContain "/Users/"
+    }
+
+    @Test
+    fun `GET Users by id should include meta location when baseUrl configured`() {
+        val user = createTestUser()
+        val baseUrlConfig = config.copy(baseUrl = "https://example.com")
+        val baseUrlDiscovery = DiscoveryService(listOf(userHandler), schemaRegistry, baseUrlConfig)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = baseUrlDiscovery,
+            config = baseUrlConfig,
+            serializer = serializer,
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val location = responseBody.get("meta")?.get("location")?.asString()
+        location shouldNotBe null
+        location shouldBe "https://example.com${config.basePath}/Users/${user.id}"
+    }
+
+    @Test
+    fun `GET ServiceProviderConfig should include meta when baseUrl configured`() {
+        val baseUrlConfig = config.copy(baseUrl = "https://example.com")
+        val baseUrlDiscovery = DiscoveryService(listOf(userHandler), schemaRegistry, baseUrlConfig)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = baseUrlDiscovery,
+            config = baseUrlConfig,
+            serializer = serializer,
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/ServiceProviderConfig",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val meta = responseBody.get("meta")
+        meta shouldNotBe null
+        meta.get("resourceType").asString() shouldBe "ServiceProviderConfig"
+        meta.get("location").asString() shouldBe "https://example.com${config.basePath}/ServiceProviderConfig"
+    }
+
     private fun createTestUser(): User {
         val id = java.util.UUID.randomUUID().toString()
         val user = User(id = id, userName = faker.name.firstName())
@@ -1269,6 +1370,20 @@ class ScimEndpointDispatcherTest {
         }
         override fun serializeToString(value: Any): String = objectMapper.writeValueAsString(value)
         override fun <T : Any> deserializeFromString(json: String, type: KClass<T>): T = objectMapper.readValue(json, type.java)
+        override fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String?): ByteArray {
+            val tree = objectMapper.readTree(json) as tools.jackson.databind.node.ObjectNode
+            val metaNode = tree.get("meta")
+            val meta = if (metaNode != null && metaNode is tools.jackson.databind.node.ObjectNode) {
+                metaNode
+            } else {
+                objectMapper.createObjectNode().also { tree.set("meta", it) }
+            }
+            meta.put("location", location)
+            if (resourceType != null && !meta.has("resourceType")) {
+                meta.put("resourceType", resourceType)
+            }
+            return objectMapper.writeValueAsBytes(tree)
+        }
     }
 
     private fun dispatcherWithMe(
@@ -1644,5 +1759,213 @@ class ScimEndpointDispatcherTest {
         val error = objectMapper.readValue(response.body, ScimError::class.java)
         error.status shouldBe "500"
         error.detail shouldContain "Internal server error"
+    }
+
+    // --- RFC compliance: meta.location enrichment fixes ---
+
+    private fun dispatcherWithBaseUrl(
+        baseUrl: String?,
+    ): ScimEndpointDispatcher {
+        val customConfig = config.copy(baseUrl = baseUrl)
+        return ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = DiscoveryService(listOf(userHandler), schemaRegistry, customConfig),
+            config = customConfig,
+            serializer = serializer,
+        )
+    }
+
+    @Test
+    fun `baseUrl with trailing slash is normalized`() {
+        val d = dispatcherWithBaseUrl("https://example.com/")
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val location = responseBody.get("meta")?.get("location")?.asString()
+        location shouldNotBe null
+        location shouldBe "https://example.com${config.basePath}/Users/${user.id}"
+    }
+
+    @Test
+    fun `baseUrl null does not enrich meta location`() {
+        val d = dispatcherWithBaseUrl(null)
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        // When baseUrl is null, meta.location should NOT be enriched
+        val metaNode = responseBody.get("meta")
+        if (metaNode != null && metaNode.isObject) {
+            metaNode.get("location") shouldBe null
+        }
+    }
+
+    @Test
+    fun `POST Location header is absolute when baseUrl configured`() {
+        val d = dispatcherWithBaseUrl("https://example.com")
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName()),
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body,
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 201
+        val locationHeader = response.headers["Location"]
+        locationHeader shouldNotBe null
+        locationHeader shouldContain "https://example.com"
+    }
+
+    @Test
+    fun `search results include meta location when baseUrl configured`() {
+        createTestUser()
+        createTestUser()
+        val d = dispatcherWithBaseUrl("https://example.com")
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val resources = responseBody.get("Resources")
+        resources.size() shouldBe 2
+        for (resource in resources) {
+            val location = resource.get("meta")?.get("location")?.asString()
+            location shouldNotBe null
+            location shouldContain "https://example.com"
+            location shouldContain "/Users/"
+        }
+    }
+
+    @Test
+    fun `PUT Users should include meta location when baseUrl configured`() {
+        val user = createTestUser()
+        val d = dispatcherWithBaseUrl("https://example.com")
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName()),
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.PUT,
+            path = "${config.basePath}/Users/${user.id}",
+            body = body,
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val location = responseBody.get("meta")?.get("location")?.asString()
+        location shouldNotBe null
+        location shouldBe "https://example.com${config.basePath}/Users/${user.id}"
+    }
+
+    @Test
+    fun `PATCH Users should include meta location when baseUrl configured`() {
+        val user = createTestUser()
+        val d = dispatcherWithBaseUrl("https://example.com")
+        val patchRequest = PatchRequest(
+            operations = listOf(
+                PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree("New Name")),
+            ),
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.PATCH,
+            path = "${config.basePath}/Users/${user.id}",
+            body = objectMapper.writeValueAsBytes(patchRequest),
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val location = responseBody.get("meta")?.get("location")?.asString()
+        location shouldNotBe null
+        location shouldBe "https://example.com${config.basePath}/Users/${user.id}"
+    }
+
+    @Test
+    fun `meta resourceType is set during enrichment when not already present`() {
+        val d = dispatcherWithBaseUrl("https://example.com")
+        val user = createTestUser()
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val metaResourceType = responseBody.get("meta")?.get("resourceType")?.asString()
+        metaResourceType shouldBe "User"
+    }
+
+    @Test
+    fun `ETag is stable regardless of baseUrl`() {
+        val user = createTestUser()
+
+        // Get ETag without baseUrl
+        val d1 = dispatcherWithBaseUrl(null)
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+        )
+        val response1 = d1.dispatch(request)
+        val etag1 = response1.headers["ETag"]
+
+        // Get ETag with baseUrl
+        val d2 = dispatcherWithBaseUrl("https://example.com")
+        val response2 = d2.dispatch(request)
+        val etag2 = response2.headers["ETag"]
+
+        etag1 shouldNotBe null
+        etag2 shouldNotBe null
+        etag1 shouldBe etag2
+    }
+
+    @Test
+    fun `POST search results include meta location when baseUrl configured`() {
+        createTestUser()
+        val d = dispatcherWithBaseUrl("https://example.com")
+        val searchRequest = SearchRequest(filter = "userName eq \"test\"")
+        val body = objectMapper.writeValueAsBytes(searchRequest)
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users/.search",
+            body = body,
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val resources = responseBody.get("Resources")
+        for (resource in resources) {
+            val location = resource.get("meta")?.get("location")?.asString()
+            location shouldNotBe null
+            location shouldContain "https://example.com"
+        }
     }
 }

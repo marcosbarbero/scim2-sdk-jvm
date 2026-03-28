@@ -25,6 +25,7 @@ spring:
 # SCIM SDK configuration
 scim:
   base-path: /scim/v2
+  base-url: ${SCIM_BASE_URL:http://localhost:8080}
 
   persistence:
     enabled: true

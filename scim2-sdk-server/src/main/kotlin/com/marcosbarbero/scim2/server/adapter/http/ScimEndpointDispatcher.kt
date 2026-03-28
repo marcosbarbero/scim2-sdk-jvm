@@ -70,6 +70,7 @@ class ScimEndpointDispatcher(
 
     private val logger = LoggerFactory.getLogger(ScimEndpointDispatcher::class.java)
     private val sortedInterceptors = interceptors.sortedBy { it.order }
+    private val normalizedBaseUrl: String? = config.baseUrl?.trimEnd('/')
 
     fun dispatch(request: ScimHttpRequest): ScimHttpResponse {
         val context = request.toScimRequestContext()
@@ -227,7 +228,8 @@ class ScimEndpointDispatcher(
             validateSearchRequest(searchRequest)
             val effectiveRequest = applyPaginationDefaults(searchRequest)
             val result = handler.search(effectiveRequest, context)
-            return ok(capSearchResults(result))
+            val capped = capSearchResults(result)
+            return okWithEnrichedListResponse(capped, handler, resourceTypeName)
         }
 
         // Extract resource ID if present
@@ -241,7 +243,12 @@ class ScimEndpointDispatcher(
                 requireAuthorization { it.canCreate(handler.endpoint, context) }
                 val resource = deserializeBody(request, handler.resourceType)
                 val created = handler.create(resource, context)
-                val location = "${config.basePath}${handler.endpoint}/${created.id}"
+                val relativeLocation = created.id?.let { "${config.basePath}${handler.endpoint}/$it" }
+                val absoluteLocation = if (relativeLocation != null) normalizedBaseUrl?.let { "$it$relativeLocation" } else null
+                val locationHeader = absoluteLocation ?: relativeLocation ?: "${config.basePath}${handler.endpoint}"
+                var bytes = serializer.serialize(created)
+                bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                val enrichedBytes = enrichMemberRefs(bytes)
                 eventPublisher.publish(
                     ResourceCreatedEvent(
                         resourceType = resourceTypeName,
@@ -249,7 +256,7 @@ class ScimEndpointDispatcher(
                         correlationId = tracer.currentCorrelationId(),
                     ),
                 )
-                ScimHttpResponse.created(serializer.serialize(created), location)
+                ScimHttpResponse.created(enrichedBytes, locationHeader)
             }
 
             HttpMethod.GET -> {
@@ -260,17 +267,23 @@ class ScimEndpointDispatcher(
                     validateSearchRequest(searchRequest)
                     val effectiveRequest = applyPaginationDefaults(searchRequest)
                     val result = handler.search(effectiveRequest, context)
-                    ok(capSearchResults(result))
+                    val capped = capSearchResults(result)
+                    okWithEnrichedListResponse(capped, handler, resourceTypeName)
                 } else {
                     requireAuthorization { it.canRead(handler.endpoint, resourceId, context) }
                     val result = handler.get(resourceId, context)
+                    val absoluteLocation = result.id?.let { rid -> normalizedBaseUrl?.let { "$it${config.basePath}${handler.endpoint}/$rid" } }
+                    // Compute ETag BEFORE meta.location enrichment for stable ETags
                     val etag = etagEngine.generateETag(result)
                     val ifNoneMatch = etagEngine.extractIfNoneMatch(request)
                     if (ifNoneMatch != null && etag == ifNoneMatch) {
                         ScimHttpResponse(status = 304)
                     } else {
+                        var bytes = serializer.serialize(result)
+                        bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                        bytes = enrichMemberRefs(bytes)
                         ScimHttpResponse.ok(
-                            serializer.serialize(result),
+                            bytes,
                             headers = if (config.etagEnabled) mapOf("ETag" to etag.value) else emptyMap(),
                         )
                     }
@@ -283,6 +296,7 @@ class ScimEndpointDispatcher(
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val resource = deserializeBody(request, handler.resourceType)
                 val result = handler.replace(resourceId, resource, ifMatch?.value, context)
+                val absoluteLocation = result.id?.let { rid -> normalizedBaseUrl?.let { "$it${config.basePath}${handler.endpoint}/$rid" } }
                 eventPublisher.publish(
                     ResourceReplacedEvent(
                         resourceType = resourceTypeName,
@@ -290,7 +304,7 @@ class ScimEndpointDispatcher(
                         correlationId = tracer.currentCorrelationId(),
                     ),
                 )
-                ok(result)
+                okWithEnrichedBytes(result, absoluteLocation, resourceTypeName)
             }
 
             HttpMethod.PATCH -> {
@@ -300,6 +314,7 @@ class ScimEndpointDispatcher(
                 val ifMatch = etagEngine.extractIfMatch(request)
                 val patchRequest = deserializeBody<PatchRequest>(request)
                 val result = handler.patch(resourceId, patchRequest, ifMatch?.value, context)
+                val absoluteLocation = result.id?.let { rid -> normalizedBaseUrl?.let { "$it${config.basePath}${handler.endpoint}/$rid" } }
                 eventPublisher.publish(
                     ResourcePatchedEvent(
                         resourceType = resourceTypeName,
@@ -308,7 +323,7 @@ class ScimEndpointDispatcher(
                         operationCount = patchRequest.operations.size,
                     ),
                 )
-                ok(result)
+                okWithEnrichedBytes(result, absoluteLocation, resourceTypeName)
             }
 
             HttpMethod.DELETE -> {
@@ -384,6 +399,73 @@ class ScimEndpointDispatcher(
         )
     } else {
         result
+    }
+
+    /**
+     * Enriches already-serialized JSON bytes with meta.location (and meta.resourceType if absent).
+     * Operates on wire format to avoid lossy domain-object round-trips.
+     * Returns original bytes unchanged when location is null or resource.id is null.
+     */
+    private fun enrichSerializedMetaLocation(
+        bytes: ByteArray,
+        location: String?,
+        resourceType: String?,
+    ): ByteArray {
+        location ?: return bytes
+        return serializer.enrichMetaLocation(bytes, location, resourceType)
+    }
+
+    private fun <T : Any> okWithEnrichedBytes(
+        resource: T,
+        absoluteLocation: String?,
+        resourceType: String?,
+    ): ScimHttpResponse {
+        var bytes = serializer.serialize(resource)
+        bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceType)
+        bytes = enrichMemberRefs(bytes)
+        return ScimHttpResponse.ok(bytes)
+    }
+
+    private fun enrichMemberRefs(bytes: ByteArray): ByteArray {
+        normalizedBaseUrl ?: return bytes
+        return serializer.enrichMemberRefs(bytes, "$normalizedBaseUrl${config.basePath}")
+    }
+
+    private fun <T : ScimResource> okWithEnrichedListResponse(
+        result: ListResponse<T>,
+        handler: ResourceHandler<*>,
+        resourceTypeName: String,
+    ): ScimHttpResponse {
+        if (normalizedBaseUrl == null) return ok(result)
+        val baseScimUrl = "$normalizedBaseUrl${config.basePath}"
+        val enrichedResources = result.resources.map { resource ->
+            var bytes = serializer.serialize(resource)
+            if (resource.id != null) {
+                val location = "$baseScimUrl${handler.endpoint}/${resource.id}"
+                bytes = serializer.enrichMetaLocation(bytes, location, resourceTypeName)
+            }
+            bytes = serializer.enrichMemberRefs(bytes, baseScimUrl)
+            bytes
+        }
+        // Build the ListResponse JSON manually with enriched resource bytes
+        val listBytes = serializer.serialize(result.copy(resources = emptyList()))
+        return ScimHttpResponse.ok(assembleListResponseBytes(listBytes, enrichedResources))
+    }
+
+    /**
+     * Replaces the empty "Resources" array in a serialized ListResponse with
+     * pre-enriched resource JSON byte arrays.
+     */
+    private fun assembleListResponseBytes(
+        listResponseBytes: ByteArray,
+        resourceBytesList: List<ByteArray>,
+    ): ByteArray {
+        if (resourceBytesList.isEmpty()) return listResponseBytes
+        val listJson = String(listResponseBytes, Charsets.UTF_8)
+        // Replace "Resources":[] with the actual enriched resources
+        val resourcesJson = resourceBytesList.joinToString(",") { String(it, Charsets.UTF_8) }
+        val replaced = listJson.replace("\"Resources\":[]", "\"Resources\":[$resourcesJson]")
+        return replaced.toByteArray(Charsets.UTF_8)
     }
 
     private fun findHandler(relativePath: String): ResourceHandler<*>? = handlers.firstOrNull { relativePath.lowercase().startsWith(it.endpoint.lowercase()) }
