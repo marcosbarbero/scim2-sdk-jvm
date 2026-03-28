@@ -1,18 +1,93 @@
 services:
-  # Primary SCIM server — plain JDK HTTP server, no Spring
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: scimdb
+      POSTGRES_USER: scim
+      POSTGRES_PASSWORD: scim
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scim -d scimdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  postgres-target:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: scimdb
+      POSTGRES_USER: scim
+      POSTGRES_PASSWORD: scim
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-target:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scim -d scimdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  keycloak:
+    build:
+      context: ./docker/keycloak
+      dockerfile: Dockerfile
+    command: start-dev --import-realm
+    environment:
+      KC_HTTP_PORT: 9090
+      KC_HTTP_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: true
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/keycloak/scim-sample-realm.json:/opt/keycloak/data/import/scim-sample-realm.json:ro
+    healthcheck:
+      test: >-
+        bash -c 'exec 3<>/dev/tcp/localhost/9000 &&
+        printf "GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 &&
+        timeout 3 cat <&3 | grep -q UP'
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+
+  # Primary SCIM server — plain JDK HTTP server with PostgreSQL
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/scimdb
+      DATABASE_USER: scim
+      DATABASE_PASSWORD: scim
     ports:
       - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
 
-  # Second SCIM server — proves bidirectional SCIM-to-SCIM sync
+  # Target SCIM server — receives outbound provisioning
   backend-target:
     build:
       context: .
       dockerfile: backend/Dockerfile
     environment:
-      PORT: 8080
+      DATABASE_URL: jdbc:postgresql://postgres-target:5432/scimdb
+      DATABASE_USER: scim
+      DATABASE_PASSWORD: scim
     ports:
       - "8081:8080"
+    depends_on:
+      postgres-target:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  pgdata-target:
