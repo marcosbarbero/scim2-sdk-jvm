@@ -47,7 +47,7 @@ function toScimFilter(input, attributes) {
   if (!input || !input.trim()) return undefined;
   if (SCIM_OPS.test(input)) return input; // already a SCIM filter
   // Plain text search — wrap as "contains" across attributes
-  const escaped = input.replace(/"/g, '\\"');
+  const escaped = input.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   return attributes.map(attr => `${attr} co "${escaped}"`).join(' or ');
 }
 
