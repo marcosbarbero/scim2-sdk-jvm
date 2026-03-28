@@ -57,20 +57,6 @@
       "protocol": "openid-connect"
     }
   ],
-  "components": {
-    "org.keycloak.storage.UserStorageProvider": [
-      {
-        "name": "scim-provider",
-        "providerId": "skss-scim2-storage",
-        "config": {
-          "endPoint": ["http://backend:8080/scim/v2"],
-          "priority": ["0"],
-          "enabled": ["true"],
-          "cachePolicy": ["DEFAULT"]
-        }
-      }
-    ]
-  },
   "users": [
     {
       "username": "admin",
