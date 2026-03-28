@@ -246,6 +246,52 @@ class PatchEngineTest {
     }
 
     @Nested
+    inner class MutabilityEnforcement {
+
+        @Test
+        fun `should reject PATCH on readOnly attribute id`() {
+            val user = baseUser()
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, path = "id", value = objectMapper.valueToTree("new-id")),
+                ),
+            )
+
+            shouldThrow<com.marcosbarbero.scim2.core.domain.model.error.MutabilityException> {
+                engine.apply(user, request)
+            }
+        }
+
+        @Test
+        fun `should reject PATCH on readOnly attribute meta`() {
+            val user = baseUser()
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, path = "meta", value = objectMapper.valueToTree(mapOf("resourceType" to "Hacked"))),
+                ),
+            )
+
+            shouldThrow<com.marcosbarbero.scim2.core.domain.model.error.MutabilityException> {
+                engine.apply(user, request)
+            }
+        }
+
+        @Test
+        fun `should allow PATCH on readWrite attribute displayName`() {
+            val user = baseUser()
+            val newDisplayName = faker.name.name()
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, path = "displayName", value = objectMapper.valueToTree(newDisplayName)),
+                ),
+            )
+
+            val result = engine.apply(user, request)
+            result.displayName shouldBe newDisplayName
+        }
+    }
+
+    @Nested
     inner class PreservesIdentity {
 
         @Test

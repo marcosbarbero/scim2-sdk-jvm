@@ -414,6 +414,43 @@ class JacksonScimSerializerTest {
     }
 
     @Nested
+    inner class FilterReturnedNeverTest {
+        @Test
+        fun `should exclude returned NEVER attributes from serialized output`() {
+            val user = User(userName = "secret.user", password = "s3cret!")
+            val bytes = serializer.serialize(user)
+
+            val filtered = serializer.filterReturnedNever(bytes, User::class.java)
+            val json = String(filtered, Charsets.UTF_8)
+
+            json shouldNotContain "\"password\""
+            json shouldNotContain "s3cret!"
+        }
+
+        @Test
+        fun `should preserve other attributes when filtering returned NEVER`() {
+            val user = User(
+                userName = "visible.user",
+                displayName = "Visible User",
+                password = "s3cret!",
+                emails = listOf(MultiValuedAttribute(value = "test@example.com", type = "work")),
+            )
+            val bytes = serializer.serialize(user)
+
+            val filtered = serializer.filterReturnedNever(bytes, User::class.java)
+            val json = String(filtered, Charsets.UTF_8)
+
+            json shouldContain "\"userName\""
+            json shouldContain "visible.user"
+            json shouldContain "\"displayName\""
+            json shouldContain "Visible User"
+            json shouldContain "\"emails\""
+            json shouldContain "test@example.com"
+            json shouldNotContain "\"password\""
+        }
+    }
+
+    @Nested
     inner class EnrichMemberRefsTest {
         @Test
         fun `should add ref to group members`() {

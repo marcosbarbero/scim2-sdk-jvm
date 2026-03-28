@@ -256,6 +256,7 @@ class ScimEndpointDispatcher(
                 val locationHeader = absoluteLocation ?: relativeLocation ?: "${config.basePath}${handler.endpoint}"
                 var bytes = serializer.serialize(created)
                 bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                bytes = serializer.filterReturnedNever(bytes, handler.resourceType)
                 val enrichedBytes = enrichMemberRefs(bytes)
                 eventPublisher.publish(
                     ResourceCreatedEvent(
@@ -294,6 +295,7 @@ class ScimEndpointDispatcher(
                     } else {
                         var bytes = serializer.serialize(result)
                         bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceTypeName)
+                        bytes = serializer.filterReturnedNever(bytes, handler.resourceType)
                         bytes = enrichMemberRefs(bytes)
                         ScimHttpResponse.ok(
                             bytes,
@@ -317,7 +319,7 @@ class ScimEndpointDispatcher(
                         correlationId = tracer.currentCorrelationId(),
                     ),
                 )
-                okWithEnrichedBytes(result, absoluteLocation, resourceTypeName)
+                okWithEnrichedBytes(result, absoluteLocation, resourceTypeName, handler.resourceType)
             }
 
             HttpMethod.PATCH -> {
@@ -342,7 +344,7 @@ class ScimEndpointDispatcher(
                         operationCount = patchRequest.operations.size,
                     ),
                 )
-                okWithEnrichedBytes(result, absoluteLocation, resourceTypeName)
+                okWithEnrichedBytes(result, absoluteLocation, resourceTypeName, handler.resourceType)
             }
 
             HttpMethod.DELETE -> {
@@ -438,9 +440,13 @@ class ScimEndpointDispatcher(
         resource: T,
         absoluteLocation: String?,
         resourceType: String?,
+        resourceClass: Class<*>? = null,
     ): ScimHttpResponse {
         var bytes = serializer.serialize(resource)
         bytes = enrichSerializedMetaLocation(bytes, absoluteLocation, resourceType)
+        if (resourceClass != null) {
+            bytes = serializer.filterReturnedNever(bytes, resourceClass)
+        }
         bytes = enrichMemberRefs(bytes)
         return ScimHttpResponse.ok(bytes)
     }
@@ -463,6 +469,7 @@ class ScimEndpointDispatcher(
                 val location = "$baseScimUrl${handler.endpoint}/${resource.id}"
                 bytes = serializer.enrichMetaLocation(bytes, location, resourceTypeName)
             }
+            bytes = serializer.filterReturnedNever(bytes, handler.resourceType)
             bytes = serializer.enrichMemberRefs(bytes, baseScimUrl)
             bytes
         }

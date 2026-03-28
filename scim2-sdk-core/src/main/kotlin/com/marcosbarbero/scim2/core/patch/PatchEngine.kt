@@ -17,10 +17,12 @@ package com.marcosbarbero.scim2.core.patch
 
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidPathException
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
+import com.marcosbarbero.scim2.core.domain.model.error.MutabilityException
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
+import com.marcosbarbero.scim2.core.validation.MutabilityValidator
 import tools.jackson.databind.JsonNode
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ArrayNode
@@ -32,11 +34,31 @@ class PatchEngine(private val objectMapper: ObjectMapper) {
         var node = objectMapper.valueToTree<ObjectNode>(resource)
 
         for (operation in request.operations) {
+            validateMutability(resource::class, operation)
             node = applyOperation(node, operation)
         }
 
         @Suppress("UNCHECKED_CAST")
         return objectMapper.treeToValue(node, resource::class.java) as T
+    }
+
+    private fun validateMutability(resourceClass: kotlin.reflect.KClass<*>, operation: PatchOperation) {
+        val path = operation.path
+        if (path != null) {
+            if (!MutabilityValidator.isModificationAllowed(resourceClass, path)) {
+                throw MutabilityException("Attribute '$path' is not modifiable")
+            }
+        } else {
+            // No path: value must be an object. Check each field in it.
+            val value = operation.value
+            if (value is ObjectNode) {
+                value.propertyNames().forEach { fieldName ->
+                    if (!MutabilityValidator.isModificationAllowed(resourceClass, fieldName)) {
+                        throw MutabilityException("Attribute '$fieldName' is not modifiable")
+                    }
+                }
+            }
+        }
     }
 
     private fun applyOperation(node: ObjectNode, operation: PatchOperation): ObjectNode = when (operation.op) {

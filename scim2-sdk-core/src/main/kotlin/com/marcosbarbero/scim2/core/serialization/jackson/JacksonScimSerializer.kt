@@ -16,6 +16,8 @@
 package com.marcosbarbero.scim2.core.serialization.jackson
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.marcosbarbero.scim2.core.schema.annotation.Returned
+import com.marcosbarbero.scim2.core.schema.annotation.ScimAttribute
 import com.marcosbarbero.scim2.core.serialization.spi.ScimSerializer
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.ObjectMapper
@@ -23,6 +25,8 @@ import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.node.ObjectNode
 import tools.jackson.module.kotlin.KotlinModule
 import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.javaField
 
 class JacksonScimSerializer(private val objectMapper: ObjectMapper) : ScimSerializer {
 
@@ -51,6 +55,17 @@ class JacksonScimSerializer(private val objectMapper: ObjectMapper) : ScimSerial
         return objectMapper.writeValueAsBytes(tree)
     }
 
+    override fun filterReturnedNever(json: ByteArray, resourceClass: Class<*>): ByteArray {
+        val neverFields = resolveReturnedNeverFields(resourceClass.kotlin)
+        if (neverFields.isEmpty()) return json
+
+        val tree = objectMapper.readTree(json) as ObjectNode
+        for (field in neverFields) {
+            tree.remove(field)
+        }
+        return objectMapper.writeValueAsBytes(tree)
+    }
+
     override fun enrichMemberRefs(json: ByteArray, baseScimUrl: String): ByteArray {
         val tree = objectMapper.readTree(json) as ObjectNode
         val base = baseScimUrl.trimEnd('/')
@@ -71,7 +86,21 @@ class JacksonScimSerializer(private val objectMapper: ObjectMapper) : ScimSerial
         }
     }
 
+    private fun resolveReturnedNeverFields(klass: KClass<*>): Set<String> = returnedNeverCache.getOrPut(klass) {
+        klass.memberProperties
+            .filter { prop ->
+                val annotation = prop.javaField?.getAnnotation(ScimAttribute::class.java)
+                    ?: prop.annotations.filterIsInstance<ScimAttribute>().firstOrNull()
+                    ?: prop.getter.annotations.filterIsInstance<ScimAttribute>().firstOrNull()
+                annotation?.returned == Returned.NEVER
+            }
+            .map { it.name }
+            .toSet()
+    }
+
     companion object {
+        private val returnedNeverCache = java.util.concurrent.ConcurrentHashMap<KClass<*>, Set<String>>()
+
         fun defaultObjectMapper(): ObjectMapper = JsonMapper.builder()
             .addModule(KotlinModule.Builder().build())
             .addModule(ScimModule())

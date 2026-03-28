@@ -18,11 +18,16 @@ package com.marcosbarbero.scim2.core.domain.model.resource
 import com.fasterxml.jackson.annotation.JsonAnyGetter
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.marcosbarbero.scim2.core.domain.model.common.Meta
+import com.marcosbarbero.scim2.core.schema.annotation.Mutability
+import com.marcosbarbero.scim2.core.schema.annotation.Returned
+import com.marcosbarbero.scim2.core.schema.annotation.ScimAttribute
 
 abstract class ScimResource(
     open val schemas: List<String>,
+    @ScimAttribute(mutability = Mutability.READ_ONLY, returned = Returned.ALWAYS)
     open val id: String? = null,
     open val externalId: String? = null,
+    @ScimAttribute(mutability = Mutability.READ_ONLY, returned = Returned.DEFAULT)
     open val meta: Meta? = null,
 ) {
     private val _extensions: MutableMap<String, Any> = mutableMapOf()
