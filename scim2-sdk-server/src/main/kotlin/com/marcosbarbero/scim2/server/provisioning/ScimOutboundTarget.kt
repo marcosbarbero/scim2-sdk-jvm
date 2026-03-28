@@ -24,13 +24,13 @@ import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource
  * plain HTTP, or any other transport.
  *
  * ```java
- * // Example with ScimClient
+ * // Example with ScimClient (uses Java-friendly Class<T> overloads)
  * ScimOutboundTarget target = new ScimOutboundTarget() {
  *     public void create(String endpoint, ScimResource resource) {
- *         scimClient.create(endpoint, resource, resource.getClass().kotlin);
+ *         scimClient.create(endpoint, resource, resource.getClass());
  *     }
  *     public void replace(String endpoint, String id, ScimResource resource) {
- *         scimClient.replace(endpoint, id, resource, resource.getClass().kotlin);
+ *         scimClient.replace(endpoint, id, resource, resource.getClass());
  *     }
  *     public void delete(String endpoint, String id) {
  *         scimClient.delete(endpoint, id);

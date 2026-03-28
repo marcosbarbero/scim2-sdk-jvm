@@ -40,6 +40,18 @@ interface ScimClient : AutoCloseable {
 
     fun <T : ScimResource> search(endpoint: String, searchRequest: SearchRequest, type: KClass<T>): ScimResponse<ListResponse<T>>
 
+    // Java-friendly overloads that accept Class<T> instead of KClass<T>
+
+    fun <T : ScimResource> create(endpoint: String, resource: T, type: Class<T>): ScimResponse<T> = create(endpoint, resource, type.kotlin)
+
+    fun <T : ScimResource> get(endpoint: String, id: String, type: Class<T>): ScimResponse<T> = get(endpoint, id, type.kotlin)
+
+    fun <T : ScimResource> replace(endpoint: String, id: String, resource: T, type: Class<T>): ScimResponse<T> = replace(endpoint, id, resource, type.kotlin)
+
+    fun <T : ScimResource> patch(endpoint: String, id: String, patchRequest: PatchRequest, type: Class<T>): ScimResponse<T> = patch(endpoint, id, patchRequest, type.kotlin)
+
+    fun <T : ScimResource> search(endpoint: String, searchRequest: SearchRequest, type: Class<T>): ScimResponse<ListResponse<T>> = search(endpoint, searchRequest, type.kotlin)
+
     fun bulk(bulkRequest: BulkRequest): ScimResponse<BulkResponse>
 
     fun getServiceProviderConfig(): ScimResponse<ServiceProviderConfig>

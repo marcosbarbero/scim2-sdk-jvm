@@ -18,10 +18,10 @@ package com.example.scim;
 import com.marcosbarbero.scim2.client.api.ScimClient;
 import com.marcosbarbero.scim2.core.domain.model.resource.ScimResource;
 import com.marcosbarbero.scim2.server.provisioning.ScimOutboundTarget;
-import kotlin.reflect.KClass;
 
 /**
  * Bridges {@link ScimOutboundTarget} to {@link ScimClient}.
+ * Uses the Java-friendly {@code Class<T>} overloads — no KClass needed.
  */
 @SuppressWarnings("unchecked")
 public class ScimClientOutboundTarget implements ScimOutboundTarget {
@@ -34,14 +34,12 @@ public class ScimClientOutboundTarget implements ScimOutboundTarget {
 
     @Override
     public void create(String endpoint, ScimResource resource) {
-        KClass<ScimResource> type = (KClass<ScimResource>) kotlin.jvm.JvmClassMappingKt.getKotlinClass(resource.getClass());
-        scimClient.create(endpoint, resource, type);
+        scimClient.create(endpoint, resource, (Class<ScimResource>) resource.getClass());
     }
 
     @Override
     public void replace(String endpoint, String id, ScimResource resource) {
-        KClass<ScimResource> type = (KClass<ScimResource>) kotlin.jvm.JvmClassMappingKt.getKotlinClass(resource.getClass());
-        scimClient.replace(endpoint, id, resource, type);
+        scimClient.replace(endpoint, id, resource, (Class<ScimResource>) resource.getClass());
     }
 
     @Override
