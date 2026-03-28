@@ -61,6 +61,7 @@ class ScimServerAutoConfiguration {
         patchEnabled = properties.patch.enabled,
         defaultPageSize = properties.pagination.defaultPageSize,
         maxPageSize = properties.pagination.maxPageSize,
+        baseUrl = properties.baseUrl,
     )
 
     @Bean

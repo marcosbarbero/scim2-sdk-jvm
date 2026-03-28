@@ -54,7 +54,11 @@ public class PlainScimServer {
 
     public static void main(String[] args) throws Exception {
         var port = Integer.parseInt(env("PORT", "8080"));
-        var config = new ScimServerConfig("/scim/v2");
+        var baseUrl = env("SCIM_BASE_URL", "http://localhost:" + port);
+        var config = new ScimServerConfig(
+                "/scim/v2", true, 1000, 1_048_576L, true, 200,
+                false, true, false, true, 100, 1000, baseUrl
+        );
         var serializer = new JacksonScimSerializer();
 
         // PostgreSQL data source
