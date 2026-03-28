@@ -9,20 +9,12 @@ Demonstrates that scim2-sdk-jvm works without any framework.
 
 ## Architecture
 
-```
-                                        Primary SCIM Server (:8080)
-                                       +---------------------------+
-Keycloak (:9090)  --- SCIM push --->   | JDK HttpServer + JDBC     |
-+ SCIM extension                       | scim2-sdk-jvm (no Spring) |
-                                       | PostgreSQL                |
-                                       +-----------+---------------+
-                                                   |
-                                       Target SCIM Server (:8081)
-                                       +---------------------------+
-                                       | JDK HttpServer + JDBC     |
-                                       | scim2-sdk-jvm (no Spring) |
-                                       | PostgreSQL                |
-                                       +---------------------------+
+```mermaid
+graph TD
+    KC[Keycloak :9090<br/>+ SCIM extension] -->|SCIM push| PS[Primary SCIM Server :8080<br/>JDK HttpServer + JDBC<br/>scim2-sdk-jvm — no Spring]
+    FE[React Frontend :5173] -->|SCIM API| PS
+    PS --- PG1[(PostgreSQL :5432)]
+    TS[Target SCIM Server :8081<br/>JDK HttpServer + JDBC<br/>scim2-sdk-jvm — no Spring] --- PG2[(PostgreSQL :5433)]
 ```
 
 ## Quick Start

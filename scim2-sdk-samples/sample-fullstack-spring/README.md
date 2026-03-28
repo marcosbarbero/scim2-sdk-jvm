@@ -9,22 +9,13 @@ A production-like SCIM 2.0 application demonstrating bidirectional identity prov
 
 ## Architecture
 
-```
-                                        Primary SCIM Server (:8080)
-                                       +---------------------------+
-Keycloak (:9090)  --- SCIM push --->   | Spring Boot + PostgreSQL  |
-+ SCIM extension                       | scim2-sdk-jvm             |
-                                       +-----------+---------------+
-                                                   |
-React Frontend (:5173)                  outbound provisioning
-                                        (ScimOutboundProvisioningListener)
-                                                   |
-                                                   v
-                                        Target SCIM Server (:8081)
-                                       +---------------------------+
-                                       | Spring Boot + PostgreSQL  |
-                                       | scim2-sdk-jvm             |
-                                       +---------------------------+
+```mermaid
+graph TD
+    KC[Keycloak :9090<br/>+ SCIM extension] -->|SCIM push| PS[Primary SCIM Server :8080<br/>Spring Boot + PostgreSQL<br/>scim2-sdk-jvm]
+    FE[React Frontend :5173] -->|REST API| PS
+    PS -->|outbound provisioning<br/>ScimOutboundProvisioningListener| TS[Target SCIM Server :8081<br/>Spring Boot + PostgreSQL<br/>scim2-sdk-jvm]
+    PS --- PG1[(PostgreSQL :5432)]
+    TS --- PG2[(PostgreSQL :5433)]
 ```
 
 **Inbound**: Create a user in Keycloak -> automatically appears in the primary SCIM server
