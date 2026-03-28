@@ -76,6 +76,30 @@ curl -s http://localhost:8080/scim/v2/Users | python3 -c "import sys,json; [prin
 curl -s http://localhost:8081/scim/v2/Users | python3 -c "import sys,json; [print(f'  Target: {r[\"userName\"]}') for r in json.load(sys.stdin).get('Resources',[])]"
 ```
 
+## Known Limitations
+
+### Keycloak SCIM Extension (suvera/keycloak-scim2-storage)
+
+The [suvera/keycloak-scim2-storage](https://github.com/suvera/keycloak-scim2-storage) extension only supports **user creation**. The following operations in Keycloak do **not** propagate to the SCIM server:
+
+| Operation | Propagates? | Notes |
+|---|---|---|
+| Create user | Yes | Syncs within ~60 seconds |
+| Update user | **No** | Extension doesn't queue `userUpdate` actions |
+| Delete user | **No** | Extension doesn't queue `userDelete` actions |
+| Create group | **No** | Extension doesn't support group sync |
+
+These are limitations of the suvera extension, not the SDK. All SCIM operations work correctly when called directly via the SCIM protocol or the React frontend:
+
+| Operation via Frontend/SCIM API | Propagates to target? |
+|---|---|
+| Create user | Yes |
+| Update user | Yes |
+| Delete user | Yes |
+| Create/update/delete group | Yes |
+
+For full bidirectional sync with Keycloak, consider using a SCIM extension that supports all operations (e.g., the commercial [scim-for-keycloak](https://scim-for-keycloak.de/) or [mitodl/keycloak-scim](https://github.com/mitodl/keycloak-scim)).
+
 ## Local Development
 
 ```bash
