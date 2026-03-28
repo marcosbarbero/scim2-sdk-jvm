@@ -10,8 +10,9 @@ until curl -sf "$KEYCLOAK_URL/health/ready" > /dev/null 2>&1 || curl -sf "$KEYCL
   sleep 2
 done
 
-echo "Waiting for backend SCIM endpoint..."
-until curl -sf "http://localhost:8080/scim/v2/ServiceProviderConfig" > /dev/null 2>&1; do
+BACKEND_URL="${BACKEND_URL:-http://localhost:8080}"
+echo "Waiting for backend SCIM endpoint at $BACKEND_URL..."
+until curl -sf "$BACKEND_URL/scim/v2/ServiceProviderConfig" > /dev/null 2>&1; do
   sleep 2
 done
 
