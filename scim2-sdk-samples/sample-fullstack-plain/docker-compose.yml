@@ -1,0 +1,18 @@
+services:
+  # Primary SCIM server — plain JDK HTTP server, no Spring
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "8080:8080"
+
+  # Second SCIM server — proves bidirectional SCIM-to-SCIM sync
+  backend-target:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      PORT: 8080
+    ports:
+      - "8081:8080"

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>scim-fullstack-plain</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>SCIM Full-Stack Sample (Plain Java)</name>
+    <description>Production-like SCIM 2.0 sample using only JDK HTTP server — no Spring Boot</description>
+
+    <modules>
+        <module>backend</module>
+    </modules>
+
+    <properties>
+        <java.version>25</java.version>
+        <maven.compiler.release>25</maven.compiler.release>
+        <scim2-sdk.version>0.2.4</scim2-sdk.version>
+        <kotlin.version>2.2.21</kotlin.version>
+        <jackson.version>3.0.4</jackson.version>
+        <slf4j.version>2.0.17</slf4j.version>
+    </properties>
+
+</project>
