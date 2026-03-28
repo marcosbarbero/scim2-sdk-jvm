@@ -300,7 +300,7 @@ Three options for managing the SCIM schema:
 
 - Java 25+
 - Maven 3.9+
-- Spring Boot 3.4+ (for starter, optional)
+- Spring Boot 4.0+ (for starter, optional)
 
 ## License
 
