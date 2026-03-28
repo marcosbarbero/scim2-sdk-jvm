@@ -37,6 +37,14 @@
             <groupId>com.marcosbarbero</groupId>
             <artifactId>scim2-sdk-test</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.marcosbarbero</groupId>
+            <artifactId>scim2-sdk-client</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.marcosbarbero</groupId>
+            <artifactId>scim2-sdk-client-httpclient</artifactId>
+        </dependency>
 
         <!-- Kotlin runtime (required by SDK models) -->
         <dependency>

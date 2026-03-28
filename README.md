@@ -196,14 +196,29 @@ For reliable delivery, implement a custom `ScimEventPublisher` using the [transa
 
 ### Without Spring Boot
 
-Outbound provisioning currently requires Spring's event system. Framework-agnostic support is tracked in [#87](https://github.com/marcosbarbero/scim2-sdk-jvm/issues/87). In the meantime, you can implement a custom `ScimEventPublisher` that calls `ScimClient` directly.
+Use `ScimOutboundEventPublisher` with a `ScimOutboundTarget` — no Spring needed:
+
+```java
+ScimOutboundTarget target = new ScimClientOutboundTarget(scimClient);
+ScimEventPublisher publisher = new ScimOutboundEventPublisher(target, handlers);
+
+var dispatcher = new ScimEndpointDispatcher(
+    handlers, ..., eventPublisher = publisher, ...
+);
+```
+
+Chain multiple publishers with `CompositeEventPublisher`:
+
+```java
+var publisher = new CompositeEventPublisher(outboundPublisher, auditPublisher);
+```
 
 ## Sample Applications
 
 | Sample | Description |
 |---|---|
 | [sample-fullstack-spring](scim2-sdk-samples/sample-fullstack-spring/) | **Production-like**: Spring Boot + PostgreSQL + Keycloak + React + bidirectional SCIM sync. `docker compose up -d` |
-| [sample-fullstack-plain](scim2-sdk-samples/sample-fullstack-plain/) | **Production-like**: JDK HttpServer + plain JDBC + PostgreSQL + Keycloak + React. No Spring. `docker compose up -d` |
+| [sample-fullstack-plain](scim2-sdk-samples/sample-fullstack-plain/) | **Production-like**: JDK HttpServer + plain JDBC + PostgreSQL + Keycloak + React + outbound provisioning. No Spring. `docker compose up -d` |
 | [sample-server-spring](scim2-sdk-samples/sample-server-spring/) | Minimal Spring Boot server (hosts E2E and contract tests) |
 
 ## Modules

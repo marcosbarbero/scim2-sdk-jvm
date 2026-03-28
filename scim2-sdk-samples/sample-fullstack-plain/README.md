@@ -11,9 +11,11 @@ Demonstrates that scim2-sdk-jvm works without any framework.
 
 ```mermaid
 graph TD
-    KC[Keycloak :9090<br/>+ SCIM extension] -->|SCIM push| PS[SCIM Server :8080<br/>JDK HttpServer + JDBC<br/>scim2-sdk-jvm — no Spring]
+    KC[Keycloak :9090<br/>+ SCIM extension] -->|SCIM push| PS[Primary SCIM Server :8080<br/>JDK HttpServer + JDBC<br/>scim2-sdk-jvm — no Spring]
     FE[React Frontend :5173] -->|SCIM API| PS
-    PS --- PG[(PostgreSQL :5432)]
+    PS -->|outbound provisioning<br/>ScimOutboundEventPublisher| TS[Target SCIM Server :8081<br/>JDK HttpServer + JDBC]
+    PS --- PG1[(PostgreSQL :5432)]
+    TS --- PG2[(PostgreSQL :5433)]
 ```
 
 ## Quick Start
@@ -94,16 +96,12 @@ curl -s http://localhost:8080/scim/v2/ResourceTypes | python3 -m json.tool
 | HTTP server         | Spring MVC (Tomcat)                   | JDK HttpServer + virtual threads |
 | Persistence         | Spring Data JPA + Flyway              | Plain JDBC + auto-init schema  |
 | Auth                | Spring Security + OAuth2 JWT          | No authentication              |
-| Outbound provisioning | Yes (ScimOutboundProvisioningListener) | No (no Spring event system) |
+| Outbound provisioning | ScimOutboundProvisioningListener (Spring) | ScimOutboundEventPublisher (no Spring) |
 | Configuration       | application.yml + auto-config         | Environment variables          |
 | Dependencies        | ~20 transitive JARs                   | SDK + JDBC driver + SLF4J      |
 | Framework           | Spring Boot 4.x                       | None                           |
 
 ## Known Limitations
-
-### No Outbound Provisioning
-
-The plain server has no Spring event system, so changes are not automatically pushed to another SCIM server. Use the [Spring Boot sample](../sample-fullstack-spring/) for bidirectional sync with a target server.
 
 ### No Authentication
 
