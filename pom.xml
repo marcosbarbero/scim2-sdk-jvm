@@ -47,6 +47,8 @@
         <module>scim2-sdk-spring-boot-starter</module>
         <module>scim2-sdk-test</module>
         <module>scim2-sdk-samples/sample-server-spring</module>
+        <module>scim2-sdk-samples/sample-fullstack-spring</module>
+        <module>scim2-sdk-samples/sample-fullstack-plain</module>
     </modules>
 
     <properties>
@@ -448,6 +450,8 @@
                         <waitUntil>published</waitUntil>
                         <excludeArtifacts>
                             <excludeArtifact>sample-server-spring</excludeArtifact>
+                            <excludeArtifact>sample-fullstack-spring</excludeArtifact>
+                            <excludeArtifact>sample-fullstack-plain</excludeArtifact>
                         </excludeArtifacts>
                     </configuration>
                 </plugin>

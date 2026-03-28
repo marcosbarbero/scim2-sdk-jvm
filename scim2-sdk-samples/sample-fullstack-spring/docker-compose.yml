@@ -61,7 +61,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scimdb
       SPRING_DATASOURCE_USERNAME: scim
@@ -85,7 +85,7 @@ services:
   backend-target:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-target:5432/scimdb
       SPRING_DATASOURCE_USERNAME: scim

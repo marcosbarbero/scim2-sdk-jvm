@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Standalone pom for Docker builds — uses Maven Central artifacts, not the SDK parent -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.example</groupId>
-        <artifactId>scim-fullstack-plain</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-    </parent>
+    <groupId>com.example</groupId>
+    <artifactId>sample-fullstack-plain</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
 
-    <artifactId>scim-fullstack-plain-backend</artifactId>
-    <name>SCIM Full-Stack Sample (Plain Java) :: Backend</name>
+    <properties>
+        <maven.compiler.release>25</maven.compiler.release>
+        <scim2-sdk.version>0.2.4</scim2-sdk.version>
+        <kotlin.version>2.2.21</kotlin.version>
+        <jackson.version>3.0.4</jackson.version>
+    </properties>
 
     <dependencies>
-        <!-- SCIM 2.0 SDK — core + server (no Spring) -->
         <dependency>
             <groupId>com.marcosbarbero</groupId>
             <artifactId>scim2-sdk-core</artifactId>
@@ -30,15 +32,6 @@
             <artifactId>scim2-sdk-test</artifactId>
             <version>${scim2-sdk.version}</version>
         </dependency>
-
-        <!-- Jackson Kotlin module for SCIM model deserialization -->
-        <dependency>
-            <groupId>tools.jackson.module</groupId>
-            <artifactId>jackson-module-kotlin</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-
-        <!-- Kotlin runtime (required by SDK models) -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
@@ -49,35 +42,26 @@
             <artifactId>kotlin-reflect</artifactId>
             <version>${kotlin.version}</version>
         </dependency>
-
-        <!-- Database -->
+        <dependency>
+            <groupId>tools.jackson.module</groupId>
+            <artifactId>jackson-module-kotlin</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.5</version>
+            <scope>runtime</scope>
         </dependency>
-
-        <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
-            <version>${slf4j.version}</version>
+            <version>2.0.17</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>com.example.scim.PlainScimServer</mainClass>
-                        </manifest>
-                    </archive>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
