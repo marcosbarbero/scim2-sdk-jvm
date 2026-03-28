@@ -65,6 +65,7 @@ class ScimServerAutoConfigurationTest {
         contextRunner
             .withPropertyValues(
                 "scim.base-path=/api/scim",
+                "scim.base-url=https://example.com",
                 "scim.bulk.enabled=false",
                 "scim.bulk.max-operations=500",
                 "scim.filter.max-results=50",
@@ -78,6 +79,7 @@ class ScimServerAutoConfigurationTest {
             .run { context ->
                 val config = context.getBean(ScimServerConfig::class.java)
                 config.basePath shouldBe "/api/scim"
+                config.baseUrl shouldBe "https://example.com"
                 config.bulkEnabled shouldBe false
                 config.bulkMaxOperations shouldBe 500
                 config.filterMaxResults shouldBe 50
