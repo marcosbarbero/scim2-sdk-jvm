@@ -1238,6 +1238,93 @@ class ScimEndpointDispatcherTest {
         capturedCount shouldBe 5
     }
 
+    // --- meta.location tests ---
+
+    @Test
+    fun `POST Users response body should include meta location when baseUrl configured`() {
+        val baseUrlConfig = config.copy(baseUrl = "https://example.com")
+        val baseUrlDiscovery = DiscoveryService(listOf(userHandler), schemaRegistry, baseUrlConfig)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = baseUrlDiscovery,
+            config = baseUrlConfig,
+            serializer = serializer,
+        )
+        val body = objectMapper.writeValueAsBytes(
+            mapOf("schemas" to listOf(ScimUrns.USER), "userName" to faker.name.firstName()),
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.POST,
+            path = "${config.basePath}/Users",
+            body = body,
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 201
+        val responseBody = objectMapper.readTree(response.body)
+        val location = responseBody.get("meta")?.get("location")?.asString()
+        location shouldNotBe null
+        location shouldContain "https://example.com"
+        location shouldContain "/Users/"
+    }
+
+    @Test
+    fun `GET Users by id should include meta location when baseUrl configured`() {
+        val user = createTestUser()
+        val baseUrlConfig = config.copy(baseUrl = "https://example.com")
+        val baseUrlDiscovery = DiscoveryService(listOf(userHandler), schemaRegistry, baseUrlConfig)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = baseUrlDiscovery,
+            config = baseUrlConfig,
+            serializer = serializer,
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/Users/${user.id}",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val location = responseBody.get("meta")?.get("location")?.asString()
+        location shouldNotBe null
+        location shouldBe "https://example.com${config.basePath}/Users/${user.id}"
+    }
+
+    @Test
+    fun `GET ServiceProviderConfig should include meta when baseUrl configured`() {
+        val baseUrlConfig = config.copy(baseUrl = "https://example.com")
+        val baseUrlDiscovery = DiscoveryService(listOf(userHandler), schemaRegistry, baseUrlConfig)
+        val d = ScimEndpointDispatcher(
+            handlers = listOf(userHandler),
+            bulkHandler = null,
+            meHandler = null,
+            discoveryService = baseUrlDiscovery,
+            config = baseUrlConfig,
+            serializer = serializer,
+        )
+        val request = ScimHttpRequest(
+            method = HttpMethod.GET,
+            path = "${config.basePath}/ServiceProviderConfig",
+        )
+
+        val response = d.dispatch(request)
+
+        response.status shouldBe 200
+        val responseBody = objectMapper.readTree(response.body)
+        val meta = responseBody.get("meta")
+        meta shouldNotBe null
+        meta.get("resourceType").asString() shouldBe "ServiceProviderConfig"
+        meta.get("location").asString() shouldBe "https://example.com${config.basePath}/ServiceProviderConfig"
+    }
+
     private fun createTestUser(): User {
         val id = java.util.UUID.randomUUID().toString()
         val user = User(id = id, userName = faker.name.firstName())

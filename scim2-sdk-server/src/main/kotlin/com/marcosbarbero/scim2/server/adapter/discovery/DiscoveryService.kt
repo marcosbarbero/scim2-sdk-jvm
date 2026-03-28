@@ -15,6 +15,7 @@
  */
 package com.marcosbarbero.scim2.server.adapter.discovery
 
+import com.marcosbarbero.scim2.core.domain.model.common.Meta
 import com.marcosbarbero.scim2.core.domain.model.error.ResourceNotFoundException
 import com.marcosbarbero.scim2.core.domain.model.schema.ResourceType
 import com.marcosbarbero.scim2.core.domain.model.schema.Schema
@@ -23,6 +24,7 @@ import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.server.port.ResourceHandler
+import java.net.URI
 
 class DiscoveryService(
     private val handlers: List<ResourceHandler<*>>,
@@ -31,6 +33,12 @@ class DiscoveryService(
 ) {
 
     fun getServiceProviderConfig(): ServiceProviderConfig = ServiceProviderConfig(
+        meta = config.baseUrl?.let {
+            Meta(
+                resourceType = "ServiceProviderConfig",
+                location = URI("${it}${config.basePath}/ServiceProviderConfig"),
+            )
+        },
         patch = ServiceProviderConfig.SupportedConfig(supported = config.patchEnabled),
         bulk = ServiceProviderConfig.BulkConfig(
             supported = config.bulkEnabled,
@@ -47,7 +55,7 @@ class DiscoveryService(
     )
 
     fun getSchemas(): ListResponse<Schema> {
-        val schemas = schemaRegistry.getAllSchemas()
+        val schemas = schemaRegistry.getAllSchemas().map { enrichSchemaMeta(it) }
         return ListResponse(
             totalResults = schemas.size,
             itemsPerPage = schemas.size,
@@ -56,11 +64,14 @@ class DiscoveryService(
         )
     }
 
-    fun getSchema(id: String): Schema = schemaRegistry.getSchema(id)
-        ?: throw ResourceNotFoundException("Schema not found: $id")
+    fun getSchema(id: String): Schema {
+        val schema = schemaRegistry.getSchema(id)
+            ?: throw ResourceNotFoundException("Schema not found: $id")
+        return enrichSchemaMeta(schema)
+    }
 
     fun getResourceTypes(): ListResponse<ResourceType> {
-        val types = schemaRegistry.getAllResourceTypes()
+        val types = schemaRegistry.getAllResourceTypes().map { enrichResourceTypeMeta(it) }
         return ListResponse(
             totalResults = types.size,
             itemsPerPage = types.size,
@@ -69,6 +80,27 @@ class DiscoveryService(
         )
     }
 
-    fun getResourceType(name: String): ResourceType = schemaRegistry.getResourceType(name)
-        ?: throw ResourceNotFoundException("ResourceType not found: $name")
+    fun getResourceType(name: String): ResourceType {
+        val type = schemaRegistry.getResourceType(name)
+            ?: throw ResourceNotFoundException("ResourceType not found: $name")
+        return enrichResourceTypeMeta(type)
+    }
+
+    private fun enrichSchemaMeta(schema: Schema): Schema = config.baseUrl?.let {
+        schema.copy(
+            meta = Meta(
+                resourceType = "Schema",
+                location = URI("${it}${config.basePath}/Schemas/${schema.id}"),
+            ),
+        )
+    } ?: schema
+
+    private fun enrichResourceTypeMeta(resourceType: ResourceType): ResourceType = config.baseUrl?.let {
+        resourceType.copy(
+            meta = Meta(
+                resourceType = "ResourceType",
+                location = URI("${it}${config.basePath}/ResourceTypes/${resourceType.name}"),
+            ),
+        )
+    } ?: resourceType
 }

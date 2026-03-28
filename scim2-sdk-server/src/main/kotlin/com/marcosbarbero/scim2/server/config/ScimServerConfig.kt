@@ -28,4 +28,5 @@ data class ScimServerConfig @JvmOverloads constructor(
     val patchEnabled: Boolean = true,
     val defaultPageSize: Int = 100,
     val maxPageSize: Int = 1000,
+    val baseUrl: String? = null,
 )

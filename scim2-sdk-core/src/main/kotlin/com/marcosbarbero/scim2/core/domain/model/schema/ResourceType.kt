@@ -16,6 +16,7 @@
 package com.marcosbarbero.scim2.core.domain.model.schema
 
 import com.marcosbarbero.scim2.core.domain.ScimUrns
+import com.marcosbarbero.scim2.core.domain.model.common.Meta
 
 data class ResourceType(
     val schemas: List<String> = listOf(ScimUrns.RESOURCE_TYPE),
@@ -25,6 +26,7 @@ data class ResourceType(
     val endpoint: String,
     val schema: String,
     val schemaExtensions: List<SchemaExtension> = emptyList(),
+    val meta: Meta? = null,
 ) {
     data class SchemaExtension(val schema: String, val required: Boolean)
 }

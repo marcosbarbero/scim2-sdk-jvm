@@ -283,6 +283,44 @@ class JacksonScimSerializerTest {
     }
 
     @Nested
+    inner class EmptyCollectionSerializationTest {
+        @Test
+        fun `should omit empty lists from serialized output`() {
+            val user = User(userName = "emptytest")
+            val json = serializer.serializeToString(user)
+
+            json shouldNotContain "\"emails\""
+            json shouldNotContain "\"phoneNumbers\""
+            json shouldNotContain "\"addresses\""
+            json shouldNotContain "\"groups\""
+        }
+
+        @Test
+        fun `should include non-empty lists in serialized output`() {
+            val user = User(
+                userName = "nonemptytest",
+                emails = listOf(
+                    MultiValuedAttribute(value = "test@example.com", type = "work", primary = true),
+                ),
+            )
+            val json = serializer.serializeToString(user)
+
+            json shouldContain "\"emails\""
+            json shouldContain "test@example.com"
+        }
+
+        @Test
+        fun `should still omit null fields`() {
+            val user = User(userName = "nulltest")
+            val json = serializer.serializeToString(user)
+
+            json shouldNotContain "\"displayName\""
+            json shouldNotContain "\"nickName\""
+            json shouldContain "\"userName\""
+        }
+    }
+
+    @Nested
     inner class ByteArraySerializationTest {
         @Test
         fun `should serialize to and deserialize from byte array`() {

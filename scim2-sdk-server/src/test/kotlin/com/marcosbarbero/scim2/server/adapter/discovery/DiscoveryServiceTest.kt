@@ -25,11 +25,13 @@ import com.marcosbarbero.scim2.server.port.ResourceHandler
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.net.URI
 
 class DiscoveryServiceTest {
 
@@ -136,5 +138,29 @@ class DiscoveryServiceTest {
         assertThrows<ResourceNotFoundException> {
             discoveryService.getResourceType("Unknown")
         }
+    }
+
+    @Test
+    fun `getServiceProviderConfig should include meta with location when baseUrl configured`() {
+        val configWithBaseUrl = config.copy(baseUrl = "https://example.com")
+        val service = DiscoveryService(listOf(userHandler, groupHandler), schemaRegistry, configWithBaseUrl)
+
+        val spc = service.getServiceProviderConfig()
+
+        spc.meta shouldNotBe null
+        spc.meta?.resourceType shouldBe "ServiceProviderConfig"
+        spc.meta?.location shouldBe URI("https://example.com/scim/v2/ServiceProviderConfig")
+    }
+
+    @Test
+    fun `getResourceType should include meta with location when baseUrl configured`() {
+        val configWithBaseUrl = config.copy(baseUrl = "https://example.com")
+        val service = DiscoveryService(listOf(userHandler, groupHandler), schemaRegistry, configWithBaseUrl)
+
+        val rt = service.getResourceType("User")
+
+        rt.meta shouldNotBe null
+        rt.meta?.resourceType shouldBe "ResourceType"
+        rt.meta?.location shouldBe URI("https://example.com/scim/v2/ResourceTypes/User")
     }
 }

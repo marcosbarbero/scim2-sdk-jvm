@@ -41,7 +41,7 @@ class JacksonScimSerializer(private val objectMapper: ObjectMapper) : ScimSerial
             .addModule(ScimModule())
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .changeDefaultPropertyInclusion { incl ->
-                incl.withValueInclusion(JsonInclude.Include.NON_NULL)
+                incl.withValueInclusion(JsonInclude.Include.NON_EMPTY)
             }
             .build()
     }
