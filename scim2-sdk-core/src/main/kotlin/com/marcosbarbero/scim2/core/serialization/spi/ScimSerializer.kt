@@ -36,6 +36,16 @@ interface ScimSerializer {
     fun enrichMetaLocation(json: ByteArray, location: String, resourceType: String? = null): ByteArray
 
     /**
+     * Removes fields annotated with `@ScimAttribute(returned = Returned.NEVER)` from
+     * already-serialized JSON bytes. Operates on wire format to avoid lossy round-trips.
+     *
+     * @param json the serialized JSON bytes
+     * @param resourceClass the resource class whose annotations drive filtering
+     * @return filtered JSON bytes with returned=NEVER fields removed
+     */
+    fun filterReturnedNever(json: ByteArray, resourceClass: Class<*>): ByteArray = json
+
+    /**
      * Enriches already-serialized JSON bytes by setting `$ref` on `members` and `groups` arrays.
      *
      * For each member/group entry that has a `value` (ID) and `type` but no `$ref`,

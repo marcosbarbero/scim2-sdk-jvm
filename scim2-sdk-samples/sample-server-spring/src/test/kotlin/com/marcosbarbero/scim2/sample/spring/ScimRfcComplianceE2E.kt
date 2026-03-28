@@ -324,6 +324,56 @@ class ScimRfcComplianceE2E(@LocalServerPort val port: Int) {
         json["scimType"].stringValue() shouldBe "invalidFilter"
     }
 
+    // === returned=NEVER filtering (RFC 7643 §7, Issue #99) ===
+
+    @Test
+    fun `POST with password does not return password in response body`() {
+        val user = User(userName = "rfc.password.${System.nanoTime()}", password = "SuperSecret123!")
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val serializer = JacksonScimSerializer()
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Users"))
+            .header("Content-Type", "application/scim+json")
+            .POST(java.net.http.HttpRequest.BodyPublishers.ofByteArray(serializer.serialize(user)))
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = response.body()
+
+        response.statusCode() shouldBe 201
+        json shouldContain "\"userName\""
+        json shouldNotContain "\"password\""
+        json shouldNotContain "SuperSecret123!"
+    }
+
+    // === Mutability enforcement (RFC 7643 §7, Issue #100) ===
+
+    @Test
+    fun `PATCH on readOnly attribute returns 400 mutability`() {
+        val created = client.create<User>("/Users", User(userName = "rfc.mutability.${System.nanoTime()}"))
+        val id = created.value.id!!
+
+        val patchJson = """
+        {
+            "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+            "Operations": [
+                {"op": "replace", "path": "id", "value": "hacked-id"}
+            ]
+        }
+        """.trimIndent()
+
+        val httpClient = java.net.http.HttpClient.newHttpClient()
+        val request = java.net.http.HttpRequest.newBuilder()
+            .uri(java.net.URI.create("http://localhost:$port/scim/v2/Users/$id"))
+            .header("Content-Type", "application/scim+json")
+            .method("PATCH", java.net.http.HttpRequest.BodyPublishers.ofString(patchJson))
+            .build()
+        val response = httpClient.send(request, java.net.http.HttpResponse.BodyHandlers.ofString())
+        val json = objectMapper.readTree(response.body())
+
+        response.statusCode() shouldBe 400
+        json["scimType"].stringValue() shouldBe "mutability"
+    }
+
     // === Verify raw JSON wire format ===
 
     @Test
