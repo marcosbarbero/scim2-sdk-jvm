@@ -88,6 +88,19 @@ services:
       postgres-target:
         condition: service_healthy
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_KEYCLOAK_URL: http://localhost:9090
+        VITE_KEYCLOAK_REALM: scim-sample
+        VITE_KEYCLOAK_CLIENT_ID: scim-sample-app
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
 volumes:
   pgdata:
   pgdata-target:
