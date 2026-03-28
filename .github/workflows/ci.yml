@@ -138,6 +138,28 @@ jobs:
       - name: Run E2E tests (full app + Keycloak)
         run: mvn test -Pe2e -B
 
+  fullstack-samples:
+    name: Full-Stack Samples
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Cache Maven dependencies
+        uses: actions/cache@v5
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
+      - name: Build full-stack samples
+        run: mvn compile -B -pl scim2-sdk-samples/sample-fullstack-spring,scim2-sdk-samples/sample-fullstack-plain -am
+
   mutation-tests:
     name: Mutation Tests
     runs-on: ubuntu-latest
