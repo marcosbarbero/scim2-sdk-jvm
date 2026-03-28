@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: scim-sample
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/scimdb}
+    username: ${SPRING_DATASOURCE_USERNAME:scim}
+    password: ${SPRING_DATASOURCE_PASSWORD:scim}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:9090/realms/scim-sample}
+          jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI:http://localhost:9090/realms/scim-sample/protocol/openid-connect/certs}
+
+# SCIM SDK configuration
+scim:
+  base-path: /scim/v2
+
+  persistence:
+    enabled: true
+    auto-migrate: true
+
+  # Outbound provisioning — push resource mutations to a target SCIM server
+  client:
+    base-url: ${SCIM_CLIENT_BASE_URL:}
+
+  idp:
+    provider: keycloak
+    client-id: ${KEYCLOAK_CLIENT_ID:scim-sample-app}
+
+  bulk:
+    max-operations: 100
+    max-payload-size: 1048576
+
+  filter:
+    max-results: 200
+
+  pagination:
+    default-count: 20
+    max-count: 100
+
+logging:
+  level:
+    com.example.scim: DEBUG
+    com.marcosbarbero.scim2: DEBUG
