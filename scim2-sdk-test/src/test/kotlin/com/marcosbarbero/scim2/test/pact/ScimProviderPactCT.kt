@@ -21,6 +21,9 @@ import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvide
 import au.com.dius.pact.provider.junitsupport.Provider
 import au.com.dius.pact.provider.junitsupport.State
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkOperationResponse
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkRequest
+import com.marcosbarbero.scim2.core.domain.model.bulk.BulkResponse
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.schema.introspector.SchemaRegistry
@@ -30,6 +33,8 @@ import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.server.config.ScimServerConfig
 import com.marcosbarbero.scim2.server.http.HttpMethod
 import com.marcosbarbero.scim2.server.http.ScimHttpRequest
+import com.marcosbarbero.scim2.server.port.BulkHandler
+import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import com.marcosbarbero.scim2.test.handler.InMemoryResourceHandler
 import com.marcosbarbero.scim2.test.repository.InMemoryResourceRepository
 import com.sun.net.httpserver.HttpExchange
@@ -52,7 +57,7 @@ import java.net.URI
  * This test is skipped when pact files do not exist (consumer tests must run first).
  */
 @Provider("ScimServiceProvider")
-@PactFolder("../../scim2-sdk-client/target/pacts")
+@PactFolder("../scim2-sdk-client/target/pacts")
 @EnabledIf("pactFilesExist")
 class ScimProviderPactCT {
 
@@ -66,10 +71,10 @@ class ScimProviderPactCT {
 
         @JvmStatic
         fun pactFilesExist(): Boolean {
-            val pactDir = java.io.File("../../scim2-sdk-client/target/pacts")
+            val pactDir = java.io.File("../scim2-sdk-client/target/pacts")
             // Also try from the module directory
             val altPactDir = java.io.File(
-                System.getProperty("user.dir") + "/../../scim2-sdk-client/target/pacts",
+                System.getProperty("user.dir") + "/../scim2-sdk-client/target/pacts",
             )
             return (pactDir.isDirectory && pactDir.listFiles()?.isNotEmpty() == true) ||
                 (altPactDir.isDirectory && altPactDir.listFiles()?.isNotEmpty() == true)
@@ -109,9 +114,29 @@ class ScimProviderPactCT {
                 config = config,
             )
 
+            val bulkHandler = object : BulkHandler {
+                override fun processBulk(request: BulkRequest, context: ScimRequestContext): BulkResponse {
+                    val responses = request.operations.map { op ->
+                        BulkOperationResponse(
+                            method = op.method,
+                            bulkId = op.bulkId,
+                            status = when (op.method) {
+                                "POST" -> "201"
+                                "DELETE" -> "204"
+                                else -> "200"
+                            },
+                        )
+                    }
+                    return BulkResponse(
+                        schemas = listOf("urn:ietf:params:scim:api:messages:2.0:BulkResponse"),
+                        operations = responses,
+                    )
+                }
+            }
+
             dispatcher = ScimEndpointDispatcher(
                 handlers = listOf(userHandler, groupHandler),
-                bulkHandler = null,
+                bulkHandler = bulkHandler,
                 meHandler = null,
                 discoveryService = discoveryService,
                 config = config,
@@ -184,6 +209,10 @@ class ScimProviderPactCT {
         context.target = HttpTestTarget("localhost", serverPort)
     }
 
+    // ========================================================================
+    // User states
+    // ========================================================================
+
     @State("no users exist")
     fun noUsersExist() {
         userRepository.clear()
@@ -193,19 +222,11 @@ class ScimProviderPactCT {
     @State("a user with id 123 exists")
     fun userExists() {
         userRepository.clear()
-        val user = User(userName = "pact.test.user")
-        val created = userRepository.create(user)
-        // The InMemoryResourceRepository assigns a UUID, but the pact expects id "123".
-        // We need to ensure the user can be fetched by its actual ID.
-        // The pact consumer uses stringValue("id", "123") for GET, meaning it expects exact match.
-        // We store with explicit id "123".
-        userRepository.clear()
-        userRepository.createWithId("123", user)
+        userRepository.createWithId("123", User(userName = "pact.test.user"))
     }
 
     @State("no user with id 999 exists")
     fun userDoesNotExist() {
-        // Ensure no user with id 999 exists - clear to be safe
         userRepository.deleteIfExists("999")
     }
 
@@ -216,9 +237,40 @@ class ScimProviderPactCT {
         userRepository.create(User(userName = "pact.user.2"))
     }
 
+    // ========================================================================
+    // Group states
+    // ========================================================================
+
+    @State("no groups exist")
+    fun noGroupsExist() {
+        groupRepository.clear()
+    }
+
+    @State("a group with id g-456 exists")
+    fun groupExists() {
+        groupRepository.clear()
+        groupRepository.createWithId("g-456", Group(displayName = "Pact Test Group"))
+    }
+
+    @State("no group with id g-999 exists")
+    fun groupDoesNotExist() {
+        groupRepository.deleteIfExists("g-999")
+    }
+
+    @State("groups exist")
+    fun groupsExist() {
+        groupRepository.clear()
+        groupRepository.create(Group(displayName = "pact.group.1"))
+        groupRepository.create(Group(displayName = "pact.group.2"))
+    }
+
+    // ========================================================================
+    // Discovery & Bulk states
+    // ========================================================================
+
     @State("server is running")
     fun serverRunning() {
-        // No-op -- server is already running
+        // No-op -- server is already running with discovery and bulk handlers
     }
 
     @TestTemplate
