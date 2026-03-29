@@ -2,13 +2,90 @@ coverage:
   status:
     project:
       default:
-        target: 80%
+        target: 85%
         threshold: 2%
+      # Core module should have highest coverage
+      core:
+        target: 90%
+        threshold: 1%
+        paths:
+          - "scim2-sdk-core/**"
+      # Server module
+      server:
+        target: 85%
+        threshold: 2%
+        paths:
+          - "scim2-sdk-server/**"
+      # Spring autoconfigure
+      autoconfigure:
+        target: 75%
+        threshold: 3%
+        paths:
+          - "scim2-sdk-spring-boot-autoconfigure/**"
     patch:
       default:
         target: 80%
+
+# Coverage trends
+comment:
+  layout: "reach,diff,flags,files"
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+  hide_project_coverage: false
+
+# Flag coverage by module
+flags:
+  core:
+    paths:
+      - "scim2-sdk-core/"
+    carryforward: true
+  server:
+    paths:
+      - "scim2-sdk-server/"
+    carryforward: true
+  autoconfigure:
+    paths:
+      - "scim2-sdk-spring-boot-autoconfigure/"
+    carryforward: true
+  client:
+    paths:
+      - "scim2-sdk-client/"
+      - "scim2-sdk-client-httpclient/"
+      - "scim2-sdk-client-okhttp/"
+    carryforward: true
+  test:
+    paths:
+      - "scim2-sdk-test/"
+    carryforward: true
 
 ignore:
   - "scim2-sdk-samples/**"
   - "**/src/test/**"
   - "**/test/contract/**"
+  - "**/generated/**"
+  - "**/*.md"
+  - "docs/**"
+
+# Component-level coverage tracking
+component_management:
+  individual_components:
+    - component_id: core
+      name: Core (domain, parsing, serialization)
+      paths:
+        - "scim2-sdk-core/src/main/**"
+    - component_id: server
+      name: Server (dispatcher, engines, handlers)
+      paths:
+        - "scim2-sdk-server/src/main/**"
+    - component_id: autoconfigure
+      name: Spring Boot Auto-Configuration
+      paths:
+        - "scim2-sdk-spring-boot-autoconfigure/src/main/**"
+    - component_id: client
+      name: Client (transport, builder)
+      paths:
+        - "scim2-sdk-client/src/main/**"
+        - "scim2-sdk-client-httpclient/src/main/**"
+        - "scim2-sdk-client-okhttp/src/main/**"

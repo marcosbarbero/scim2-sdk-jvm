@@ -239,7 +239,7 @@ graph TD
     IR --> OK
     EP --> NE
     EP --> SE
-    OP --> NO
+    EP --> NO
 
     style D fill:#4CAF50,color:#fff
     style RH fill:#2196F3,color:#fff
