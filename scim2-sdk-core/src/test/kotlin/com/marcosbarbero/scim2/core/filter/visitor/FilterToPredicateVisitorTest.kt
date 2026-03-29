@@ -209,5 +209,73 @@ class FilterToPredicateVisitorTest {
             matches("emails[type eq \"work\"].value", sampleUser) shouldBe true
             matches("emails[type eq \"${faker.name.name()}\"].value", sampleUser) shouldBe false
         }
+
+        @Test
+        fun `should return false when value path attribute is not a list`() {
+            matches("userName[type eq \"work\"]", sampleUser) shouldBe false
+        }
+
+        @Test
+        fun `should return false when value path has no matching items`() {
+            matches("emails[type eq \"nonexistent\"]", sampleUser) shouldBe false
+        }
+    }
+
+    @Nested
+    inner class NullComparisons {
+
+        @Test
+        fun `ne null should match present attribute`() {
+            matches("userName ne null", sampleUser) shouldBe true
+        }
+
+        @Test
+        fun `ne null should not match absent attribute`() {
+            matches("nonExistent ne null", sampleUser) shouldBe false
+        }
+
+        @Test
+        fun `gt null should return false`() {
+            matches("age gt null", sampleUser) shouldBe false
+        }
+    }
+
+    @Nested
+    inner class NumericEdgeCases {
+
+        @Test
+        fun `gt with non-numeric expected should return false`() {
+            matches("age gt \"notanumber\"", sampleUser) shouldBe false
+        }
+
+        @Test
+        fun `ge should match equal numeric value`() {
+            matches("age ge 30", sampleUser) shouldBe true
+        }
+
+        @Test
+        fun `le should match equal numeric value`() {
+            matches("age le 30", sampleUser) shouldBe true
+        }
+
+        @Test
+        fun `lt should not match equal value`() {
+            matches("age lt 30", sampleUser) shouldBe false
+        }
+
+        @Test
+        fun `numeric comparison with absent attribute returns false`() {
+            matches("nonExistent gt 0", sampleUser) shouldBe false
+        }
+    }
+
+    @Nested
+    inner class StringOperatorEdgeCases {
+
+        @Test
+        fun `co with non-string expected should return false`() {
+            // co operator on numeric expected value
+            matches("userName co 123", sampleUser) shouldBe false
+        }
     }
 }
