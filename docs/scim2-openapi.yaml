@@ -377,6 +377,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/Group'
 
+  /Groups/.search:
+    post:
+      tags: [Groups]
+      summary: Search groups (POST)
+      description: |
+        Alternative to GET for searching with complex filters.
+        [RFC 7644 §3.4.3](https://www.rfc-editor.org/rfc/rfc7644#section-3.4.3)
+      operationId: searchGroupsPost
+      requestBody:
+        required: true
+        content:
+          application/scim+json:
+            schema:
+              $ref: '#/components/schemas/SearchRequest'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/scim+json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+
   /Groups/{id}:
     get:
       tags: [Groups]
