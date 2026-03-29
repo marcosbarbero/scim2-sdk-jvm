@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.marcosbarbero.scim2.core.domain.model.common.MultiValuedAttribute
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidPathException
 import com.marcosbarbero.scim2.core.domain.model.error.InvalidValueException
+import com.marcosbarbero.scim2.core.domain.model.error.MutabilityException
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOp
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchOperation
 import com.marcosbarbero.scim2.core.domain.model.patch.PatchRequest
@@ -288,6 +289,96 @@ class PatchEngineTest {
 
             val result = engine.apply(user, request)
             result.displayName shouldBe newDisplayName
+        }
+    }
+
+    @Nested
+    inner class FilteredMultiValuedOperations {
+
+        @Test
+        fun `should add to filtered multi-valued attribute`() {
+            val user = baseUser()
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(
+                        op = PatchOp.ADD,
+                        path = """emails[type eq "work"]""",
+                        value = objectMapper.valueToTree(mapOf("display" to "Work Email")),
+                    ),
+                ),
+            )
+
+            val result = engine.apply(user, request)
+            val workEmail = result.emails.first { it.type == "work" }
+            workEmail.display shouldBe "Work Email"
+        }
+
+        @Test
+        fun `should throw when adding to filtered multi-valued with non-object value`() {
+            val user = baseUser()
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(
+                        op = PatchOp.ADD,
+                        path = """emails[type eq "work"]""",
+                        value = objectMapper.valueToTree("not an object"),
+                    ),
+                ),
+            )
+
+            shouldThrow<InvalidValueException> {
+                engine.apply(user, request)
+            }
+        }
+
+        @Test
+        fun `should add single item to existing array`() {
+            val user = baseUser()
+            val newEmail = mapOf("value" to "single@example.com", "type" to "other")
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.ADD, path = "emails", value = objectMapper.valueToTree(newEmail)),
+                ),
+            )
+
+            val result = engine.apply(user, request)
+            result.emails shouldHaveSize 3
+        }
+    }
+
+    @Nested
+    inner class ReplaceWithNoPath {
+
+        @Test
+        fun `should replace with no path by merging object value`() {
+            val user = baseUser()
+            val newDisplayName = faker.name.name()
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, value = objectMapper.valueToTree(mapOf("displayName" to newDisplayName))),
+                ),
+            )
+
+            val result = engine.apply(user, request)
+            result.displayName shouldBe newDisplayName
+        }
+    }
+
+    @Nested
+    inner class MutabilityWithNoPath {
+
+        @Test
+        fun `should reject no-path replace containing readOnly attribute`() {
+            val user = baseUser()
+            val request = PatchRequest(
+                operations = listOf(
+                    PatchOperation(op = PatchOp.REPLACE, value = objectMapper.valueToTree(mapOf("id" to "hacked"))),
+                ),
+            )
+
+            shouldThrow<MutabilityException> {
+                engine.apply(user, request)
+            }
         }
     }
 

@@ -20,10 +20,12 @@ import com.marcosbarbero.scim2.core.domain.model.resource.EnterpriseUserExtensio
 import com.marcosbarbero.scim2.core.domain.model.resource.Group
 import com.marcosbarbero.scim2.core.domain.model.resource.User
 import io.github.serpro69.kfaker.Faker
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -124,6 +126,28 @@ class SchemaRegistryTest {
                     "department",
                     "manager",
                 )
+        }
+    }
+
+    @Nested
+    inner class ExtensionErrorPaths {
+
+        @Test
+        fun `should throw when extension class has no ScimExtension annotation`() {
+            registry.register(User::class)
+            val ex = shouldThrow<IllegalArgumentException> {
+                registry.registerExtension(User::class, User::class)
+            }
+            ex.message shouldContain "@ScimExtension"
+        }
+
+        @Test
+        fun `should throw when resource type not registered before adding extension`() {
+            // Don't register User first
+            val ex = shouldThrow<IllegalStateException> {
+                registry.registerExtension(User::class, EnterpriseUserExtension::class)
+            }
+            ex.message shouldContain "must be registered before"
         }
     }
 
