@@ -200,30 +200,52 @@ With Spring Boot, register it as a bean and the auto-configuration will use it i
 fun scimMetrics(): ScimMetrics = DatadogScimMetrics(statsdClient)
 ```
 
+### OpenTelemetry Tracing
+
+The SDK includes `OpenTelemetryScimTracer`, which auto-configures when OpenTelemetry is on the classpath. Add the dependency:
+
+```xml
+<dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-api</artifactId>
+</dependency>
+```
+
+When an `io.opentelemetry.api.trace.Tracer` bean is available (e.g., via OpenTelemetry's Spring Boot instrumentation or a custom `Tracer` bean), the auto-configuration registers an `OpenTelemetryScimTracer` that:
+
+- Wraps every SCIM operation in an OpenTelemetry span with attributes
+- Records exceptions with `StatusCode.ERROR` and `recordException`
+- Provides the current trace ID as the correlation ID for MDC and events
+
+No additional configuration is needed. To disable tracing while keeping OpenTelemetry on the classpath:
+
+```yaml
+scim:
+  tracing:
+    enabled: false
+```
+
+The `@ConditionalOnMissingBean` guard means you can still provide your own `ScimTracer` bean to override it.
+
 ### Custom ScimTracer
 
-To provide your own tracer (e.g., for OpenTelemetry spans), implement `ScimTracer`:
+To provide a custom tracer implementation, implement the `ScimTracer` interface:
 
 ```kotlin
-class OpenTelemetryScimTracer(private val tracer: Tracer) : ScimTracer {
+class MyCustomTracer : ScimTracer {
     override fun <T> trace(operationName: String, attributes: Map<String, String>, block: () -> T): T {
-        val span = tracer.spanBuilder(operationName).startSpan()
-        attributes.forEach { (k, v) -> span.setAttribute(k, v) }
-        return span.makeCurrent().use {
-            try {
-                block()
-            } finally {
-                span.end()
-            }
-        }
+        // your tracing logic
+        return block()
     }
 
-    override fun currentCorrelationId(): String? =
-        Span.current().spanContext.traceId.takeIf { it != TraceId.getInvalid() }
+    override fun currentCorrelationId(): String? {
+        // return your correlation ID
+        return null
+    }
 }
 ```
 
-Register it as a Spring bean or pass it directly to `ScimEndpointDispatcher`.
+Register it as a Spring bean and the auto-configuration will use it instead of `OpenTelemetryScimTracer` (thanks to `@ConditionalOnMissingBean`).
 
 ### Disabling Metrics
 

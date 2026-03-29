@@ -16,7 +16,7 @@ A modern, Kotlin-first SCIM 2.0 (RFC 7643/7644) SDK for the JVM with full Java i
 - **Spring Boot starter**: Auto-configuration with sensible defaults
 - **Works without Spring**: Use with any JVM HTTP framework
 - **OOTB persistence**: JPA adapter with reference schemas for PostgreSQL, MySQL, Oracle, MSSQL, H2
-- **Observability**: Metrics (Micrometer), tracing, structured logging, event system
+- **Observability**: Metrics (Micrometer), tracing (OpenTelemetry), structured logging (MDC), event system
 - **Type-safe client**: Fluent API with Kotlin DSLs for filters, patches, searches
 - **RFC 9457 ProblemDetail**: Content-negotiated error responses
 - **Extensible**: SPI for serialization, HTTP transport, identity, authorization, events
@@ -215,13 +215,16 @@ var publisher = new CompositeEventPublisher(outboundPublisher, auditPublisher);
 
 ## Observability
 
-The SDK provides built-in observability via [Micrometer](https://micrometer.io/) metrics, structured logging, and event correlation.
+The SDK provides built-in observability:
 
-See the [Observability Guide](docs/observability.md) for details.
+- **Metrics** — [Micrometer](https://micrometer.io/) auto-configured with Prometheus, Grafana dashboard included
+- **Tracing** — [OpenTelemetry](https://opentelemetry.io/) auto-configured when on classpath (spans, trace IDs, exception recording)
+- **Structured logging** — SLF4J MDC with `scim.correlationId`, `scim.operation`, `scim.resourceType`
+- **Event correlation** — all events carry the tracer's correlation ID
+
+See the [Observability Guide](docs/observability.md) for configuration, metrics reference, and custom implementation examples.
 
 ### Quick Start (Spring Boot)
-
-Add Micrometer and actuator:
 
 ```yaml
 management:
@@ -231,7 +234,7 @@ management:
         include: health,prometheus,metrics
 ```
 
-Metrics are automatically recorded for all SCIM operations. See the [Spring Boot full-stack sample](scim2-sdk-samples/sample-fullstack-spring/) for a complete example with Prometheus + Grafana.
+Metrics and tracing are automatically recorded for all SCIM operations. See the [Spring Boot full-stack sample](scim2-sdk-samples/sample-fullstack-spring/) for a complete example with Prometheus + Grafana.
 
 ## Sample Applications
 
@@ -278,12 +281,19 @@ All properties are optional with sensible defaults:
 | `scim.persistence.table-name` | `scim_resources` | Database table name for SCIM resource storage |
 | `scim.persistence.schema-name` | *(none)* | Database schema name (e.g., `scim`) — if set, the table is qualified as `schema.table` |
 | `scim.persistence.auto-migrate` | `false` | Run [Flyway](https://flywaydb.org/) migration on startup to create the `scim_resources` table automatically |
+| `scim.tracing.enabled` | `true` | Enable OpenTelemetry tracing auto-configuration. Set to `false` to disable even when OpenTelemetry is on the classpath |
 | `scim.client.base-url` | *(none)* | Base URL of the remote SCIM Service Provider — when set, auto-configures a `ScimClient` bean |
 | `scim.client.connect-timeout` | `10s` | TCP connection timeout for the SCIM client |
 | `scim.client.read-timeout` | `30s` | Read timeout for the SCIM client |
 | `scim.idp.provider` | *(none)* | Identity Provider type: `keycloak`, `okta`, `azure-ad`, `ping-federate`, `auth0` — auto-configures the corresponding `IdentityResolver` |
 | `scim.idp.client-id` | *(none)* | Client ID for Keycloak client-role extraction |
 | `scim.idp.namespace` | *(none)* | Auth0 custom namespace for role claims |
+| `scim.idp.claims.subject` | `sub` | JWT claim for subject |
+| `scim.idp.claims.email` | `email` | JWT claim for email |
+| `scim.idp.claims.name` | `name` | JWT claim for name |
+| `scim.idp.claims.roles` | `roles` | JWT claim for roles |
+| `scim.idp.claims.groups` | `groups` | JWT claim for groups |
+| `scim.idp.claims.custom` | `{}` | Additional custom claim mappings (key-value pairs) |
 
 ## Database Support
 

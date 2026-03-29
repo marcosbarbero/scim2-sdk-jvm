@@ -127,9 +127,11 @@ sequenceDiagram
 
 ## Using the Outbox Pattern
 
-### Option 1: namastack-outbox (Recommended)
+### Option 1: namastack-outbox (Recommended Pattern)
 
-[namastack-outbox](https://github.com/namastack/namastack-outbox) provides transactional outbox support and is available in Maven Central. It integrates with Spring Modulith's event externalization, meaning events stored via the outbox can be automatically forwarded to Kafka, AMQP, or any other supported broker through Spring Modulith's `EventExternalizationConfiguration`.
+> **Note:** This is a documented integration pattern, not a built-in SDK feature.
+
+[namastack-outbox](https://github.com/namastack/namastack-outbox) provides transactional outbox support and is available in Maven Central. It integrates with Spring Modulith's event externalization, meaning events stored via the outbox can be forwarded to Kafka, AMQP, or any other supported broker through Spring Modulith's `EventExternalizationConfiguration`.
 
 Add the dependency:
 
@@ -141,15 +143,29 @@ Add the dependency:
 </dependency>
 ```
 
-Configure in `application.yml`:
+Implement `ScimEventPublisher` as a Spring `@Component`. The SDK auto-detects it and uses it instead of the default `SpringScimEventPublisher`:
 
-```yaml
-scim:
-  outbox:
-    enabled: true
+```kotlin
+@Component
+class NamastackOutboxAdapter(
+    private val outboxService: OutboxService, // from namastack-outbox
+    private val objectMapper: ObjectMapper,
+) : ScimEventPublisher {
+    override fun publish(event: ScimEvent) {
+        outboxService.store(
+            OutboxEvent(
+                id = event.eventId,
+                type = event::class.simpleName!!,
+                payload = objectMapper.writeValueAsString(event),
+            )
+        )
+    }
+}
 ```
 
-The SDK auto-configures a `NamastackOutboxAdapter` that delegates to namastack-outbox's event publishing. Events are stored transactionally alongside your resource changes and published asynchronously.
+That's it — Spring auto-configuration picks up your `@Component` automatically via `@ConditionalOnMissingBean(ScimEventPublisher::class)`. Events are then stored transactionally alongside your resource changes and published asynchronously by namastack-outbox's poller.
+
+For plain Java (without Spring), wire the publisher manually into `ScimEndpointDispatcher`.
 
 ### Option 2: Custom Implementation
 

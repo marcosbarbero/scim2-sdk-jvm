@@ -20,6 +20,7 @@ import com.marcosbarbero.scim2.core.domain.model.resource.User
 import com.marcosbarbero.scim2.core.domain.model.search.ListResponse
 import com.marcosbarbero.scim2.core.domain.model.search.SearchRequest
 import com.marcosbarbero.scim2.core.observability.ScimMetrics
+import com.marcosbarbero.scim2.core.observability.ScimTracer
 import com.marcosbarbero.scim2.core.serialization.jackson.JacksonScimSerializer
 import com.marcosbarbero.scim2.server.adapter.http.ScimEndpointDispatcher
 import com.marcosbarbero.scim2.server.http.HttpMethod
@@ -27,22 +28,39 @@ import com.marcosbarbero.scim2.server.http.ScimHttpRequest
 import com.marcosbarbero.scim2.server.port.ResourceHandler
 import com.marcosbarbero.scim2.server.port.ScimRequestContext
 import com.marcosbarbero.scim2.spring.observability.MicrometerScimMetrics
+import com.marcosbarbero.scim2.spring.observability.OpenTelemetryScimTracer
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import io.opentelemetry.api.trace.Tracer
+import io.opentelemetry.sdk.testing.junit5.OpenTelemetryExtension
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.RegisterExtension
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.jackson.autoconfigure.JacksonAutoConfiguration
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 
 class ScimObservabilityAutoConfigurationTest {
 
+    companion object {
+        @JvmField
+        @RegisterExtension
+        val otelTesting: OpenTelemetryExtension = OpenTelemetryExtension.create()
+    }
+
     private val contextRunner = ApplicationContextRunner()
         .withConfiguration(
             AutoConfigurations.of(
                 ScimObservabilityAutoConfiguration::class.java,
+            ),
+        )
+
+    private val tracerContextRunner = ApplicationContextRunner()
+        .withConfiguration(
+            AutoConfigurations.of(
+                ScimTracerAutoConfiguration::class.java,
             ),
         )
 
@@ -132,6 +150,29 @@ class ScimObservabilityAutoConfigurationTest {
                     .gauge()
                 gauge.shouldNotBeNull()
                 gauge.value() shouldBe 0.0
+            }
+    }
+
+    @Test
+    fun `creates OpenTelemetryScimTracer when Tracer bean present`() {
+        val tracer = otelTesting.openTelemetry.getTracer("test")
+        tracerContextRunner
+            .withBean(Tracer::class.java, { tracer })
+            .run { context ->
+                val scimTracer = context.getBean(ScimTracer::class.java)
+                scimTracer.shouldNotBeNull()
+                scimTracer.shouldBeInstanceOf<OpenTelemetryScimTracer>()
+            }
+    }
+
+    @Test
+    fun `does not create tracer when scim tracing enabled is false`() {
+        val tracer = otelTesting.openTelemetry.getTracer("test")
+        tracerContextRunner
+            .withPropertyValues("scim.tracing.enabled=false")
+            .withBean(Tracer::class.java, { tracer })
+            .run { context ->
+                context.getBeansOfType(ScimTracer::class.java).isEmpty() shouldBe true
             }
     }
 
