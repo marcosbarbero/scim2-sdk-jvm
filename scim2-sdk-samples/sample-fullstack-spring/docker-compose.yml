@@ -71,6 +71,8 @@ services:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:9090/realms/scim-sample/protocol/openid-connect/certs
       # Outbound provisioning — push changes to the target SCIM server
       SCIM_CLIENT_BASE_URL: http://backend-target:8080/scim/v2
+      # OpenTelemetry — export traces to Jaeger
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
     ports:
       - "8080:8080"
     depends_on:
@@ -180,6 +182,15 @@ services:
       - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    profiles: ["observability"]
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
 
 volumes:
   pgdata:
