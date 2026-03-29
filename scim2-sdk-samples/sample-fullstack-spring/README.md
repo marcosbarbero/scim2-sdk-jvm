@@ -78,7 +78,7 @@ curl -s http://localhost:8081/scim/v2/Users | python3 -c "import sys,json; [prin
 
 ## Observability
 
-The sample includes an optional observability stack (Prometheus + Grafana) for monitoring SCIM operations.
+The sample includes an optional observability stack for monitoring and tracing SCIM operations.
 
 ### Start with observability
 
@@ -87,8 +87,9 @@ docker compose --profile observability up -d
 ```
 
 This starts all services plus:
-- **Prometheus** at http://localhost:9091 -- scrapes `/actuator/prometheus` from both SCIM servers
-- **Grafana** at http://localhost:3000 (login: admin / admin) -- pre-built SCIM dashboard
+- **Prometheus** at http://localhost:9091 — scrapes `/actuator/prometheus` from both SCIM servers
+- **Grafana** at http://localhost:3000 (login: admin / admin) — pre-built SCIM dashboard
+- **Jaeger** at http://localhost:16686 — distributed tracing UI (traces from OpenTelemetry)
 
 ### SCIM Dashboard
 
@@ -176,11 +177,14 @@ cd ../shared-frontend && npm install && npm run dev
 
 ## Services
 
-| Service          | URL                        | Description                    |
-|------------------|----------------------------|--------------------------------|
-| Frontend         | http://localhost:5173       | React UI                       |
-| Primary Backend  | http://localhost:8080       | SCIM server + REST API         |
-| Target Backend   | http://localhost:8081       | Outbound provisioning target   |
-| Keycloak         | http://localhost:9090       | Identity provider (admin/admin)|
-| PostgreSQL       | localhost:5432              | Primary database               |
-| PostgreSQL Target| localhost:5433              | Target database                |
+| Service          | URL                        | Description                        |
+|------------------|----------------------------|------------------------------------|
+| Frontend         | http://localhost:5173       | React UI                           |
+| Primary Backend  | http://localhost:8080       | SCIM server + REST API             |
+| Target Backend   | http://localhost:8081       | Outbound provisioning target       |
+| Keycloak         | http://localhost:9090       | Identity provider (admin/admin)    |
+| PostgreSQL       | localhost:5432              | Primary database                   |
+| PostgreSQL Target| localhost:5433              | Target database                    |
+| Prometheus       | http://localhost:9091       | Metrics (observability profile)    |
+| Grafana          | http://localhost:3000       | Dashboards (admin/admin)           |
+| Jaeger           | http://localhost:16686      | Distributed tracing UI             |
