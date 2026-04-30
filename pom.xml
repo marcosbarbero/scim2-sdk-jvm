@@ -60,7 +60,7 @@
         <kotlin.version>2.3.21</kotlin.version>
         <kotest.version>6.1.11</kotest.version>
         <mockk.version>1.14.9</mockk.version>
-        <spring-boot.version>4.0.5</spring-boot.version>
+        <spring-boot.version>4.0.6</spring-boot.version>
 
         <kotlinx-coroutines.version>1.10.2</kotlinx-coroutines.version>
         <okhttp.version>5.3.2</okhttp.version>
