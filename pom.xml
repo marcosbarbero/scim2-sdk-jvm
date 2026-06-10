@@ -57,7 +57,7 @@
 
         <java.version>25</java.version>
         <kotlin.jvm-target>23</kotlin.jvm-target>
-        <kotlin.version>2.3.21</kotlin.version>
+        <kotlin.version>2.4.0</kotlin.version>
         <kotest.version>6.1.11</kotest.version>
         <mockk.version>1.14.11</mockk.version>
         <spring-boot.version>4.0.6</spring-boot.version>
