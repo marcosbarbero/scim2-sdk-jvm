@@ -58,7 +58,7 @@
         <java.version>25</java.version>
         <kotlin.jvm-target>23</kotlin.jvm-target>
         <kotlin.version>2.4.0</kotlin.version>
-        <kotest.version>6.1.11</kotest.version>
+        <kotest.version>6.2.1</kotest.version>
         <mockk.version>1.14.11</mockk.version>
         <spring-boot.version>4.1.0</spring-boot.version>
 
@@ -66,7 +66,7 @@
         <okhttp.version>5.4.0</okhttp.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <pact.version>4.7.1</pact.version>
+        <pact.version>4.7.2</pact.version>
 
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
