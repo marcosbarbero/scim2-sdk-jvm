@@ -66,7 +66,7 @@
         <okhttp.version>5.4.0</okhttp.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <pact.version>4.7.2</pact.version>
+        <pact.version>4.7.3</pact.version>
 
         <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
