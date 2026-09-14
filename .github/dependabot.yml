@@ -11,6 +11,12 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "deps"
+    ignore:
+      # 3.6.0 breaks MockK's ByteBuddy agent self-attach on JDK 25; revisit on next release
+      - dependency-name: "org.apache.maven.plugins:maven-surefire-plugin"
+        versions: ["3.6.0"]
+      - dependency-name: "org.apache.maven.plugins:maven-failsafe-plugin"
+        versions: ["3.6.0"]
     groups:
       kotlin:
         patterns:
