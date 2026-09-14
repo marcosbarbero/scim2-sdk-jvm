@@ -57,7 +57,7 @@
 
         <java.version>25</java.version>
         <kotlin.jvm-target>23</kotlin.jvm-target>
-        <kotlin.version>2.4.10</kotlin.version>
+        <kotlin.version>2.4.20</kotlin.version>
         <kotest.version>6.2.5</kotest.version>
         <mockk.version>1.14.11</mockk.version>
         <spring-boot.version>4.1.1</spring-boot.version>
@@ -68,7 +68,7 @@
         <wiremock.version>3.13.2</wiremock.version>
         <pact.version>4.7.5</pact.version>
 
-        <maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
+        <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>3.6.0</maven-surefire-plugin.version>
         <maven-failsafe-plugin.version>3.5.2</maven-failsafe-plugin.version>
         <maven-enforcer-plugin.version>3.6.3</maven-enforcer-plugin.version>
@@ -526,7 +526,7 @@
             <plugin>
                 <groupId>com.diffplug.spotless</groupId>
                 <artifactId>spotless-maven-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.10.2</version>
                 <configuration>
                     <kotlin>
                         <includes>
