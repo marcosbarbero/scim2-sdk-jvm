@@ -66,7 +66,7 @@
         <okhttp.version>5.5.1</okhttp.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <pact.version>4.7.5</pact.version>
+        <pact.version>4.7.6</pact.version>
 
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
         <!-- Pinned: 3.6.0 breaks MockK/ByteBuddy self-attach on JDK 25 ("Agent failed to start!") -->
