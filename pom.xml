@@ -58,15 +58,15 @@
         <java.version>25</java.version>
         <kotlin.jvm-target>23</kotlin.jvm-target>
         <kotlin.version>2.4.21</kotlin.version>
-        <kotest.version>6.2.6</kotest.version>
-        <mockk.version>1.14.11</mockk.version>
+        <kotest.version>6.2.7</kotest.version>
+        <mockk.version>1.14.12</mockk.version>
         <spring-boot.version>4.1.2</spring-boot.version>
 
         <kotlinx-coroutines.version>1.11.0</kotlinx-coroutines.version>
         <okhttp.version>5.5.1</okhttp.version>
         <testcontainers.version>2.0.5</testcontainers.version>
         <wiremock.version>3.13.2</wiremock.version>
-        <pact.version>4.7.5</pact.version>
+        <pact.version>4.7.7</pact.version>
 
         <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
         <!-- Pinned: 3.6.0 breaks MockK/ByteBuddy self-attach on JDK 25 ("Agent failed to start!") -->
